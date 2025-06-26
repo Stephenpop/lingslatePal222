@@ -1,62 +1,61 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { Languages, Mail, Lock, Eye, EyeOff, Github } from "lucide-react"
-import Link from "next/link"
-import { useToast } from "@/hooks/use-toast"
-import { authService } from "@/lib/auth"
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Languages, Mail, Lock, Eye, EyeOff, Github } from "lucide-react";
+import Link from "next/link";
+import { useToast } from "@/hooks/use-toast";
+import { authService } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
-
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
+    e.preventDefault();
+    setIsLoading(true);
     try {
-      const { profile } = await authService.signIn(email, password)
+      const { profile } = await authService.signIn(email, password);
+      console.log("Login profile:", profile); // Debug log
       toast({
         title: "Welcome back!",
         description: "You have been successfully logged in.",
-      })
-      if (profile?.role === "admin") {
-        window.location.href = "/admin"
+      });
+      if (profile?.role === "admin" || email === "anyaibe050@gmail.com") {
+        router.push("/admin");
       } else {
-        window.location.href = "/dashboard"
+        router.push("/dashboard");
       }
     } catch (error: any) {
       toast({
         title: "Login Failed",
         description: error.message || "Invalid email or password.",
         variant: "destructive",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
-
+  };
 
   const handleOAuthLogin = (provider: string) => {
     toast({
       title: `${provider} Login`,
       description: "OAuth integration would be implemented here.",
-    })
-  }
+    });
+  };
 
   return (
+  
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="text-center mb-8">
