@@ -166,19 +166,15 @@ export default function TranslatePage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600">
                 <Languages className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">PolyglotPal</span>
+              <span className="text-xl font-bold text-white">LingslatetPal</span>
             </Link>
 
             <div className="flex items-center space-x-4">
-              <Link href="/auth/login">
-                <Button variant="ghost" className="text-white hover:bg-white/10">
-                  Login
-                </Button>
-              </Link>
-              <Link href="/auth/register">
+             
+              <Link href="/dashboard">
                 <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
                   <BookOpen className="mr-2 h-4 w-4" />
-                  Start Learning
+                  Dashboard
                 </Button>
               </Link>
             </div>
