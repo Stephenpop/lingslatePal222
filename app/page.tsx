@@ -123,11 +123,7 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center space-x-4"
             >
-              <Link href="/translate">
-                <Button variant="ghost" className="text-white hover:bg-white/10">
-                  Translate
-                </Button>
-              </Link>
+              
               <Link href="/auth/login">
                 <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
                   Login
