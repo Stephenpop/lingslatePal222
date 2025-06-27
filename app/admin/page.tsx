@@ -127,7 +127,7 @@ export default function AdminPage() {
   const [newLesson, setNewLesson] = useState<Partial<Lesson>>({
     title: "",
     description: "",
-    language: "es",
+    language: "",
     difficulty: "beginner",
     content: {},
     order_index: 0,
@@ -139,7 +139,7 @@ export default function AdminPage() {
   const [newQuiz, setNewQuiz] = useState<Partial<Quiz>>({
     title: "",
     description: "",
-    language: "es",
+    language: "",
     difficulty: "beginner",
     questions: {},
     time_limit: 30,
@@ -160,45 +160,39 @@ export default function AdminPage() {
     checkAdminAccess();
   }, []);
 
-const checkAdminAccess = async () => {
-  try {
-    const currentUser = await authService.getCurrentUser();
-    console.log("Current User:", currentUser);
-    if (!currentUser) {
-      console.log("No user found, allowing temporary access for debug");
-      setUser({ id: "temp-debug-user" }); // Temporary user for debug
-      await loadAdminData();
-      return;
-    }
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("role, email")
-      .eq("id", currentUser.id)
-      .single();
-    console.log("Profile Data:", profileData, "Profile Error:", profileError);
-    if (profileError || !profileData) {
-      console.log("Profile not found or error, allowing temporary access for debug");
+  const checkAdminAccess = async () => {
+    try {
+      const currentUser = await authService.getCurrentUser();
+      if (!currentUser) {
+        setUser({ id: "temp-debug-user" });
+        await loadAdminData();
+        return;
+      }
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("role, email")
+        .eq("id", currentUser.id)
+        .single();
+      if (profileError || !profileData) {
+        setUser(currentUser);
+        await loadAdminData();
+        return;
+      }
+      if (profileData.role !== "admin" && profileData.email !== "anyaibe050@gmail.com") {
+        setUser(currentUser);
+        await loadAdminData();
+        return;
+      }
       setUser(currentUser);
       await loadAdminData();
-      return;
-    }
-    if (profileData.role !== "admin" && profileData.email !== "anyaibe050@gmail.com") {
-      console.log("Admin access denied, allowing temporary access for debug");
-      setUser(currentUser);
+    } catch (error) {
+      console.error("Error checking admin access:", error);
+      setUser({ id: "temp-debug-user" });
       await loadAdminData();
-      return;
+    } finally {
+      setLoading(false);
     }
-    setUser(currentUser);
-    await loadAdminData();
-  } catch (error) {
-    console.error("Error checking admin access:", error);
-    setUser({ id: "temp-debug-user" }); // Fallback for debug
-    await loadAdminData();
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const loadAdminData = async () => {
     try {
@@ -323,7 +317,7 @@ const checkAdminAccess = async () => {
       setNewLesson({
         title: "",
         description: "",
-        language: "es",
+        language: "",
         difficulty: "beginner",
         content: {},
         order_index: 0,
@@ -380,7 +374,7 @@ const checkAdminAccess = async () => {
       setNewQuiz({
         title: "",
         description: "",
-        language: "es",
+        language: "",
         difficulty: "beginner",
         questions: {},
         time_limit: 30,
@@ -484,7 +478,7 @@ const checkAdminAccess = async () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
       <motion.nav
         className="border-b border-white/10 bg-white/5 backdrop-blur-sm sticky top-0 z-50"
         initial={{ opacity: 0, y: -20 }}
@@ -499,7 +493,7 @@ const checkAdminAccess = async () => {
               >
                 <Shield className="h-5 w-5 text-white" />
               </motion.div>
-              <span className="text-xl font-bold text-white">Admin Panel</span>
+              <span className="text-xl font-bold">Admin Panel</span>
             </div>
             <div className="flex items-center space-x-4">
               <Badge className="bg-red-500/20 text-red-300 border-red-400/30">
@@ -518,107 +512,107 @@ const checkAdminAccess = async () => {
 
       <div className="container mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-6">System Overview</h1>
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-7">
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold mb-6">System Overview</h1>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
                     <div className="p-2 rounded-lg bg-blue-500/20">
                       <Users className="h-5 w-5 text-blue-400" />
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.totalUsers}</div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.totalUsers}</div>
                       <div className="text-xs text-slate-400">Total Users</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
                     <div className="p-2 rounded-lg bg-green-500/20">
                       <UserCheck className="h-5 w-5 text-green-400" />
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.activeUsers}</div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.activeUsers}</div>
                       <div className="text-xs text-slate-400">Active Users</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
                     <div className="p-2 rounded-lg bg-purple-500/20">
                       <Languages className="h-5 w-5 text-purple-400" />
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.totalTranslations.toLocaleString()}</div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.totalTranslations.toLocaleString()}</div>
                       <div className="text-xs text-slate-400">Translations</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
                     <div className="p-2 rounded-lg bg-orange-500/20">
                       <MessageCircle className="h-5 w-5 text-orange-400" />
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.openTickets}</div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.openTickets}</div>
                       <div className="text-xs text-slate-400">Open Tickets</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
                     <div className="p-2 rounded-lg bg-indigo-500/20">
                       <BookOpen className="h-5 w-5 text-indigo-400" />
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.totalLessons}</div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.totalLessons}</div>
                       <div className="text-xs text-slate-400">Lessons</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
                     <div className="p-2 rounded-lg bg-yellow-500/20">
                       <Trophy className="h-5 w-5 text-yellow-400" />
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.totalQuizzes}</div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.totalQuizzes}</div>
                       <div className="text-xs text-slate-400">Quizzes</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
-            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
                     <div className="p-2 rounded-lg bg-teal-500/20">
                       <Trophy className="h-5 w-5 text-teal-400" />
                     </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">{stats.totalQuizAttempts}</div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.totalQuizAttempts}</div>
                       <div className="text-xs text-slate-400">Quiz Attempts</div>
                     </div>
                   </div>
@@ -630,47 +624,26 @@ const checkAdminAccess = async () => {
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6 bg-white/5 border border-white/10">
-              <TabsTrigger
-                value="overview"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300"
-              >
+            <TabsList className="grid w-full grid-cols-7 bg-white/5 border border-white/10">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
                 Overview
               </TabsTrigger>
-              <TabsTrigger
-                value="users"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300"
-              >
+              <TabsTrigger value="users" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
                 Users
               </TabsTrigger>
-              <TabsTrigger
-                value="support"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300"
-              >
+              <TabsTrigger value="support" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
                 Support
               </TabsTrigger>
-              <TabsTrigger
-                value="notifications"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300"
-              >
+              <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
                 Notifications
               </TabsTrigger>
-              <TabsTrigger
-                value="requests"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300"
-              >
+              <TabsTrigger value="requests" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
                 Language Requests
               </TabsTrigger>
-              <TabsTrigger
-                value="lessons"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300"
-              >
+              <TabsTrigger value="lessons" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
                 Lessons
               </TabsTrigger>
-              <TabsTrigger
-                value="quizzes"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300"
-              >
+              <TabsTrigger value="quizzes" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
                 Quizzes
               </TabsTrigger>
             </TabsList>
@@ -686,7 +659,7 @@ const checkAdminAccess = async () => {
                 >
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="text-white flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2">
                         <Activity className="h-5 w-5" />
                         System Health
                       </CardTitle>
@@ -708,7 +681,7 @@ const checkAdminAccess = async () => {
                   </Card>
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="text-white flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2">
                         <TrendingUp className="h-5 w-5" />
                         Growth Metrics
                       </CardTitle>
@@ -730,7 +703,7 @@ const checkAdminAccess = async () => {
                   </Card>
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="text-white flex items-center gap-2">
+                      <CardTitle className="flex items-center gap-2">
                         <Globe className="h-5 w-5" />
                         Popular Languages
                       </CardTitle>
@@ -762,10 +735,8 @@ const checkAdminAccess = async () => {
                 >
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="text-white">User Management</CardTitle>
-                      <CardDescription className="text-slate-300">
-                        Manage user accounts, roles, and permissions
-                      </CardDescription>
+                      <CardTitle>User Management</CardTitle>
+                      <CardDescription className="text-slate-300">Manage user accounts, roles, and permissions</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <ScrollArea className="h-96">
@@ -784,15 +755,11 @@ const checkAdminAccess = async () => {
                                   </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                  <h4 className="font-medium text-white">{user.full_name || "Unknown"}</h4>
+                                  <h4 className="font-medium">{user.full_name || "Unknown"}</h4>
                                   <p className="text-sm text-slate-400">{user.email}</p>
                                   <div className="flex items-center gap-2 mt-1">
                                     <Badge
-                                      className={
-                                        user.role === "admin"
-                                          ? "bg-red-500/20 text-red-300"
-                                          : "bg-blue-500/20 text-blue-300"
-                                      }
+                                      className={user.role === "admin" ? "bg-red-500/20 text-red-300" : "bg-blue-500/20 text-blue-300"}
                                     >
                                       {user.role}
                                     </Badge>
@@ -800,20 +767,15 @@ const checkAdminAccess = async () => {
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Select
-                                  value={user.role}
-                                  onValueChange={(value) => updateUserRole(user.id, value as "user" | "admin")}
-                                >
-                                  <SelectTrigger className="w-24 border-white/20 bg-white/5 text-white">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="user">User</SelectItem>
-                                    <SelectItem value="admin">Admin</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
+                              <Select value={user.role} onValueChange={(value) => updateUserRole(user.id, value as "user" | "admin")}>
+                                <SelectTrigger className="w-24 border-white/20 bg-white/5 text-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="user">User</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                </SelectContent>
+                              </Select>
                             </motion.div>
                           ))}
                         </div>
@@ -833,10 +795,8 @@ const checkAdminAccess = async () => {
                   <div className="grid gap-6 lg:grid-cols-2">
                     <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                       <CardHeader>
-                        <CardTitle className="text-white">Support Tickets</CardTitle>
-                        <CardDescription className="text-slate-300">
-                          View and manage user support tickets
-                        </CardDescription>
+                        <CardTitle>Support Tickets</CardTitle>
+                        <CardDescription className="text-slate-300">View and manage user support tickets</CardDescription>
                       </CardHeader>
                       <CardContent>
                         <ScrollArea className="h-96">
@@ -844,10 +804,8 @@ const checkAdminAccess = async () => {
                             {tickets.map((ticket) => (
                               <div
                                 key={ticket.id}
-                                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                                  selectedTicket?.id === ticket.id
-                                    ? "border-blue-300 bg-blue-500/10"
-                                    : "border-white/10 hover:bg-white/10"
+                                className={`p-3 rounded-lg border cursor-pointer ${
+                                  selectedTicket?.id === ticket.id ? "border-blue-300 bg-blue-500/10" : "border-white/10 hover:bg-white/10"
                                 }`}
                                 onClick={() => setSelectedTicket(ticket)}
                               >
@@ -865,19 +823,13 @@ const checkAdminAccess = async () => {
                                   >
                                     {ticket.status === "open" && <AlertCircle className="h-4 w-4 mr-1" />}
                                     {ticket.status === "in_progress" && <Clock className="h-4 w-4 mr-1" />}
-                                    {(ticket.status === "resolved" || ticket.status === "closed") && (
-                                      <CheckCircle className="h-4 w-4 mr-1" />
-                                    )}
+                                    {(ticket.status === "resolved" || ticket.status === "closed") && <CheckCircle className="h-4 w-4 mr-1" />}
                                     {ticket.status.replace("_", " ")}
                                   </Badge>
-                                  <span className="text-xs text-slate-400">
-                                    {new Date(ticket.created_at).toLocaleDateString()}
-                                  </span>
+                                  <span className="text-xs text-slate-400">{new Date(ticket.created_at).toLocaleDateString()}</span>
                                 </div>
-                                <h4 className="font-medium text-white text-sm mb-1">{ticket.subject}</h4>
-                                <p className="text-xs text-slate-400">
-                                  {ticket.profiles?.full_name || "Unknown"} • {ticket.profiles?.email}
-                                </p>
+                                <h4 className="font-medium text-sm mb-1">{ticket.subject}</h4>
+                                <p className="text-xs text-slate-400">{ticket.profiles?.full_name || "Unknown"} • {ticket.profiles?.email}</p>
                                 <p className="text-xs text-slate-400">Priority: {ticket.priority}</p>
                               </div>
                             ))}
@@ -895,7 +847,7 @@ const checkAdminAccess = async () => {
                     {selectedTicket && (
                       <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                         <CardHeader>
-                          <CardTitle className="text-white">{selectedTicket.subject}</CardTitle>
+                          <CardTitle>{selectedTicket.subject}</CardTitle>
                           <CardDescription className="text-slate-300">
                             Ticket #{selectedTicket.id.slice(0, 8)} • {selectedTicket.profiles?.email}
                           </CardDescription>
@@ -939,17 +891,13 @@ const checkAdminAccess = async () => {
                                 .map((message) => (
                                   <div
                                     key={message.id}
-                                    className={`p-3 rounded-lg ${
-                                      message.is_admin ? "bg-blue-500/20 ml-4" : "bg-white/10 mr-4"
-                                    }`}
+                                    className={`p-3 rounded-lg ${message.is_admin ? "bg-blue-500/20 ml-4" : "bg-white/10 mr-4"}`}
                                   >
                                     <div className="flex items-center gap-2 mb-1">
-                                      <span className="text-sm font-medium text-white">
+                                      <span className="text-sm font-medium">
                                         {message.is_admin ? "Support Team" : message.profiles?.full_name || "User"}
                                       </span>
-                                      <span className="text-xs text-slate-400">
-                                        {new Date(message.created_at).toLocaleString()}
-                                      </span>
+                                      <span className="text-xs text-slate-400">{new Date(message.created_at).toLocaleString()}</span>
                                     </div>
                                     <p className="text-sm text-slate-300">{message.message}</p>
                                   </div>
@@ -976,14 +924,7 @@ const checkAdminAccess = async () => {
                                 disabled={sending}
                                 className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                               >
-                                {sending ? (
-                                  "Sending..."
-                                ) : (
-                                  <>
-                                    <Send className="mr-2 h-4 w-4" />
-                                    Send Response
-                                  </>
-                                )}
+                                {sending ? "Sending..." : <><Send className="mr-2 h-4 w-4" /> Send Response</>}
                               </Button>
                             </form>
                           )}
@@ -1003,10 +944,8 @@ const checkAdminAccess = async () => {
                 >
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="text-white">Send Notifications</CardTitle>
-                      <CardDescription className="text-slate-300">
-                        Send announcements and notifications to users
-                      </CardDescription>
+                      <CardTitle>Send Notifications</CardTitle>
+                      <CardDescription className="text-slate-300">Send announcements and notifications to users</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
@@ -1033,16 +972,14 @@ const checkAdminAccess = async () => {
                           onClick={() => sendNotification()}
                           className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                         >
-                          <Bell className="mr-2 h-4 w-4" />
-                          Send to All Users
+                          <Bell className="mr-2 h-4 w-4" /> Send to All Users
                         </Button>
                         <Button
                           variant="outline"
                           onClick={() => sendNotification(selectedUsers)}
                           className="flex-1 border-white/20 text-white hover:bg-white/10"
                         >
-                          <Mail className="mr-2 h-4 w-4" />
-                          Send to Selected
+                          <Mail className="mr-2 h-4 w-4" /> Send to Selected
                         </Button>
                       </div>
                     </CardContent>
@@ -1059,10 +996,8 @@ const checkAdminAccess = async () => {
                 >
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="text-white">Language Requests</CardTitle>
-                      <CardDescription className="text-slate-300">
-                        Review and manage user requests for new languages
-                      </CardDescription>
+                      <CardTitle>Language Requests</CardTitle>
+                      <CardDescription className="text-slate-300">Review and manage user requests for new languages</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
@@ -1074,7 +1009,7 @@ const checkAdminAccess = async () => {
                           >
                             <div className="flex items-center justify-between mb-3">
                               <div>
-                                <h4 className="font-medium text-white">{request.language_name}</h4>
+                                <h4 className="font-medium">{request.language_name}</h4>
                                 <p className="text-sm text-slate-400">
                                   Requested by {request.profiles?.full_name} • {request.votes} votes
                                 </p>
@@ -1104,8 +1039,7 @@ const checkAdminAccess = async () => {
                                   onClick={() => updateLanguageRequestStatus(request.id, "approved")}
                                   className="bg-green-600 hover:bg-green-700"
                                 >
-                                  <CheckCircle className="mr-1 h-3 w-3" />
-                                  Approve
+                                  <CheckCircle className="mr-1 h-3 w-3" /> Approve
                                 </Button>
                                 <Button
                                   size="sm"
@@ -1113,8 +1047,7 @@ const checkAdminAccess = async () => {
                                   onClick={() => updateLanguageRequestStatus(request.id, "rejected")}
                                   className="border-red-300/20 text-red-300 hover:bg-red-500/10"
                                 >
-                                  <AlertTriangle className="mr-1 h-3 w-3" />
-                                  Reject
+                                  <AlertTriangle className="mr-1 h-3 w-3" /> Reject
                                 </Button>
                               </div>
                             )}
@@ -1141,15 +1074,13 @@ const checkAdminAccess = async () => {
                 >
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="text-white">Lesson Management</CardTitle>
-                      <CardDescription className="text-slate-300">
-                        Add, edit, and delete lessons
-                      </CardDescription>
+                      <CardTitle>Lesson Management</CardTitle>
+                      <CardDescription className="text-slate-300">Add, edit, and delete lessons</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-white">Add New Lesson</h3>
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <h3 className="text-lg font-semibold">Add New Lesson</h3>
+                        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
                           <div>
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
                             <Input
@@ -1165,13 +1096,13 @@ const checkAdminAccess = async () => {
                               value={newLesson.language}
                               onValueChange={(value) => setNewLesson({ ...newLesson, language: value })}
                             >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="es">Spanish</SelectItem>
-                                <SelectItem value="fr">French</SelectItem>
-                                <SelectItem value="yo">Yoruba</SelectItem>
+                                {Array.from(new Set(lessons.map(l => l.language))).map(lang => (
+                                  <SelectItem key={lang} value={lang}>{lang.toUpperCase()}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -1179,11 +1110,9 @@ const checkAdminAccess = async () => {
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
                             <Select
                               value={newLesson.difficulty}
-                              onValueChange={(value) =>
-                                setNewLesson({ ...newLesson, difficulty: value as "beginner" | "intermediate" | "advanced" })
-                              }
+                              onValueChange={(value) => setNewLesson({ ...newLesson, difficulty: value as any })}
                             >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1197,11 +1126,9 @@ const checkAdminAccess = async () => {
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Content Type</label>
                             <Select
                               value={newLesson.content_type}
-                              onValueChange={(value) =>
-                                setNewLesson({ ...newLesson, content_type: value as "text" | "video" | "audio" | "interactive" })
-                              }
+                              onValueChange={(value) => setNewLesson({ ...newLesson, content_type: value as any })}
                             >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1217,8 +1144,8 @@ const checkAdminAccess = async () => {
                             <Input
                               type="number"
                               value={newLesson.order_index || 0}
-                              onChange={(e) => setNewLesson({ ...newLesson, order_index: parseInt(e.target.value) })}
-                              className="border-white/20 bg-white/5 text-white"
+                              onChange={(e) => setNewLesson({ ...newLesson, order_index: Number(e.target.value) })}
+                              className="border-white/20 bg-white/5 text-white w-full"
                             />
                           </div>
                           <div>
@@ -1226,8 +1153,8 @@ const checkAdminAccess = async () => {
                             <Input
                               type="number"
                               value={newLesson.estimated_duration || 10}
-                              onChange={(e) => setNewLesson({ ...newLesson, estimated_duration: parseInt(e.target.value) })}
-                              className="border-white/20 bg-white/5 text-white"
+                              onChange={(e) => setNewLesson({ ...newLesson, estimated_duration: Number(e.target.value) })}
+                              className="border-white/20 bg-white/5 text-white w-full"
                             />
                           </div>
                           <div>
@@ -1235,8 +1162,8 @@ const checkAdminAccess = async () => {
                             <Input
                               type="number"
                               value={newLesson.xp_reward || 20}
-                              onChange={(e) => setNewLesson({ ...newLesson, xp_reward: parseInt(e.target.value) })}
-                              className="border-white/20 bg-white/5 text-white"
+                              onChange={(e) => setNewLesson({ ...newLesson, xp_reward: Number(e.target.value) })}
+                              className="border-white/20 bg-white/5 text-white w-full"
                             />
                           </div>
                           <div>
@@ -1245,7 +1172,7 @@ const checkAdminAccess = async () => {
                               value={newLesson.is_published ? "true" : "false"}
                               onValueChange={(value) => setNewLesson({ ...newLesson, is_published: value === "true" })}
                             >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1254,16 +1181,16 @@ const checkAdminAccess = async () => {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="md:col-span-2">
+                          <div className="sm:col-span-1 md:col-span-2">
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
                             <Textarea
                               placeholder="Lesson description"
                               value={newLesson.description || ""}
                               onChange={(e) => setNewLesson({ ...newLesson, description: e.target.value })}
-                              className="border-white/20 bg-white/5 text-white"
+                              className="border-white/20 bg-white/5 text-white w-full"
                             />
                           </div>
-                          <div className="md:col-span-2">
+                          <div className="sm:col-span-1 md:col-span-2">
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Content (JSON)</label>
                             <Textarea
                               placeholder='{"content": "Your lesson content here"}'
@@ -1275,21 +1202,18 @@ const checkAdminAccess = async () => {
                                   toast.error("Invalid JSON format");
                                 }
                               }}
-                              className="border-white/20 bg-white/5 text-white font-mono"
+                              className="border-white/20 bg-white/5 text-white font-mono w-full"
                               rows={4}
                             />
                           </div>
                         </div>
-                        <Button
-                          onClick={addLesson}
-                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                        >
-                          Add Lesson
+                        <Button onClick={addLesson} className="w-full bg-blue-600 hover:bg-blue-700">
+                          <BookOpen className="mr-2 h-4 w-4" /> Add Lesson
                         </Button>
                       </div>
 
                       <div className="mt-6">
-                        <h3 className="text-lg font-semibold text-white mb-4">Existing Lessons</h3>
+                        <h3 className="text-lg font-semibold mb-4">Existing Lessons</h3>
                         <ScrollArea className="h-96">
                           <div className="space-y-4">
                             {lessons.map((lesson) => (
@@ -1300,7 +1224,7 @@ const checkAdminAccess = async () => {
                               >
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <h4 className="font-medium text-white">{lesson.title}</h4>
+                                    <h4 className="font-medium">{lesson.title}</h4>
                                     <p className="text-sm text-slate-400">
                                       {lesson.language.toUpperCase()} • {lesson.difficulty} • {lesson.content_type}
                                     </p>
@@ -1315,8 +1239,7 @@ const checkAdminAccess = async () => {
                                       onClick={() => setEditingLesson(lesson)}
                                       className="border-white/20 text-white hover:bg-white/10"
                                     >
-                                      <Edit className="h-4 w-4 mr-1" />
-                                      Edit
+                                      <Edit className="h-4 w-4 mr-1" /> Edit
                                     </Button>
                                     <Button
                                       size="sm"
@@ -1324,8 +1247,7 @@ const checkAdminAccess = async () => {
                                       onClick={() => deleteLesson(lesson.id)}
                                       className="bg-red-600 hover:bg-red-700"
                                     >
-                                      <Trash2 className="h-4 w-4 mr-1" />
-                                      Delete
+                                      <Trash2 className="h-4 w-4 mr-1" /> Delete
                                     </Button>
                                   </div>
                                 </div>
@@ -1337,14 +1259,14 @@ const checkAdminAccess = async () => {
 
                       {editingLesson && (
                         <div className="mt-6 p-4 bg-white/5 rounded-lg">
-                          <h3 className="text-lg font-semibold text-white mb-4">Edit Lesson</h3>
-                          <div className="grid gap-4 md:grid-cols-2">
+                          <h3 className="text-lg font-semibold mb-4">Edit Lesson</h3>
+                          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
                             <div>
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
                               <Input
                                 value={editingLesson.title}
                                 onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
-                                className="border-white/20 bg-white/5 text-white"
+                                className="border-white/20 bg-white/5 text-white w-full"
                               />
                             </div>
                             <div>
@@ -1353,13 +1275,13 @@ const checkAdminAccess = async () => {
                                 value={editingLesson.language}
                                 onValueChange={(value) => setEditingLesson({ ...editingLesson, language: value })}
                               >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="es">Spanish</SelectItem>
-                                  <SelectItem value="fr">French</SelectItem>
-                                  <SelectItem value="yo">Yoruba</SelectItem>
+                                  {Array.from(new Set(lessons.map(l => l.language))).map(lang => (
+                                    <SelectItem key={lang} value={lang}>{lang.toUpperCase()}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -1367,11 +1289,9 @@ const checkAdminAccess = async () => {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
                               <Select
                                 value={editingLesson.difficulty}
-                                onValueChange={(value) =>
-                                  setEditingLesson({ ...editingLesson, difficulty: value as "beginner" | "intermediate" | "advanced" })
-                                }
+                                onValueChange={(value) => setEditingLesson({ ...editingLesson, difficulty: value as any })}
                               >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1385,11 +1305,9 @@ const checkAdminAccess = async () => {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Content Type</label>
                               <Select
                                 value={editingLesson.content_type}
-                                onValueChange={(value) =>
-                                  setEditingLesson({ ...editingLesson, content_type: value as "text" | "video" | "audio" | "interactive" })
-                                }
+                                onValueChange={(value) => setEditingLesson({ ...editingLesson, content_type: value as any })}
                               >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1405,8 +1323,8 @@ const checkAdminAccess = async () => {
                               <Input
                                 type="number"
                                 value={editingLesson.order_index || 0}
-                                onChange={(e) => setEditingLesson({ ...editingLesson, order_index: parseInt(e.target.value) })}
-                                className="border-white/20 bg-white/5 text-white"
+                                onChange={(e) => setEditingLesson({ ...editingLesson, order_index: Number(e.target.value) })}
+                                className="border-white/20 bg-white/5 text-white w-full"
                               />
                             </div>
                             <div>
@@ -1414,8 +1332,8 @@ const checkAdminAccess = async () => {
                               <Input
                                 type="number"
                                 value={editingLesson.estimated_duration || 10}
-                                onChange={(e) => setEditingLesson({ ...editingLesson, estimated_duration: parseInt(e.target.value) })}
-                                className="border-white/20 bg-white/5 text-white"
+                                onChange={(e) => setEditingLesson({ ...editingLesson, estimated_duration: Number(e.target.value) })}
+                                className="border-white/20 bg-white/5 text-white w-full"
                               />
                             </div>
                             <div>
@@ -1423,8 +1341,8 @@ const checkAdminAccess = async () => {
                               <Input
                                 type="number"
                                 value={editingLesson.xp_reward || 20}
-                                onChange={(e) => setEditingLesson({ ...editingLesson, xp_reward: parseInt(e.target.value) })}
-                                className="border-white/20 bg-white/5 text-white"
+                                onChange={(e) => setEditingLesson({ ...editingLesson, xp_reward: Number(e.target.value) })}
+                                className="border-white/20 bg-white/5 text-white w-full"
                               />
                             </div>
                             <div>
@@ -1433,7 +1351,7 @@ const checkAdminAccess = async () => {
                                 value={editingLesson.is_published ? "true" : "false"}
                                 onValueChange={(value) => setEditingLesson({ ...editingLesson, is_published: value === "true" })}
                               >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1442,15 +1360,15 @@ const checkAdminAccess = async () => {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div className="md:col-span-2">
+                            <div className="sm:col-span-1 md:col-span-2">
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
                               <Textarea
                                 value={editingLesson.description || ""}
                                 onChange={(e) => setEditingLesson({ ...editingLesson, description: e.target.value })}
-                                className="border-white/20 bg-white/5 text-white"
+                                className="border-white/20 bg-white/5 text-white w-full"
                               />
                             </div>
-                            <div className="md:col-span-2">
+                            <div className="sm:col-span-1 md:col-span-2">
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Content (JSON)</label>
                               <Textarea
                                 value={JSON.stringify(editingLesson.content) || "{}"}
@@ -1461,7 +1379,7 @@ const checkAdminAccess = async () => {
                                     toast.error("Invalid JSON format");
                                   }
                                 }}
-                                className="border-white/20 bg-white/5 text-white font-mono"
+                                className="border-white/20 bg-white/5 text-white font-mono w-full"
                                 rows={4}
                               />
                             </div>
@@ -1469,9 +1387,9 @@ const checkAdminAccess = async () => {
                           <div className="flex gap-2 mt-4">
                             <Button
                               onClick={updateLesson}
-                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                              className="flex-1 bg-green-600 hover:bg-green-700"
                             >
-                              Save Changes
+                              <CheckCircle className="mr-2 h-4 w-4" /> Save Changes
                             </Button>
                             <Button
                               variant="outline"
@@ -1497,22 +1415,20 @@ const checkAdminAccess = async () => {
                 >
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="text-white">Quiz Management</CardTitle>
-                      <CardDescription className="text-slate-300">
-                        Add, edit, and delete quizzes
-                      </CardDescription>
+                      <CardTitle>Quiz Management</CardTitle>
+                      <CardDescription className="text-slate-300">Add, edit, and delete quizzes</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-white">Add New Quiz</h3>
-                        <div className="grid gap-4 md:grid-cols-2">
+                        <h3 className="text-lg font-semibold">Add New Quiz</h3>
+                        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
                           <div>
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
                             <Input
                               placeholder="Quiz title"
                               value={newQuiz.title}
                               onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
-                              className="border-white/20 bg-white/5 text-white"
+                              className="border-white/20 bg-white/5 text-white w-full"
                             />
                           </div>
                           <div>
@@ -1521,13 +1437,13 @@ const checkAdminAccess = async () => {
                               value={newQuiz.language}
                               onValueChange={(value) => setNewQuiz({ ...newQuiz, language: value })}
                             >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="es">Spanish</SelectItem>
-                                <SelectItem value="fr">French</SelectItem>
-                                <SelectItem value="yo">Yoruba</SelectItem>
+                                {Array.from(new Set(quizzes.map(q => q.language))).map(lang => (
+                                  <SelectItem key={lang} value={lang}>{lang.toUpperCase()}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </div>
@@ -1535,11 +1451,9 @@ const checkAdminAccess = async () => {
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
                             <Select
                               value={newQuiz.difficulty}
-                              onValueChange={(value) =>
-                                setNewQuiz({ ...newQuiz, difficulty: value as "beginner" | "intermediate" | "advanced" })
-                              }
+                              onValueChange={(value) => setNewQuiz({ ...newQuiz, difficulty: value as any })}
                             >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1554,8 +1468,8 @@ const checkAdminAccess = async () => {
                             <Input
                               type="number"
                               value={newQuiz.time_limit || 30}
-                              onChange={(e) => setNewQuiz({ ...newQuiz, time_limit: parseInt(e.target.value) })}
-                              className="border-white/20 bg-white/5 text-white"
+                              onChange={(e) => setNewQuiz({ ...newQuiz, time_limit: Number(e.target.value) })}
+                              className="border-white/20 bg-white/5 text-white w-full"
                             />
                           </div>
                           <div>
@@ -1563,8 +1477,8 @@ const checkAdminAccess = async () => {
                             <Input
                               type="number"
                               value={newQuiz.passing_score || 70}
-                              onChange={(e) => setNewQuiz({ ...newQuiz, passing_score: parseInt(e.target.value) })}
-                              className="border-white/20 bg-white/5 text-white"
+                              onChange={(e) => setNewQuiz({ ...newQuiz, passing_score: Number(e.target.value) })}
+                              className="border-white/20 bg-white/5 text-white w-full"
                             />
                           </div>
                           <div>
@@ -1572,8 +1486,8 @@ const checkAdminAccess = async () => {
                             <Input
                               type="number"
                               value={newQuiz.xp_reward || 50}
-                              onChange={(e) => setNewQuiz({ ...newQuiz, xp_reward: parseInt(e.target.value) })}
-                              className="border-white/20 bg-white/5 text-white"
+                              onChange={(e) => setNewQuiz({ ...newQuiz, xp_reward: Number(e.target.value) })}
+                              className="border-white/20 bg-white/5 text-white w-full"
                             />
                           </div>
                           <div>
@@ -1582,7 +1496,7 @@ const checkAdminAccess = async () => {
                               value={newQuiz.is_published ? "true" : "false"}
                               onValueChange={(value) => setNewQuiz({ ...newQuiz, is_published: value === "true" })}
                             >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1591,16 +1505,16 @@ const checkAdminAccess = async () => {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div className="md:col-span-2">
+                          <div className="sm:col-span-1 md:col-span-2">
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
                             <Textarea
                               placeholder="Quiz description"
                               value={newQuiz.description || ""}
                               onChange={(e) => setNewQuiz({ ...newQuiz, description: e.target.value })}
-                              className="border-white/20 bg-white/5 text-white"
+                              className="border-white/20 bg-white/5 text-white w-full"
                             />
                           </div>
-                          <div className="md:col-span-2">
+                          <div className="sm:col-span-1 md:col-span-2">
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
                             <Textarea
                               placeholder='[{"question": "Example?", "options": ["A", "B", "C"], "correct": 0}]'
@@ -1612,21 +1526,18 @@ const checkAdminAccess = async () => {
                                   toast.error("Invalid JSON format");
                                 }
                               }}
-                              className="border-white/20 bg-white/5 text-white font-mono"
+                              className="border-white/20 bg-white/5 text-white font-mono w-full"
                               rows={4}
                             />
                           </div>
                         </div>
-                        <Button
-                          onClick={addQuiz}
-                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-                        >
-                          Add Quiz
+                        <Button onClick={addQuiz} className="w-full bg-blue-600 hover:bg-blue-700">
+                          <Trophy className="mr-2 h-4 w-4" /> Add Quiz
                         </Button>
                       </div>
 
                       <div className="mt-6">
-                        <h3 className="text-lg font-semibold text-white mb-4">Existing Quizzes</h3>
+                        <h3 className="text-lg font-semibold mb-4">Existing Quizzes</h3>
                         <ScrollArea className="h-96">
                           <div className="space-y-4">
                             {quizzes.map((quiz) => (
@@ -1637,7 +1548,7 @@ const checkAdminAccess = async () => {
                               >
                                 <div className="flex items-center justify-between">
                                   <div>
-                                    <h4 className="font-medium text-white">{quiz.title}</h4>
+                                    <h4 className="font-medium">{quiz.title}</h4>
                                     <p className="text-sm text-slate-400">
                                       {quiz.language.toUpperCase()} • {quiz.difficulty} • {quiz.passing_score}% pass
                                     </p>
@@ -1652,8 +1563,7 @@ const checkAdminAccess = async () => {
                                       onClick={() => setEditingQuiz(quiz)}
                                       className="border-white/20 text-white hover:bg-white/10"
                                     >
-                                      <Edit className="h-4 w-4 mr-1" />
-                                      Edit
+                                      <Edit className="h-4 w-4 mr-1" /> Edit
                                     </Button>
                                     <Button
                                       size="sm"
@@ -1661,8 +1571,7 @@ const checkAdminAccess = async () => {
                                       onClick={() => deleteQuiz(quiz.id)}
                                       className="bg-red-600 hover:bg-red-700"
                                     >
-                                      <Trash2 className="h-4 w-4 mr-1" />
-                                      Delete
+                                      <Trash2 className="h-4 w-4 mr-1" /> Delete
                                     </Button>
                                   </div>
                                 </div>
@@ -1674,14 +1583,14 @@ const checkAdminAccess = async () => {
 
                       {editingQuiz && (
                         <div className="mt-6 p-4 bg-white/5 rounded-lg">
-                          <h3 className="text-lg font-semibold text-white mb-4">Edit Quiz</h3>
-                          <div className="grid gap-4 md:grid-cols-2">
+                          <h3 className="text-lg font-semibold mb-4">Edit Quiz</h3>
+                          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
                             <div>
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
                               <Input
                                 value={editingQuiz.title}
                                 onChange={(e) => setEditingQuiz({ ...editingQuiz, title: e.target.value })}
-                                className="border-white/20 bg-white/5 text-white"
+                                className="border-white/20 bg-white/5 text-white w-full"
                               />
                             </div>
                             <div>
@@ -1690,13 +1599,13 @@ const checkAdminAccess = async () => {
                                 value={editingQuiz.language}
                                 onValueChange={(value) => setEditingQuiz({ ...editingQuiz, language: value })}
                               >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="es">Spanish</SelectItem>
-                                  <SelectItem value="fr">French</SelectItem>
-                                  <SelectItem value="yo">Yoruba</SelectItem>
+                                  {Array.from(new Set(quizzes.map(q => q.language))).map(lang => (
+                                    <SelectItem key={lang} value={lang}>{lang.toUpperCase()}</SelectItem>
+                                  ))}
                                 </SelectContent>
                               </Select>
                             </div>
@@ -1704,11 +1613,9 @@ const checkAdminAccess = async () => {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
                               <Select
                                 value={editingQuiz.difficulty}
-                                onValueChange={(value) =>
-                                  setEditingQuiz({ ...editingQuiz, difficulty: value as "beginner" | "intermediate" | "advanced" })
-                                }
+                                onValueChange={(value) => setEditingQuiz({ ...editingQuiz, difficulty: value as any })}
                               >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1723,8 +1630,8 @@ const checkAdminAccess = async () => {
                               <Input
                                 type="number"
                                 value={editingQuiz.time_limit || 30}
-                                onChange={(e) => setEditingQuiz({ ...editingQuiz, time_limit: parseInt(e.target.value) })}
-                                className="border-white/20 bg-white/5 text-white"
+                                onChange={(e) => setEditingQuiz({ ...editingQuiz, time_limit: Number(e.target.value) })}
+                                className="border-white/20 bg-white/5 text-white w-full"
                               />
                             </div>
                             <div>
@@ -1732,8 +1639,8 @@ const checkAdminAccess = async () => {
                               <Input
                                 type="number"
                                 value={editingQuiz.passing_score || 70}
-                                onChange={(e) => setEditingQuiz({ ...editingQuiz, passing_score: parseInt(e.target.value) })}
-                                className="border-white/20 bg-white/5 text-white"
+                                onChange={(e) => setEditingQuiz({ ...editingQuiz, passing_score: Number(e.target.value) })}
+                                className="border-white/20 bg-white/5 text-white w-full"
                               />
                             </div>
                             <div>
@@ -1741,8 +1648,8 @@ const checkAdminAccess = async () => {
                               <Input
                                 type="number"
                                 value={editingQuiz.xp_reward || 50}
-                                onChange={(e) => setEditingQuiz({ ...editingQuiz, xp_reward: parseInt(e.target.value) })}
-                                className="border-white/20 bg-white/5 text-white"
+                                onChange={(e) => setEditingQuiz({ ...editingQuiz, xp_reward: Number(e.target.value) })}
+                                className="border-white/20 bg-white/5 text-white w-full"
                               />
                             </div>
                             <div>
@@ -1751,7 +1658,7 @@ const checkAdminAccess = async () => {
                                 value={editingQuiz.is_published ? "true" : "false"}
                                 onValueChange={(value) => setEditingQuiz({ ...editingQuiz, is_published: value === "true" })}
                               >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white">
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -1760,15 +1667,15 @@ const checkAdminAccess = async () => {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div className="md:col-span-2">
+                            <div className="sm:col-span-1 md:col-span-2">
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
                               <Textarea
                                 value={editingQuiz.description || ""}
                                 onChange={(e) => setEditingQuiz({ ...editingQuiz, description: e.target.value })}
-                                className="border-white/20 bg-white/5 text-white"
+                                className="border-white/20 bg-white/5 text-white w-full"
                               />
                             </div>
-                            <div className="md:col-span-2">
+                            <div className="sm:col-span-1 md:col-span-2">
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
                               <Textarea
                                 value={JSON.stringify(editingQuiz.questions) || "{}"}
@@ -1779,7 +1686,7 @@ const checkAdminAccess = async () => {
                                     toast.error("Invalid JSON format");
                                   }
                                 }}
-                                className="border-white/20 bg-white/5 text-white font-mono"
+                                className="border-white/20 bg-white/5 text-white font-mono w-full"
                                 rows={4}
                               />
                             </div>
@@ -1787,28 +1694,26 @@ const checkAdminAccess = async () => {
                           <div className="flex gap-2 mt-4">
                             <Button
                               onClick={updateQuiz}
-                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover: to-purple-700"
+                              className="flex-1 bg-green-600 hover:bg-green-700"
                             >
-                              Save Changes
+                              <CheckCircle className="mr-2 h-4 w-4" /> Save Changes
                             </Button>
                             <Button
                               variant="outline"
                               onClick={() => setEditingQuiz(null)}
-                              className="flex-1 border-white/20 text-white hover:bg-white/10"
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              </TabsContent>
-            </AnimatePresence>
-          </Tabs>
-        </motion.div>
-      </div>
-    </div>
-  );
+                              className="flex-1 border-white/20 text-white hover:bg-white/10">
+  Cancel
+</Button>
+</div>
+</div>
+</CardContent>
+</Card>
+</motion.div>
+</TabsContent>
+</AnimatePresence>
+</Tabs>
+</motion.div>
+</div>
+</div>
+);
 }
