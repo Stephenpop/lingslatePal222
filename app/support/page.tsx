@@ -1,141 +1,139 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { MessageCircle, Send, HelpCircle, ArrowLeft, Languages, Clock, CheckCircle, AlertCircle } from "lucide-react"
-import Link from "next/link"
-import { supabase } from "@/lib/supabase"
-import { authService } from "@/lib/auth"
-import { toast } from "sonner"
+import type React from "react";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { MessageCircle, Send, HelpCircle, ArrowLeft, Languages, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
+import { authService } from "@/lib/auth";
+import { toast } from "sonner";
 
 interface Ticket {
-  id: string
-  subject: string
-  status: string
-  priority: string
-  created_at: string
+  id: string;
+  subject: string;
+  status: "open" | "in_progress" | "resolved" | "closed";
+  priority: "low" | "medium" | "high" | "urgent";
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  profiles?: { full_name: string; email: string };
   support_messages: Array<{
-    id: string
-    message: string
-    is_admin: boolean
-    created_at: string
-  }>
+    id: string;
+    message: string;
+    is_admin: boolean;
+    created_at: string;
+    sender_id: string;
+    profiles?: { full_name: string; email: string };
+  }>;
 }
 
 const faqData = [
   {
     question: "How do I reset my password?",
-    answer:
-      "You can reset your password by clicking 'Forgot Password' on the login page. You'll receive an email with instructions to create a new password.",
+    answer: "Click 'Forgot Password' on the login page to receive an email with reset instructions.",
   },
   {
     question: "How do I change my learning language?",
-    answer:
-      "Go to your profile settings and select a new target language from the dropdown menu. Your progress will be saved separately for each language.",
+    answer: "Go to profile settings and select a new target language. Progress is saved per language.",
   },
   {
     question: "Can I use the app offline?",
-    answer:
-      "Yes! LingslatePal works as a Progressive Web App (PWA). Install it on your device and access lessons offline. Translation requires internet connection.",
+    answer: "Yes, install LingslatePal as a PWA for offline lesson access. Translation requires internet.",
   },
   {
     question: "How is my progress calculated?",
-    answer:
-      "Progress is based on completed lessons, quiz scores, daily streaks, and XP points. Each activity contributes to your overall learning journey.",
+    answer: "Progress tracks completed lessons, quiz scores, daily streaks, and XP points.",
   },
   {
     question: "Is LingslatePal really free?",
-    answer:
-      "Yes! LingslatePal is completely free. We use open-source translation services and offer all features at no cost. No hidden fees or premium subscriptions.",
+    answer: "Yes, all features are free using open-source translation services. No hidden fees.",
   },
   {
     question: "How accurate are the translations?",
-    answer:
-      "We use LibreTranslate, an open-source translation engine. While generally accurate, we recommend verifying important translations with native speakers.",
+    answer: "LibreTranslate is generally accurate, but verify important translations with native speakers.",
   },
   {
     question: "Can I request new languages?",
-    answer:
-      "Use the 'Request New Language' button on our homepage to suggest languages you'd like to see added to LingslatePal.",
+    answer: "Use the 'Request New Language' button on the homepage to suggest languages.",
   },
   {
     question: "How do streaks work?",
-    answer:
-      "Streaks are maintained by completing at least one learning activity (lesson, quiz, or translation) each day. Your streak resets if you miss a day.",
+    answer: "Complete a lesson, quiz, or translation daily to maintain streaks. Missing a day resets it.",
   },
-]
+];
 
 export default function SupportPage() {
-  const [user, setUser] = useState<any>(null)
-  const [tickets, setTickets] = useState<Ticket[]>([])
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
-  const [newMessage, setNewMessage] = useState("")
-  const [newTicketSubject, setNewTicketSubject] = useState("")
-  const [newTicketMessage, setNewTicketMessage] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [sending, setSending] = useState(false)
+  const [user, setUser] = useState<any>(null);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [newTicketSubject, setNewTicketSubject] = useState("");
+  const [newTicketMessage, setNewTicketMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
-    loadSupportData()
-  }, [])
+    loadSupportData();
+  }, []);
 
   const loadSupportData = async () => {
     try {
-      const currentUser = await authService.getCurrentUser()
-      setUser(currentUser)
+      const currentUser = await authService.getCurrentUser();
+      setUser(currentUser);
 
       if (currentUser) {
-        // Load user's support tickets
-        const { data: ticketsData } = await supabase
+        const { data: ticketsData, error } = await supabase
           .from("support_tickets")
           .select(`
             *,
+            profiles:user_id (full_name, email),
             support_messages (
               id,
               message,
               is_admin,
-              created_at
+              created_at,
+              profiles:sender_id (full_name, email)
             )
           `)
           .eq("user_id", currentUser.id)
-          .order("created_at", { ascending: false })
+          .order("created_at", { ascending: false });
 
-        setTickets(ticketsData || [])
+        if (error) throw error;
+        setTickets(ticketsData || []);
       }
     } catch (error) {
-      console.error("Error loading support data:", error)
+      console.error("Error loading support data:", error);
+      toast.error("Failed to load support tickets");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const createTicket = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!user) {
-      toast.error("Please log in to create a support ticket")
-      return
+      toast.error("Please log in to create a support ticket");
+      return;
     }
 
     if (!newTicketSubject.trim() || !newTicketMessage.trim()) {
-      toast.error("Please fill in all fields")
-      return
+      toast.error("Please fill in all fields");
+      return;
     }
 
-    setSending(true)
+    setSending(true);
 
     try {
-      // Create ticket
       const { data: ticket, error: ticketError } = await supabase
         .from("support_tickets")
         .insert({
@@ -145,42 +143,40 @@ export default function SupportPage() {
           priority: "medium",
         })
         .select()
-        .single()
+        .single();
 
-      if (ticketError) throw ticketError
+      if (ticketError) throw ticketError;
 
-      // Add initial message
       const { error: messageError } = await supabase.from("support_messages").insert({
         ticket_id: ticket.id,
         sender_id: user.id,
         message: newTicketMessage.trim(),
         is_admin: false,
-      })
+      });
 
-      if (messageError) throw messageError
+      if (messageError) throw messageError;
 
-      toast.success("Support ticket created successfully!")
-
-      // Reset form
-      setNewTicketSubject("")
-      setNewTicketMessage("")
-
-      // Reload tickets
-      await loadSupportData()
+      toast.success("Support ticket created successfully!");
+      setNewTicketSubject("");
+      setNewTicketMessage("");
+      await loadSupportData();
     } catch (error) {
-      console.error("Error creating ticket:", error)
-      toast.error("Failed to create support ticket")
+      console.error("Error creating ticket:", error);
+      toast.error("Failed to create support ticket");
     } finally {
-      setSending(false)
+      setSending(false);
     }
-  }
+  };
 
   const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (!selectedTicket || !newMessage.trim()) return
+    if (!selectedTicket || !newMessage.trim()) {
+      toast.error("Please select a ticket and enter a message");
+      return;
+    }
 
-    setSending(true)
+    setSending(true);
 
     try {
       const { error } = await supabase.from("support_messages").insert({
@@ -188,67 +184,71 @@ export default function SupportPage() {
         sender_id: user.id,
         message: newMessage.trim(),
         is_admin: false,
-      })
+      });
 
-      if (error) throw error
+      if (error) throw error;
 
-      toast.success("Message sent!")
-      setNewMessage("")
+      await supabase.from("support_tickets").update({ status: "open", updated_at: new Date().toISOString() }).eq("id", selectedTicket.id);
 
-      // Reload tickets to show new message
-      await loadSupportData()
+      toast.success("Message sent!");
+      setNewMessage("");
+      await loadSupportData();
 
-      // Update selected ticket
-      const updatedTicket = tickets.find((t) => t.id === selectedTicket.id)
+      const updatedTicket = tickets.find((t) => t.id === selectedTicket.id);
       if (updatedTicket) {
-        setSelectedTicket(updatedTicket)
+        setSelectedTicket(updatedTicket);
       }
     } catch (error) {
-      console.error("Error sending message:", error)
-      toast.error("Failed to send message")
+      console.error("Error sending message:", error);
+      toast.error("Failed to send message");
     } finally {
-      setSending(false)
+      setSending(false);
     }
-  }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case "open":
-        return "bg-red-100 text-red-700"
+        return "bg-red-100 text-red-700";
       case "in_progress":
-        return "bg-yellow-100 text-yellow-700"
+        return "bg-yellow-100 text-yellow-700";
       case "resolved":
-        return "bg-green-100 text-green-700"
+        return "bg-green-100 text-green-700";
+      case "closed":
+        return "bg-gray-100 text-gray-700";
       default:
-        return "bg-gray-100 text-gray-700"
+        return "bg-gray-100 text-gray-700";
     }
-  }
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "open":
-        return <AlertCircle className="h-4 w-4" />
+        return <AlertCircle className="h-4 w-4" />;
       case "in_progress":
-        return <Clock className="h-4 w-4" />
+        return <Clock className="h-4 w-4" />;
       case "resolved":
-        return <CheckCircle className="h-4 w-4" />
+      case "closed":
+        return <CheckCircle className="h-4 w-4" />;
       default:
-        return <HelpCircle className="h-4 w-4" />
+        return <HelpCircle className="h-4 w-4" />;
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-slate-600">Loading...</div>
+        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading support...</p>
+        </motion.div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Navigation */}
-      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur-sm">
+      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
@@ -257,7 +257,6 @@ export default function SupportPage() {
               </div>
               <span className="text-xl font-bold text-slate-800">LingslatePal</span>
             </Link>
-
             <div className="flex items-center space-x-4">
               <Link href="/dashboard">
                 <Button variant="ghost" className="text-slate-700 hover:bg-slate-100">
@@ -277,10 +276,16 @@ export default function SupportPage() {
         </motion.div>
 
         <Tabs defaultValue="faq" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="faq">FAQ</TabsTrigger>
-            <TabsTrigger value="tickets">My Tickets</TabsTrigger>
-            <TabsTrigger value="contact">Contact Support</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 bg-white/80 border border-slate-200">
+            <TabsTrigger value="faq" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-800 text-slate-700">
+              FAQ
+            </TabsTrigger>
+            <TabsTrigger value="tickets" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-800 text-slate-700">
+              My Tickets
+            </TabsTrigger>
+            <TabsTrigger value="contact" className="data-[state=active]:bg-blue-100 data-[state=active]:text-blue-800 text-slate-700">
+              Contact Support
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="faq">
@@ -298,7 +303,7 @@ export default function SupportPage() {
                 <Accordion type="single" collapsible className="w-full">
                   {faqData.map((faq, index) => (
                     <AccordionItem key={index} value={`item-${index}`}>
-                      <AccordionTrigger className="text-left">{faq.question}</AccordionTrigger>
+                      <AccordionTrigger className="text-left text-slate-800 font-semibold">{faq.question}</AccordionTrigger>
                       <AccordionContent className="text-slate-600">{faq.answer}</AccordionContent>
                     </AccordionItem>
                   ))}
@@ -315,7 +320,9 @@ export default function SupportPage() {
                   <h3 className="text-lg font-semibold text-slate-800 mb-2">Login Required</h3>
                   <p className="text-slate-600 mb-4">Please log in to view your support tickets</p>
                   <Link href="/auth/login">
-                    <Button>Login to Continue</Button>
+                    <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                      Login to Continue
+                    </Button>
                   </Link>
                 </CardContent>
               </Card>
@@ -370,7 +377,7 @@ export default function SupportPage() {
                     <CardHeader>
                       <CardTitle className="text-slate-800">{selectedTicket.subject}</CardTitle>
                       <CardDescription className="text-slate-600">
-                        Ticket #{selectedTicket.id.slice(0, 8)} • {selectedTicket.status}
+                        Ticket #{selectedTicket.id.slice(0, 8)} • {selectedTicket.status.replace("_", " ")}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -386,8 +393,8 @@ export default function SupportPage() {
                                 }`}
                               >
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-sm font-medium">
-                                    {message.is_admin ? "Support Team" : "You"}
+                                  <span className="text-sm font-medium text-slate-800">
+                                    {message.is_admin ? "Support Team" : message.profiles?.full_name || "You"}
                                   </span>
                                   <span className="text-xs text-slate-500">
                                     {new Date(message.created_at).toLocaleString()}
@@ -399,15 +406,20 @@ export default function SupportPage() {
                         </div>
                       </ScrollArea>
 
-                      {selectedTicket.status !== "resolved" && (
+                      {selectedTicket.status !== "resolved" && selectedTicket.status !== "closed" && (
                         <form onSubmit={sendMessage} className="space-y-3">
                           <Textarea
                             placeholder="Type your message..."
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             rows={3}
+                            className="border-slate-200 bg-white/80 text-slate-800"
                           />
-                          <Button type="submit" disabled={sending} className="w-full">
+                          <Button
+                            type="submit"
+                            disabled={sending}
+                            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                          >
                             {sending ? (
                               "Sending..."
                             ) : (
@@ -434,7 +446,9 @@ export default function SupportPage() {
                   <h3 className="text-lg font-semibold text-slate-800 mb-2">Login Required</h3>
                   <p className="text-slate-600 mb-4">Please log in to contact support</p>
                   <Link href="/auth/login">
-                    <Button>Login to Continue</Button>
+                    <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+                      Login to Continue
+                    </Button>
                   </Link>
                 </CardContent>
               </Card>
@@ -455,9 +469,9 @@ export default function SupportPage() {
                         value={newTicketSubject}
                         onChange={(e) => setNewTicketSubject(e.target.value)}
                         required
+                        className="border-slate-200 bg-white/80 text-slate-800"
                       />
                     </div>
-
                     <div>
                       <label className="text-sm font-medium text-slate-700 mb-2 block">Message</label>
                       <Textarea
@@ -466,10 +480,14 @@ export default function SupportPage() {
                         onChange={(e) => setNewTicketMessage(e.target.value)}
                         rows={6}
                         required
+                        className="border-slate-200 bg-white/80 text-slate-800"
                       />
                     </div>
-
-                    <Button type="submit" disabled={sending} className="w-full">
+                    <Button
+                      type="submit"
+                      disabled={sending}
+                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                    >
                       {sending ? (
                         "Creating Ticket..."
                       ) : (
@@ -487,5 +505,5 @@ export default function SupportPage() {
         </Tabs>
       </div>
     </div>
-  )
+  );
 }
