@@ -164,27 +164,37 @@ const checkAdminAccess = async () => {
   try {
     const currentUser = await authService.getCurrentUser();
     console.log("Current User:", currentUser);
+    
     if (!currentUser) {
       console.log("No user found, redirecting to /dashboard");
       router.push("/dashboard");
       return;
     }
+
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("role, email")
-      .eq("id", currentUser.id) // Fixed typo: removed extra quote
+      .eq("id", currentUser.id) // Ensure this ID matches the profiles table
       .single();
+
     console.log("Profile Data:", profileData, "Profile Error:", profileError);
+    
     if (profileError || !profileData) {
       console.log("Profile not found or error, redirecting to /dashboard");
       router.push("/dashboard");
       return;
     }
+
+    console.log("User Role:", profileData.role);
+    console.log("User Email:", profileData.email);
+
+    // Check if the user is an admin or has the specific email
     if (profileData.role !== "admin" && profileData.email !== "anyaibe050@gmail.com") {
       console.log("Admin access denied, redirecting to /dashboard");
       router.push("/dashboard");
       return;
     }
+
     setUser(currentUser);
     await loadAdminData();
   } catch (error) {
@@ -193,6 +203,7 @@ const checkAdminAccess = async () => {
   } finally {
     setLoading(false);
   }
+};
 
 
 
