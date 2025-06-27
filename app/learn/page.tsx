@@ -1,208 +1,621 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BookOpen, Clock, Trophy, Filter } from "lucide-react";
-import { authService } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Label } from "@/components/ui/label"
+import { BookOpen, Clock, Trophy, Filter, ArrowLeft, ArrowRight, CheckCircle, XCircle, Languages } from "lucide-react"
+import Link from "next/link"
+import { authService } from "@/lib/auth"
+import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+
+interface Question {
+  id: number
+  question: string
+  type: "multiple_choice" | "text_input"
+  options?: string[]
+  correct_answer: number | string
+  alternatives?: string[]
+  explanation?: string
+}
 
 interface Lesson {
-  id: string;
-  title: string;
-  description: string | null;
-  language: string;
-  difficulty: "beginner" | "intermediate" | "advanced";
-  content: any; // JSONB, adjust based on content structure
-  order_index: number;
-  is_published: boolean;
-  content_type: "text" | "video" | "audio" | "interactive";
-  estimated_duration: number | null;
-  xp_reward: number;
+  id: string
+  title: string
+  description: string | null
+  language: string
+  difficulty: "beginner" | "intermediate" | "advanced"
+  content: {
+    main_content: string // Text, YouTube embed URL, or other content based on content_type
+    questions: Question[]
+  }
+  order_index: number
+  is_published: boolean
+  content_type: "text" | "video" | "audio" | "interactive"
+  estimated_duration: number | null
+  xp_reward: number
 }
 
 export default function LearnPage() {
-  const [user, setUser] = useState<any>(null);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
-  const router = useRouter();
+  const [user, setUser] = useState<any>(null)
+  const [lessons, setLessons] = useState<Lesson[]>([])
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([])
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
+  const [currentQuestion, setCurrentQuestion] = useState<number | null>(null)
+  const [answers, setAnswers] = useState<Record<number, any>>({})
+  const [showResults, setShowResults] = useState(false)
+  const [score, setScore] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("all")
+  const router = useRouter()
 
-  useEffect(() => {
-    loadUserAndLessons();
-  }, []);
+  use'effect(() => {
+    loadUserAndLessons()
+  }, [])
 
   const loadUserAndLessons = async () => {
     try {
-      const currentUser = await authService.getCurrentUser();
+      const currentUser = await authService.getCurrentUser()
       if (!currentUser) {
-        router.push("/auth/login");
-        return;
+        router.push("/auth/login")
+        return
       }
-      setUser(currentUser);
+      setUser(currentUser)
 
       const { data: lessonsData, error } = await supabase
         .from("lessons")
         .select("*")
         .eq("language", currentUser.profile?.learning_language || "es")
         .eq("is_published", true)
-        .order("order_index", { ascending: true });
+        .order("order_index", { ascending: true })
 
-      if (error) throw error;
-      setLessons(lessonsData || []);
+      if (error) throw error
+      setLessons(lessonsData || [])
+
+      // Load completed lessons
+      if (currentUser) {
+        const { data: completionsData } = await supabase
+          .from("lesson_completions")
+          .select("lesson_id")
+          .eq("user_id", currentUser.id)
+        setCompletedLessonIds(completionsData?.map((c) => c.lesson_id) || [])
+      }
     } catch (error) {
-      console.error("Error loading lessons:", error);
-      toast.error("Failed to load lessons");
+      console.error("Error loading lessons:", error)
+      toast.error("Failed to load lessons")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const completeLesson = async (lessonId: string, xpReward: number) => {
+  const startLesson = (lesson: Lesson) => {
+    setSelectedLesson(lesson)
+    setCurrentQuestion(null)
+    setAnswers({})
+    setShowResults(false)
+    setScore(0)
+  }
+
+  const startQuestions = () => {
+    if (selectedLesson && selectedLesson.content.questions.length > 0) {
+      setCurrentQuestion(0)
+    } else {
+      completeLesson()
+    }
+  }
+
+  const handleAnswer = (questionId: number, answer: any) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [questionId]: answer,
+    }))
+  }
+
+  const nextQuestion = () => {
+    if (selectedLesson && currentQuestion !== null && currentQuestion < selectedLesson.content.questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1)
+    } else {
+      finishQuestions()
+    }
+  }
+
+  const previousQuestion = () => {
+    if (currentQuestion !== null && currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1)
+    }
+  }
+
+  const finishQuestions = async () => {
+    if (!selectedLesson) return
+
+    // Calculate score
+    let correctAnswers = 0
+    const totalQuestions = selectedLesson.content.questions.length
+
+    selectedLesson.content.questions.forEach((question: Question) => {
+      const userAnswer = answers[question.id]
+
+      if (question.type === "multiple_choice") {
+        if (userAnswer === question.correct_answer) {
+          correctAnswers++
+        }
+      } else if (question.type === "text_input") {
+        const correctAnswer = question.correct_answer as string
+        const alternatives = question.alternatives || []
+        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim())
+
+        if (userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim())) {
+          correctAnswers++
+        }
+      }
+    })
+
+    const finalScore = Math.round((correctAnswers / totalQuestions) * 100)
+    setScore(finalScore)
+    setShowResults(true)
+
+    if (finalScore >= 70) {
+      await completeLesson()
+    }
+  }
+
+  const completeLesson = async () => {
+    if (!selectedLesson || !user) return
+
     try {
-      const currentXp = user.profile?.xp_points || 0;
-      const { error } = await supabase
+      // Check if lesson is already completed
+      if (completedLessonIds.includes(selectedLesson.id)) {
+        toast.info("Lesson already completed!")
+        setSelectedLesson(null)
+        return
+      }
+
+      // Record lesson completion
+      const { error: completionError } = await supabase.from("lesson_completions").insert({
+        user_id: user.id,
+        lesson_id: selectedLesson.id,
+        score,
+        completed_at: new Date().toISOString(),
+      })
+
+      if (completionError) throw completionError
+
+      // Award XP
+      const currentXp = user.profile?.xp_points || 0
+      const { error: xpError } = await supabase
         .from("profiles")
-        .update({ xp_points: currentXp + xpReward })
-        .eq("id", user.id);
+        .update({ xp_points: currentXp + selectedLesson.xp_reward })
+        .eq("id", user.id)
 
-      if (error) throw error;
+      if (xpError) throw xpError
 
-      toast.success(`Lesson completed! +${xpReward} XP`);
-      await loadUserAndLessons(); // Refresh user data
+      toast.success(`Lesson completed! +${selectedLesson.xp_reward} XP`)
+      setCompletedLessonIds((prev) => [...prev, selectedLesson.id])
+      setSelectedLesson(null)
+      await loadUserAndLessons()
     } catch (error) {
-      console.error("Error completing lesson:", error);
-      toast.error("Failed to complete lesson");
+      console.error("Error completing lesson:", error)
+      toast.error("Failed to complete lesson")
     }
-  };
+  }
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "beginner":
+        return "bg-green-100 text-green-700"
+      case "intermediate":
+        return "bg-yellow-100 text-yellow-700"
+      case "advanced":
+        return "bg-red-100 text-red-700"
+      default:
+        return "bg-gray-100 text-gray-700"
+    }
+  }
 
   const filteredLessons = difficultyFilter === "all"
     ? lessons
-    : lessons.filter((lesson) => lesson.difficulty === difficultyFilter);
+    : lessons.filter((lesson) => lesson.difficulty === difficultyFilter)
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-slate-300">Loading lessons...</p>
+          <p className="text-slate-600">Loading lessons...</p>
         </motion.div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      <motion.nav
-        className="border-b border-white/10 bg-white/5 backdrop-blur-sm sticky top-0 z-50"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600">
-                <BookOpen className="h-5 w-5 text-white" />
+                <Languages className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-white">Learn</span>
-            </div>
+              <span className="text-xl font-bold text-slate-800">LingslatePal</span>
+            </Link>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-slate-300">
+              <span className="text-sm text-slate-600">
                 {user.profile?.full_name} • {user.profile?.xp_points || 0} XP
               </span>
-              <Button
-                variant="outline"
-                className="border-white/20 text-white hover:bg-white/10"
-                onClick={() => router.push("/dashboard")}
-              >
-                Back to Dashboard
-              </Button>
+              <Link href="/dashboard">
+                <Button variant="ghost" className="text-slate-700 hover:bg-slate-100">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Dashboard
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
-      </motion.nav>
+      </nav>
 
       <div className="container mx-auto px-4 py-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-4">
-            Learn {user.profile?.learning_language === "es" ? "Spanish" : user.profile?.learning_language}
-          </h1>
-          <div className="flex items-center gap-4">
-            <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-              <SelectTrigger className="w-48 border-white/20 bg-white/5 text-white">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue placeholder="Filter by difficulty" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Difficulties</SelectItem>
-                <SelectItem value="beginner">Beginner</SelectItem>
-                <SelectItem value="intermediate">Intermediate</SelectItem>
-                <SelectItem value="advanced">Advanced</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </motion.div>
+        {!selectedLesson ? (
+          <div>
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+              <h1 className="text-3xl font-bold text-slate-800 mb-4">
+                Learn {user.profile?.learning_language === "es" ? "Spanish" : user.profile?.learning_language}
+              </h1>
+              <div className="flex items-center gap-4">
+                <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+                  <SelectTrigger className="w-48 border-slate-200 bg-white/80 text-slate-800">
+                    <Filter className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Filter by difficulty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Difficulties</SelectItem>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-        >
-          {filteredLessons.length === 0 ? (
-            <div className="col-span-full text-center py-8 text-slate-400">
-              <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No lessons available for this language or difficulty</p>
-            </div>
-          ) : (
-            filteredLessons.map((lesson) => (
-              <motion.div key={lesson.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-                  <CardHeader>
-                    <CardTitle className="text-white">{lesson.title}</CardTitle>
-                    <CardDescription className="text-slate-300">{lesson.description || "No description"}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        className={
-                          lesson.difficulty === "beginner"
-                            ? "bg-green-500/20 text-green-300"
-                            : lesson.difficulty === "intermediate"
-                              ? "bg-yellow-500/20 text-yellow-300"
-                              : "bg-red-500/20 text-red-300"
-                        }
-                      >
-                        {lesson.difficulty}
-                      </Badge>
-                      <Badge className="bg-blue-500/20 text-blue-300">{lesson.content_type}</Badge>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+            >
+              {filteredLessons.length === 0 ? (
+                <div className="col-span-full text-center py-8 text-slate-600">
+                  <BookOpen className="h-12 w-12 mx-auto mb-3 text-slate-400" />
+                  <p>No lessons available for this language or difficulty</p>
+                </div>
+              ) : (
+                filteredLessons.map((lesson) => (
+                  <motion.div key={lesson.id} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                    <Card className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-slate-800">{lesson.title}</CardTitle>
+                          {completedLessonIds.includes(lesson.id) && (
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                          )}
+                        </div>
+                        <CardDescription className="text-slate-600">{lesson.description || "No description"}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Badge className={getDifficultyColor(lesson.difficulty)}>
+                            {lesson.difficulty}
+                          </Badge>
+                          <Badge className="bg-blue-100 text-blue-700">{lesson.content_type}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <Clock className="h-4 w-4" />
+                          {lesson.estimated_duration ? `${lesson.estimated_duration} min` : "N/A"}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <Trophy className="h-4 w-4" />
+                          {lesson.xp_reward} XP
+                        </div>
+                        <Button
+                          onClick={() => startLesson(lesson)}
+                          className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                        >
+                          {completedLessonIds.includes(lesson.id) ? "Review Lesson" : "Start Lesson"}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))
+              )}
+            </motion.div>
+          </div>
+        ) : showResults ? (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
+            <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="text-center">
+                <div className="mx-auto mb-4">
+                  {score >= 70 ? (
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                      <CheckCircle className="h-8 w-8 text-green-600" />
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
-                      <Clock className="h-4 w-4" />
-                      {lesson.estimated_duration ? `${lesson.estimated_duration} min` : "N/A"}
+                  ) : (
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                      <XCircle className="h-8 w-8 text-red-600" />
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
-                      <Trophy className="h-4 w-4" />
-                      {lesson.xp_reward} XP
-                    </div>
-                    <Button
-                      className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 mt-4"
-                      onClick={() => completeLesson(lesson.id, lesson.xp_reward)}
-                    >
-                      Complete Lesson
+                  )}
+                </div>
+                <CardTitle className="text-2xl text-slate-800">
+                  {score >= 70 ? "Lesson Completed!" : "Keep Practicing!"}
+                </CardTitle>
+                <CardDescription className="text-slate-600">
+                  You scored {score}% on {selectedLesson.title}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-slate-800 mb-2">{score}%</div>
+                  <div className="w-full bg-slate-200 rounded-full h-2.5">
+                    <div
+                      className="bg-blue-500 h-2.5 rounded-full"
+                      style={{ width: `${score}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-sm text-slate-600 mt-2">
+                    {score >= 70
+                      ? "You passed! Minimum required: 70%"
+                      : "You need 70% to complete the lesson"}
+                  </p>
+                </div>
+
+                {score >= 70 && (
+                  <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                    <Trophy className="h-6 w-6 mx-auto mb-2 text-yellow-600" />
+                    <p className="text-sm font-medium text-yellow-800">
+                      You earned {selectedLesson.xp_reward} XP points!
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-slate-800">Review Your Answers</h3>
+                  {selectedLesson.content.questions.map((question: Question) => {
+                    const userAnswer = answers[question.id]
+                    let isCorrect = false
+
+                    if (question.type === "multiple_choice") {
+                      isCorrect = userAnswer === question.correct_answer
+                    } else if (question.type === "text_input") {
+                      const correctAnswer = question.correct_answer as string
+                      const alternatives = question.alternatives || []
+                      const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim())
+                      isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim())
+                    }
+
+                    return (
+                      <div key={question.id} className="p-4 border rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
+                              isCorrect ? "bg-green-100" : "bg-red-100"
+                            }`}
+                          >
+                            {isCorrect ? (
+                              <CheckCircle className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-red-600" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-medium text-slate-800 mb-2">{question.question}</p>
+
+                            {question.type === "multiple_choice" && question.options && (
+                              <div className="space-y-1 mb-2">
+                                {question.options.map((option, optionIndex) => (
+                                  <div
+                                    key={optionIndex}
+                                    className={`text-sm p-2 rounded ${
+                                      optionIndex === question.correct_answer
+                                        ? "bg-green-100 text-green-800"
+                                        : optionIndex === userAnswer
+                                          ? "bg-red-100 text-red-800"
+                                          : "text-slate-600"
+                                    }`}
+                                  >
+                                    {option}
+                                    {optionIndex === question.correct_answer && " ✓"}
+                                    {optionIndex === userAnswer && optionIndex !== question.correct_answer && " ✗"}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {question.type === "text_input" && (
+                              <div className="space-y-1 mb-2">
+                                <div className="text-sm">
+                                  <span className="text-slate-600">Your answer: </span>
+                                  <span className={isCorrect ? "text-green-700" : "text-red-700"}>
+                                    {userAnswer || "No answer"}
+                                  </span>
+                                </div>
+                                <div className="text-sm">
+                                  <span className="text-slate-600">Correct answer: </span>
+                                  <span className="text-green-700">{question.correct_answer as string}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {question.explanation && (
+                              <p className="text-sm text-slate-600 italic">{question.explanation}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="flex gap-3">
+                  <Button onClick={() => setSelectedLesson(null)} variant="outline" className="flex-1">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Lessons
+                  </Button>
+                  {score < 70 && (
+                    <Button onClick={() => { setCurrentQuestion(0); setAnswers({}); setShowResults(false); }} className="flex-1">
+                      Retake Questions
                     </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))
-          )}
-        </motion.div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : currentQuestion !== null ? (
+          <div className="max-w-2xl mx-auto">
+            <Card className="border-slate-200 bg-white/80 backdrop-blur-sm mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-slate-800">{selectedLesson.title}</CardTitle>
+                    <CardDescription className="text-slate-600">
+                      Question {currentQuestion + 1} of {selectedLesson.content.questions.length}
+                    </CardDescription>
+                  </div>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-2.5">
+                  <div
+                    className="bg-blue-500 h-2.5 rounded-full"
+                    style={{ width: `${((currentQuestion + 1) / selectedLesson.content.questions.length) * 100}%` }}
+                  ></div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-slate-800">{selectedLesson.content.questions[currentQuestion].question}</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {selectedLesson.content.questions[currentQuestion].type === "multiple_choice" ? (
+                  <RadioGroup
+                    value={answers[selectedLesson.content.questions[currentQuestion].id]?.toString()}
+                    onValueChange={(value) =>
+                      handleAnswer(selectedLesson.content.questions[currentQuestion].id, Number.parseInt(value))
+                    }
+                  >
+                    {selectedLesson.content.questions[currentQuestion].options?.map((option, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <RadioGroupItem value={index.toString()} id={`option-${index}`} />
+                        <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
+                          {option}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                ) : (
+                  <div>
+                    <Label htmlFor="text-answer" className="text-sm font-medium text-slate-700">
+                      Your Answer
+                    </Label>
+                    <Input
+                      id="text-answer"
+                      placeholder="Type your answer here..."
+                      value={answers[selectedLesson.content.questions[currentQuestion].id] || ""}
+                      onChange={(e) => handleAnswer(selectedLesson.content.questions[currentQuestion].id, e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+
+                <div className="flex justify-between">
+                  <Button onClick={previousQuestion} disabled={currentQuestion === 0} variant="outline">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <Button onClick={nextQuestion}>
+                    {currentQuestion === selectedLesson.content.questions.length - 1 ? (
+                      <>
+                        <Trophy className="mr-2 h-4 w-4" />
+                        Finish Questions
+                      </>
+                    ) : (
+                      <>
+                        Next
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <div className="max-w-2xl mx-auto">
+            <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-slate-800">{selectedLesson.title}</CardTitle>
+                  <Badge className={getDifficultyColor(selectedLesson.difficulty)}>
+                    {selectedLesson.difficulty}
+                  </Badge>
+                </div>
+                <CardDescription className="text-slate-600">{selectedLesson.description || "No description"}</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {selectedLesson.content_type === "text" && (
+                  <div className="prose text-slate-800">
+                    {selectedLesson.content.main_content}
+                  </div>
+                )}
+                {selectedLesson.content_type === "video" && (
+                  <div className="aspect-video">
+                    <iframe
+                      src={selectedLesson.content.main_content}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="w-full h-full rounded-lg"
+                    ></iframe>
+                  </div>
+                )}
+                {selectedLesson.content_type === "audio" && (
+                  <audio controls className="w-full">
+                    <source src={selectedLesson.content.main_content} type="audio/mpeg" />
+                    Your browser does not support the audio element.
+                  </audio>
+                )}
+                {selectedLesson.content_type === "interactive" && (
+                  <div className="text-slate-800">
+                    {/* Placeholder for interactive content */}
+                    <p>{selectedLesson.content.main_content}</p>
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <Button onClick={() => setSelectedLesson(null)} variant="outline" className="flex-1">
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Back to Lessons
+                  </Button>
+                  {selectedLesson.content.questions.length > 0 ? (
+                    <Button onClick={startQuestions} className="flex-1">
+                      Start Questions
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button onClick={completeLesson} className="flex-1">
+                      Complete Lesson
+                      <Trophy className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
-  );
+  )
 }
