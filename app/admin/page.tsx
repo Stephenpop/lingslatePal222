@@ -160,25 +160,38 @@ export default function AdminPage() {
     checkAdminAccess();
   }, []);
 
-  const checkAdminAccess = async () => {
-    try {
-      const currentUser = await authService.getCurrentUser();
-      if (
-        !currentUser ||
-        (currentUser.profile?.role !== "admin" && currentUser.profile?.email !== "anyaibe050@gmail.com")
-      ) {
-        router.push("/dashboard");
-        return;
-      }
-      setUser(currentUser);
-      await loadAdminData();
-    } catch (error) {
-      console.error("Error checking admin access:", error);
+const checkAdminAccess = async () => {
+  try {
+    const currentUser = await authService.getCurrentUser();
+    console.log("Current User:", currentUser);
+    if (!currentUser) {
+      console.log("No user found, redirecting to /dashboard");
       router.push("/dashboard");
-    } finally {
-      setLoading(false);
+      return;
     }
-  };
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("role, email")
+      .eq("id", currentUser.id)
+      .single();
+    console.log("Profile Data:", profileData, "Profile Error:", profileError);
+    if (
+      !profileData ||
+      (profileData.role !== "admin" && profileData.email !== "anyaibe050@gmail.com")
+    ) {
+      console.log("Admin access denied, redirecting to /dashboard");
+      router.push("/dashboard");
+      return;
+    }
+    setUser(currentUser);
+    await loadAdminData();
+  } catch (error) {
+    console.error("Error checking admin access:", error);
+    router.push("/dashboard");
+  } finally {
+    setLoading(false);
+  }
+
 
   const loadAdminData = async () => {
     try {
