@@ -61,17 +61,51 @@ export default function DashboardPage() {
         .eq("id", currentUser.id)
         .single()
       if (profileError && profileError.code !== "PGRST116") {
-        toast.error("Failed to load profile data")
-      } else {
-        setProfile(profileData)
+        throw profileError
+      }
+      setProfile(profileData)
+
+      // Update streak and last_activity_date
+      if (profileData) {
+        const today = new Date().toISOString().split('T')[0]
+        const lastActivity = profileData.last_activity_date
+          ? new Date(profileData.last_activity_date).toISOString().split('T')[0]
+          : null
+        let updatedStreak = profileData.current_streak || 0
+        let updatedLongestStreak = profileData.longest_streak || 0
+
+        if (!lastActivity || lastActivity < today) {
+          const yesterday = new Date()
+          yesterday.setDate(yesterday.getDate() - 1)
+          const yesterdayStr = yesterday.toISOString().split('T')[0]
+
+          if (lastActivity === yesterdayStr) {
+            updatedStreak += 1
+          } else if (lastActivity < yesterdayStr) {
+            updatedStreak = 1
+          }
+          updatedLongestStreak = Math.max(updatedLongestStreak, updatedStreak)
+
+          const { error: streakError } = await supabase
+            .from("profiles")
+            .update({
+              current_streak: updatedStreak,
+              longest_streak: updatedLongestStreak,
+              last_activity_date: today,
+            })
+            .eq("id", currentUser.id)
+          if (streakError) throw streakError
+          profileData.current_streak = updatedStreak
+          profileData.longest_streak = updatedLongestStreak
+          profileData.last_activity_date = today
+        }
       }
 
       // Lessons completed
       const { count: lessonsCount } = await supabase
-        .from("user_lesson_progress")
+        .from("lesson_completions")
         .select("*", { count: "exact", head: true })
         .eq("user_id", currentUser.id)
-        .eq("completed", true)
       setLessonsCompleted(lessonsCount || 0)
 
       // Quizzes completed
@@ -90,7 +124,7 @@ export default function DashboardPage() {
           .order("created_at", { ascending: false })
           .limit(5),
         supabase
-          .from("user_lesson_progress")
+          .from("lesson_completions")
           .select("id, lesson_id, completed_at, lessons(title)")
           .eq("user_id", currentUser.id)
           .order("completed_at", { ascending: false })
@@ -143,7 +177,6 @@ export default function DashboardPage() {
           }))
         )
       }
-      // Sort by time descending and take 5 most recent
       activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
       setRecentActivity(activities.slice(0, 5))
 
@@ -170,6 +203,7 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     try {
       await authService.signOut()
+      router.push("/auth/login")
     } catch (error) {
       toast.error("Failed to logout")
     }
@@ -177,10 +211,10 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your dashboard...</p>
+          <p className="text-slate-600">Loading your dashboard...</p>
         </motion.div>
       </div>
     )
@@ -196,10 +230,10 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Navigation */}
       <motion.nav
-        className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50"
+        className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
@@ -212,32 +246,34 @@ export default function DashboardPage() {
               >
                 <Languages className="h-5 w-5 text-white" />
               </motion.div>
-              <span className="text-xl font-bold text-gray-900">LingslatePal</span>
+              <span className="text-xl font-bold text-slate-800">LingslatePal</span>
             </Link>
 
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <div className="flex items-center space-x-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src={profile?.avatar_url || ""} />
-                  <AvatarFallback className="bg-blue-600 text-white">
-                    {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden md:block">
-                  <p className="text-sm font-medium text-gray-900">
-                    {profile?.full_name || user?.email?.split("@")[0] || "User"}
-                  </p>
-                  <p className="text-xs text-gray-500">Level {stats.level}</p>
+              <Link href="/profile">
+                <div className="flex items-center space-x-2 hover:bg-slate-100 p-2 rounded transition-colors">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={profile?.avatar_url || ""} />
+                    <AvatarFallback className="bg-blue-600 text-white">
+                      {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="hidden md:block">
+                    <p className="text-sm font-medium text-slate-800">
+                      {profile?.full_name || user?.email?.split("@")[0] || "User"}
+                    </p>
+                    <p className="text-xs text-slate-600">Level {stats.level}</p>
+                  </div>
                 </div>
-              </div>
+              </Link>
 
               <Link href="/support">
-                <Button variant="ghost" className="text-gray-700 hover:bg-gray-100 p-2 sm:p-4">
+                <Button variant="ghost" className="text-slate-700 hover:bg-slate-100 p-2 sm:p-4">
                   <Settings className="h-4 w-4 sm:mr-2" />
                   <span className="hidden sm:inline">Support</span>
                 </Button>
               </Link>
-              <Button onClick={handleLogout} variant="ghost" className="text-gray-700 hover:bg-gray-100 p-2 sm:p-4">
+              <Button onClick={handleLogout} variant="ghost" className="text-slate-700 hover:bg-slate-100 p-2 sm:p-4">
                 <LogOut className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Logout</span>
               </Button>
@@ -251,10 +287,10 @@ export default function DashboardPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-slate-800 mb-2">
                 Welcome back, {profile?.full_name || user?.email?.split("@")[0] || "Learner"}! 👋
               </h1>
-              <p className="text-gray-600">Ready to continue your language learning journey?</p>
+              <p className="text-slate-600">Ready to continue your language learning journey?</p>
             </div>
             <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2">
               <Flame className="mr-1 h-4 w-4" />
@@ -270,12 +306,12 @@ export default function DashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total XP</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.xp.toLocaleString()}</p>
+                  <p className="text-sm text-slate-600">Total XP</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.xp.toLocaleString()}</p>
                 </div>
                 <div className="p-3 bg-yellow-100 rounded-full">
                   <Star className="h-6 w-6 text-yellow-600" />
@@ -284,12 +320,12 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Current Streak</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.streak} days</p>
+                  <p className="text-sm text-slate-600">Current Streak</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.streak} days</p>
                 </div>
                 <div className="p-3 bg-orange-100 rounded-full">
                   <Flame className="h-6 w-6 text-orange-600" />
@@ -298,12 +334,12 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Level</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.level}</p>
+                  <p className="text-sm text-slate-600">Level</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.level}</p>
                 </div>
                 <div className="p-3 bg-purple-100 rounded-full">
                   <Trophy className="h-6 w-6 text-purple-600" />
@@ -312,12 +348,12 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-shadow">
+          <Card className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Lessons Done</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.lessonsCompleted}</p>
+                  <p className="text-sm text-slate-600">Lessons Done</p>
+                  <p className="text-2xl font-bold text-slate-800">{stats.lessonsCompleted}</p>
                 </div>
                 <div className="p-3 bg-green-100 rounded-full">
                   <BookOpen className="h-6 w-6 text-green-600" />
@@ -329,19 +365,19 @@ export default function DashboardPage() {
 
         {/* Level Progress */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card className="border-gray-200 bg-white shadow-lg mb-8">
+          <Card className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg mb-8">
             <CardHeader>
-              <CardTitle className="text-gray-900 flex items-center gap-2">
+              <CardTitle className="text-slate-800 flex items-center gap-2">
                 <Target className="h-5 w-5" />
                 Level Progress
               </CardTitle>
-              <CardDescription className="text-gray-600">
+              <CardDescription className="text-slate-600">
                 {stats.nextLevelXP} XP needed to reach Level {stats.level + 1}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Progress value={((stats.xp % 1000) / 1000) * 100} className="h-3 mb-2" />
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-slate-600">
                 <span>Level {stats.level}</span>
                 <span>Level {stats.level + 1}</span>
               </div>
@@ -358,13 +394,13 @@ export default function DashboardPage() {
         >
           <Link href="/learn">
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+              <Card className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all cursor-pointer group">
                 <CardContent className="p-6 text-center">
                   <div className="p-4 bg-blue-100 rounded-full w-fit mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
                     <BookOpen className="h-8 w-8 text-blue-600" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Continue Learning</h3>
-                  <p className="text-sm text-gray-600 mb-4">Pick up where you left off</p>
+                  <h3 className="font-semibold text-slate-800 mb-2">Continue Learning</h3>
+                  <p className="text-sm text-slate-600 mb-4">Pick up where you left off</p>
                   <Button className="w-full bg-blue-600 hover:bg-blue-700">
                     <Play className="mr-2 h-4 w-4" />
                     Continue
@@ -376,13 +412,13 @@ export default function DashboardPage() {
 
           <Link href="/quiz">
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+              <Card className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all cursor-pointer group">
                 <CardContent className="p-6 text-center">
                   <div className="p-4 bg-purple-100 rounded-full w-fit mx-auto mb-4 group-hover:bg-purple-200 transition-colors">
                     <Brain className="h-8 w-8 text-purple-600" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Take a Quiz</h3>
-                  <p className="text-sm text-gray-600 mb-4">Test your knowledge</p>
+                  <h3 className="font-semibold text-slate-800 mb-2">Take a Quiz</h3>
+                  <p className="text-sm text-slate-600 mb-4">Test your knowledge</p>
                   <Button className="w-full bg-purple-600 hover:bg-purple-700">
                     <Zap className="mr-2 h-4 w-4" />
                     Start Quiz
@@ -394,13 +430,13 @@ export default function DashboardPage() {
 
           <Link href="/translate">
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Card className="border-gray-200 bg-white shadow-lg hover:shadow-xl transition-all cursor-pointer group">
+              <Card className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all cursor-pointer group">
                 <CardContent className="p-6 text-center">
                   <div className="p-4 bg-green-100 rounded-full w-fit mx-auto mb-4 group-hover:bg-green-200 transition-colors">
                     <Languages className="h-8 w-8 text-green-600" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Translate</h3>
-                  <p className="text-sm text-gray-600 mb-4">Practice with real text</p>
+                  <h3 className="font-semibold text-slate-800 mb-2">Translate</h3>
+                  <p className="text-sm text-slate-600 mb-4">Practice with real text</p>
                   <Button className="w-full bg-green-600 hover:bg-green-700">
                     <Languages className="mr-2 h-4 w-4" />
                     Translate
@@ -414,7 +450,7 @@ export default function DashboardPage() {
         {/* Tabs Section */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-3 bg-white border border-gray-200">
+            <TabsList className="grid w-full grid-cols-3 bg-white/80 border border-slate-200">
               <TabsTrigger
                 value="activity"
                 className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
@@ -440,20 +476,20 @@ export default function DashboardPage() {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="border-gray-200 bg-white shadow-lg">
+                  <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="text-gray-900">Recent Activity</CardTitle>
-                      <CardDescription className="text-gray-600">Your latest learning activities</CardDescription>
+                      <CardTitle className="text-slate-800">Recent Activity</CardTitle>
+                      <CardDescription className="text-slate-600">Your latest learning activities</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         {recentActivity.length === 0 ? (
-                          <div className="text-gray-500 text-center py-8">No recent activity yet.</div>
+                          <div className="text-slate-600 text-center py-8">No recent activity yet.</div>
                         ) : (
                           recentActivity.map((activity, index) => (
                             <motion.div
                               key={index}
-                              className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                              className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: index * 0.1 }}
@@ -463,8 +499,8 @@ export default function DashboardPage() {
                                   <activity.icon className={`h-4 w-4 text-${activity.color}-600`} />
                                 </div>
                                 <div>
-                                  <p className="font-medium text-gray-900">{activity.title}</p>
-                                  <p className="text-sm text-gray-600 flex items-center gap-1">
+                                  <p className="font-medium text-slate-800">{activity.title}</p>
+                                  <p className="text-sm text-slate-600 flex items-center gap-1">
                                     <Clock className="h-3 w-3" />
                                     {activity.time ? new Date(activity.time).toLocaleString() : ""}
                                   </p>
@@ -487,15 +523,15 @@ export default function DashboardPage() {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="border-gray-200 bg-white shadow-lg">
+                  <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="text-gray-900">Achievements</CardTitle>
-                      <CardDescription className="text-gray-600">Your learning milestones</CardDescription>
+                      <CardTitle className="text-slate-800">Achievements</CardTitle>
+                      <CardDescription className="text-slate-600">Your learning milestones</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="grid gap-4 md:grid-cols-2">
                         {achievements.length === 0 ? (
-                          <div className="text-gray-500 text-center py-8">No achievements earned yet.</div>
+                          <div className="text-slate-600 text-center py-8">No achievements earned yet.</div>
                         ) : (
                           achievements.map((achievement, index) => (
                             <motion.div
@@ -503,7 +539,7 @@ export default function DashboardPage() {
                               className={`p-4 border rounded-lg transition-all ${
                                 achievement.earned
                                   ? "border-green-200 bg-green-50 shadow-md"
-                                  : "border-gray-200 bg-gray-50 hover:bg-gray-100"
+                                  : "border-slate-200 bg-slate-50 hover:bg-slate-100"
                               }`}
                               initial={{ opacity: 0, scale: 0.9 }}
                               animate={{ opacity: 1, scale: 1 }}
@@ -515,12 +551,12 @@ export default function DashboardPage() {
                                   {typeof achievement.icon === "string" ? achievement.icon : <achievement.icon />}
                                 </div>
                                 <div className="flex-1">
-                                  <h4 className="font-medium text-gray-900">{achievement.title}</h4>
-                                  <p className="text-sm text-gray-600">{achievement.description}</p>
+                                  <h4 className="font-medium text-slate-800">{achievement.title}</h4>
+                                  <p className="text-sm text-slate-600">{achievement.description}</p>
                                 </div>
                                 <Badge
                                   className={
-                                    achievement.earned ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+                                    achievement.earned ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-600"
                                   }
                                 >
                                   {achievement.xp} XP
@@ -543,55 +579,55 @@ export default function DashboardPage() {
                   transition={{ duration: 0.3 }}
                 >
                   <div className="grid gap-6 md:grid-cols-2">
-                    <Card className="border-gray-200 bg-white shadow-lg">
+                    <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
                       <CardHeader>
-                        <CardTitle className="text-gray-900 flex items-center gap-2">
+                        <CardTitle className="text-slate-800 flex items-center gap-2">
                           <TrendingUp className="h-5 w-5" />
                           Learning Stats
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Lessons Completed</span>
-                          <span className="font-medium text-gray-900">{stats.lessonsCompleted}</span>
+                          <span className="text-slate-600">Lessons Completed</span>
+                          <span className="font-medium text-slate-800">{stats.lessonsCompleted}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Quizzes Completed</span>
-                          <span className="font-medium text-gray-900">{stats.quizzesCompleted}</span>
+                          <span className="text-slate-600">Quizzes Completed</span>
+                          <span className="font-medium text-slate-800">{stats.quizzesCompleted}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Average Score</span>
-                          <span className="font-medium text-gray-900">87%</span>
+                          <span className="text-slate-600">Average Score</span>
+                          <span className="font-medium text-slate-800">87%</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Study Time</span>
-                          <span className="font-medium text-gray-900">24 hours</span>
+                          <span className="text-slate-600">Study Time</span>
+                          <span className="font-medium text-slate-800">24 hours</span>
                         </div>
                       </CardContent>
                     </Card>
 
-                    <Card className="border-gray-200 bg-white shadow-lg">
+                    <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
                       <CardHeader>
-                        <CardTitle className="text-gray-900 flex items-center gap-2">
+                        <CardTitle className="text-slate-800 flex items-center gap-2">
                           <Calendar className="h-5 w-5" />
                           This Week
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Days Active</span>
-                          <span className="font-medium text-gray-900">5/7</span>
+                          <span className="text-slate-600">Days Active</span>
+                          <span className="font-medium text-slate-800">5/7</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600">XP Earned</span>
-                          <span className="font-medium text-gray-900">450 XP</span>
+                          <span className="text-slate-600">XP Earned</span>
+                          <span className="font-medium text-slate-800">450 XP</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Time Studied</span>
-                          <span className="font-medium text-gray-900">3.2 hours</span>
+                          <span className="text-slate-600">Time Studied</span>
+                          <span className="font-medium text-slate-800">3.2 hours</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-gray-600">Streak Status</span>
+                          <span className="text-slate-600">Streak Status</span>
                           <Badge className="bg-orange-100 text-orange-800">
                             <Flame className="h-3 w-3 mr-1" />
                             {stats.streak} days
