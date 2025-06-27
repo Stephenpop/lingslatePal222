@@ -164,47 +164,40 @@ const checkAdminAccess = async () => {
   try {
     const currentUser = await authService.getCurrentUser();
     console.log("Current User:", currentUser);
-    
     if (!currentUser) {
-      console.log("No user found, redirecting to /dashboard");
-      router.push("/dashboard");
+      console.log("No user found, allowing temporary access for debug");
+      setUser({ id: "temp-debug-user" }); // Temporary user for debug
+      await loadAdminData();
       return;
     }
-
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("role, email")
-      .eq("id", currentUser.id) // Ensure this ID matches the profiles table
+      .eq("id", currentUser.id)
       .single();
-
     console.log("Profile Data:", profileData, "Profile Error:", profileError);
-    
     if (profileError || !profileData) {
-      console.log("Profile not found or error, redirecting to /dashboard");
-      router.push("/dashboard");
+      console.log("Profile not found or error, allowing temporary access for debug");
+      setUser(currentUser);
+      await loadAdminData();
       return;
     }
-
-    console.log("User Role:", profileData.role);
-    console.log("User Email:", profileData.email);
-
-    // Check if the user is an admin or has the specific email
     if (profileData.role !== "admin" && profileData.email !== "anyaibe050@gmail.com") {
-      console.log("Admin access denied, redirecting to /dashboard");
-      router.push("/dashboard");
+      console.log("Admin access denied, allowing temporary access for debug");
+      setUser(currentUser);
+      await loadAdminData();
       return;
     }
-
     setUser(currentUser);
     await loadAdminData();
   } catch (error) {
     console.error("Error checking admin access:", error);
-    router.push("/dashboard");
+    setUser({ id: "temp-debug-user" }); // Fallback for debug
+    await loadAdminData();
   } finally {
     setLoading(false);
   }
 };
-
 
 
   const loadAdminData = async () => {
