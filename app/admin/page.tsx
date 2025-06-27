@@ -172,7 +172,7 @@ const checkAdminAccess = async () => {
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("role, email")
-      .eq("id", currentUser.id)
+      .eq("id", currentUser.id")
       .single();
     console.log("Profile Data:", profileData, "Profile Error:", profileError);
     if (
