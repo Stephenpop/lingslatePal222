@@ -20,6 +20,7 @@ import {
   Languages,
   Play,
   RotateCcw,
+  SkipForward,
 } from "lucide-react"
 import Link from "next/link"
 import { supabase, type Quiz, type QuizAttempt } from "@/lib/supabase"
@@ -30,24 +31,32 @@ interface Question {
   id: number
   question: string
   type: "multiple_choice" | "text_input"
-  options?: string[]
+  options?: string[] // Up to 5 options for multiple_choice
   correct_answer: number | string
-  alternatives?: string[]
+  alternatives?: string[] // For text_input alternative correct answers
   explanation?: string
+}
+
+interface Category {
+  id: string
+  name: string
+  quizzes: Quiz[]
 }
 
 export default function QuizPage() {
   const [user, setUser] = useState<any>(null)
-  const [quizzes, setQuizzes] = useState<Quiz[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null)
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [answers, setAnswers] = useState<Record<number, any>>({})
+  const [skippedQuestions, setSkippedQuestions] = useState<number[]>([])
   const [showResults, setShowResults] = useState(false)
   const [score, setScore] = useState(0)
   const [timeLeft, setTimeLeft] = useState<number | null>(null)
   const [quizStarted, setQuizStarted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [recentAttempts, setRecentAttempts] = useState<QuizAttempt[]>([])
+  const [completedQuizIds, setCompletedQuizIds] = useState<string[]>([])
 
   useEffect(() => {
     loadQuizData()
@@ -68,28 +77,49 @@ export default function QuizPage() {
       const currentUser = await authService.getCurrentUser()
       setUser(currentUser)
 
-      // Load available quizzes
+      // Load categories and quizzes
       const { data: quizzesData } = await supabase
         .from("quizzes")
-        .select("*")
+        .select(`
+          *,
+          category:categories(name)
+        `)
         .eq("is_published", true)
         .order("created_at", { ascending: false })
 
-      setQuizzes(quizzesData || [])
+      // Group quizzes by category
+      const groupedByCategory = quizzesData?.reduce((acc, quiz) => {
+        const categoryName = quiz.category?.name || "Uncategorized"
+        const categoryId = quiz.category_id || "uncategorized"
+        const existingCategory = acc.find((cat) => cat.id === categoryId)
+        if (existingCategory) {
+          existingCategory.quizzes.push(quiz)
+        } else {
+          acc.push({
+            id: categoryId,
+            name: categoryName,
+            quizzes: [quiz],
+          })
+        }
+        return acc
+      }, [] as Category[]) || []
 
-      // Load recent attempts if user is logged in
+      setCategories(groupedByCategory)
+
+      // Load recent attempts and completed quizzes if user is logged in
       if (currentUser) {
         const { data: attemptsData } = await supabase
           .from("quiz_attempts")
           .select(`
             *,
-            quizzes (title, difficulty, xp_reward)
+            quizzes (title, difficulty, xp_reward, category:categories(name))
           `)
           .eq("user_id", currentUser.id)
           .order("completed_at", { ascending: false })
           .limit(5)
 
         setRecentAttempts(attemptsData || [])
+        setCompletedQuizIds(attemptsData?.map((attempt) => attempt.quiz_id) || [])
       }
     } catch (error) {
       console.error("Error loading quiz data:", error)
@@ -99,9 +129,14 @@ export default function QuizPage() {
   }
 
   const startQuiz = (quiz: Quiz) => {
+    if (quiz.questions.length < 20) {
+      toast.error("This quiz does not have enough questions (minimum 20 required).")
+      return
+    }
     setSelectedQuiz(quiz)
     setCurrentQuestion(0)
     setAnswers({})
+    setSkippedQuestions([])
     setShowResults(false)
     setScore(0)
     setQuizStarted(true)
@@ -116,6 +151,15 @@ export default function QuizPage() {
       ...prev,
       [questionId]: answer,
     }))
+    // Remove from skipped questions if answered
+    setSkippedQuestions((prev) => prev.filter((id) => id !== questionId))
+  }
+
+  const skipQuestion = () => {
+    if (selectedQuiz) {
+      setSkippedQuestions((prev) => [...prev, selectedQuiz.questions[currentQuestion].id])
+      nextQuestion()
+    }
   }
 
   const nextQuestion = () => {
@@ -182,7 +226,7 @@ export default function QuizPage() {
         if (finalScore >= selectedQuiz.passing_score) {
           toast.success(`Quiz completed! You earned ${selectedQuiz.xp_reward} XP!`)
 
-          // Update user XP (simplified - in real app, this would be handled server-side)
+          // Update user XP
           if (user.profile) {
             const { error: updateError } = await supabase
               .from("profiles")
@@ -195,7 +239,7 @@ export default function QuizPage() {
           }
         }
 
-        // Reload recent attempts
+        // Reload recent attempts and completed quizzes
         await loadQuizData()
       } catch (error) {
         console.error("Error saving quiz attempt:", error)
@@ -207,6 +251,7 @@ export default function QuizPage() {
     setSelectedQuiz(null)
     setCurrentQuestion(0)
     setAnswers({})
+    setSkippedQuestions([])
     setShowResults(false)
     setScore(0)
     setTimeLeft(null)
@@ -275,57 +320,72 @@ export default function QuizPage() {
             </motion.div>
 
             <div className="grid gap-8 lg:grid-cols-3">
-              {/* Available Quizzes */}
+              {/* Available Quizzes by Category */}
               <div className="lg:col-span-2">
-                <h2 className="text-xl font-semibold text-slate-800 mb-4">Available Quizzes</h2>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {quizzes.map((quiz) => (
-                    <Card
-                      key={quiz.id}
-                      className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow"
-                    >
-                      <CardHeader>
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-slate-800">{quiz.title}</CardTitle>
-                          <Badge className={getDifficultyColor(quiz.difficulty)}>{quiz.difficulty || "beginner"}</Badge>
-                        </div>
-                        <CardDescription className="text-slate-600">{quiz.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-slate-600">Questions:</span>
-                            <span className="font-medium text-slate-800">{quiz.questions.length}</span>
-                          </div>
-                          {quiz.time_limit && (
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-slate-600">Time Limit:</span>
-                              <span className="font-medium text-slate-800 flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {quiz.time_limit} min
-                              </span>
+                {categories.map((category) => (
+                  <div key={category.id} className="mb-8">
+                    <h2 className="text-xl font-semibold text-slate-800 mb-4">{category.name}</h2>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      {category.quizzes.map((quiz) => (
+                        <Card
+                          key={quiz.id}
+                          className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow"
+                        >
+                          <CardHeader>
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-slate-800">{quiz.title}</CardTitle>
+                              <div className="flex items-center gap-2">
+                                {completedQuizIds.includes(quiz.id) && (
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                )}
+                                <Badge className={getDifficultyColor(quiz.difficulty)}>
+                                  {quiz.difficulty || "beginner"}
+                                </Badge>
+                              </div>
                             </div>
-                          )}
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-slate-600">Passing Score:</span>
-                            <span className="font-medium text-slate-800">{quiz.passing_score}%</span>
-                          </div>
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-slate-600">XP Reward:</span>
-                            <Badge className="bg-yellow-100 text-yellow-700">
-                              <Star className="h-3 w-3 mr-1" />
-                              {quiz.xp_reward} XP
-                            </Badge>
-                          </div>
-                        </div>
-                        <Button onClick={() => startQuiz(quiz)} className="w-full mt-4">
-                          <Play className="mr-2 h-4 w-4" />
-                          Start Quiz
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                            <CardDescription className="text-slate-600">{quiz.description}</CardDescription>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-600">Questions:</span>
+                                <span className="font-medium text-slate-800">{quiz.questions.length}</span>
+                              </div>
+                              {quiz.time_limit && (
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-slate-600">Time Limit:</span>
+                                  <span className="font-medium text-slate-800 flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {quiz.time_limit} min
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-600">Passing Score:</span>
+                                <span className="font-medium text-slate-800">{quiz.passing_score}%</span>
+                              </div>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="text-slate-600">XP Reward:</span>
+                                <Badge className="bg-yellow-100 text-yellow-700">
+                                  <Star className="h-3 w-3 mr-1" />
+                                  {quiz.xp_reward} XP
+                                </Badge>
+                              </div>
+                            </div>
+                            <Button
+                              onClick={() => startQuiz(quiz)}
+                              className="w-full mt-4"
+                              disabled={quiz.questions.length < 20}
+                            >
+                              <Play className="mr-2 h-4 w-4" />
+                              {completedQuizIds.includes(quiz.id) ? "Retake Quiz" : "Start Quiz"}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
 
               {/* Recent Attempts */}
@@ -426,15 +486,18 @@ export default function QuizPage() {
                   <h3 className="font-semibold text-slate-800">Review Your Answers</h3>
                   {selectedQuiz.questions.map((question: Question, index: number) => {
                     const userAnswer = answers[question.id]
+                    const wasSkipped = skippedQuestions.includes(question.id)
                     let isCorrect = false
 
-                    if (question.type === "multiple_choice") {
-                      isCorrect = userAnswer === question.correct_answer
-                    } else if (question.type === "text_input") {
-                      const correctAnswer = question.correct_answer as string
-                      const alternatives = question.alternatives || []
-                      const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim())
-                      isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim())
+                    if (!wasSkipped) {
+                      if (question.type === "multiple_choice") {
+                        isCorrect = userAnswer === question.correct_answer
+                      } else if (question.type === "text_input") {
+                        const correctAnswer = question.correct_answer as string
+                        const alternatives = question.alternatives || []
+                        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim())
+                        isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim())
+                      }
                     }
 
                     return (
@@ -442,10 +505,12 @@ export default function QuizPage() {
                         <div className="flex items-start gap-3">
                           <div
                             className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                              isCorrect ? "bg-green-100" : "bg-red-100"
+                              wasSkipped ? "bg-gray-100" : isCorrect ? "bg-green-100" : "bg-red-100"
                             }`}
                           >
-                            {isCorrect ? (
+                            {wasSkipped ? (
+                              <SkipForward className="h-4 w-4 text-gray-600" />
+                            ) : isCorrect ? (
                               <CheckCircle className="h-4 w-4 text-green-600" />
                             ) : (
                               <XCircle className="h-4 w-4 text-red-600" />
@@ -462,14 +527,14 @@ export default function QuizPage() {
                                     className={`text-sm p-2 rounded ${
                                       optionIndex === question.correct_answer
                                         ? "bg-green-100 text-green-800"
-                                        : optionIndex === userAnswer
+                                        : optionIndex === userAnswer && !wasSkipped
                                           ? "bg-red-100 text-red-800"
                                           : "text-slate-600"
                                     }`}
                                   >
                                     {option}
                                     {optionIndex === question.correct_answer && " ✓"}
-                                    {optionIndex === userAnswer && optionIndex !== question.correct_answer && " ✗"}
+                                    {optionIndex === userAnswer && !wasSkipped && optionIndex !== question.correct_answer && " ✗"}
                                   </div>
                                 ))}
                               </div>
@@ -479,8 +544,8 @@ export default function QuizPage() {
                               <div className="space-y-1 mb-2">
                                 <div className="text-sm">
                                   <span className="text-slate-600">Your answer: </span>
-                                  <span className={isCorrect ? "text-green-700" : "text-red-700"}>
-                                    {userAnswer || "No answer"}
+                                  <span className={wasSkipped ? "text-gray-700" : isCorrect ? "text-green-700" : "text-red-700"}>
+                                    {wasSkipped ? "Skipped" : userAnswer || "No answer"}
                                   </span>
                                 </div>
                                 <div className="text-sm">
@@ -550,7 +615,7 @@ export default function QuizPage() {
                       handleAnswer(selectedQuiz.questions[currentQuestion].id, Number.parseInt(value))
                     }
                   >
-                    {selectedQuiz.questions[currentQuestion].options?.map((option, index) => (
+                    {selectedQuiz.questions[currentQuestion].options?.slice(0, 5).map((option, index) => (
                       <div key={index} className="flex items-center space-x-2">
                         <RadioGroupItem value={index.toString()} id={`option-${index}`} />
                         <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
@@ -574,12 +639,15 @@ export default function QuizPage() {
                   </div>
                 )}
 
-                <div className="flex justify-between">
+                <div className="flex justify-between gap-2">
                   <Button onClick={previousQuestion} disabled={currentQuestion === 0} variant="outline">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Previous
                   </Button>
-
+                  <Button onClick={skipQuestion} variant="outline">
+                    <SkipForward className="mr-2 h-4 w-4" />
+                    Skip
+                  </Button>
                   <Button onClick={nextQuestion}>
                     {currentQuestion === selectedQuiz.questions.length - 1 ? (
                       <>
