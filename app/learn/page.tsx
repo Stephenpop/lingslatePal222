@@ -56,7 +56,7 @@ export default function LearnPage() {
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all")
   const router = useRouter()
 
-  use'effect(() => {
+  useEffect(() => {
     loadUserAndLessons()
   }, [])
 
@@ -218,10 +218,6 @@ export default function LearnPage() {
         return "bg-gray-100 text-gray-700"
     }
   }
-
-  const filteredLessons = difficultyFilter === "all"
-    ? lessons
-    : lessons.filter((lesson) => lesson.difficulty === difficultyFilter)
 
   if (loading) {
     return (
