@@ -48,7 +48,7 @@ export const fetchWithErrorHandling = async (query: any) => {
   try {
     const { data, error } = await query;
     if (error) {
-      console.error("Supabase Error:", error.message);
+      console.error("Supabase Error:", error.message, error.details);
       throw error;
     }
     return data;
