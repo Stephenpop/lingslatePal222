@@ -215,7 +215,7 @@ export default function DashboardPage() {
               <span className="text-xl font-bold text-gray-900">LingslatePal</span>
             </Link>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <div className="flex items-center space-x-2">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={profile?.avatar_url || ""} />
@@ -232,14 +232,14 @@ export default function DashboardPage() {
               </div>
 
               <Link href="/support">
-                <Button variant="ghost" className="text-gray-700 hover:bg-gray-100">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Support
+                <Button variant="ghost" className="text-gray-700 hover:bg-gray-100 p-2 sm:p-4">
+                  <Settings className="h-4 w-4 sm:mr-2" />
+                  <span className="hidden sm:inline">Support</span>
                 </Button>
               </Link>
-              <Button onClick={handleLogout} variant="ghost" className="text-gray-700 hover:bg-gray-100">
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
+              <Button onClick={handleLogout} variant="ghost" className="text-gray-700 hover:bg-gray-100 p-2 sm:p-4">
+                <LogOut className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -559,7 +559,6 @@ export default function DashboardPage() {
                           <span className="text-gray-600">Quizzes Completed</span>
                           <span className="font-medium text-gray-900">{stats.quizzesCompleted}</span>
                         </div>
-                        {/* You can add more dynamic stats here if you track them */}
                         <div className="flex items-center justify-between">
                           <span className="text-gray-600">Average Score</span>
                           <span className="font-medium text-gray-900">87%</span>
