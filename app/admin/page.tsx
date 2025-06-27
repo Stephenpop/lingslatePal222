@@ -28,6 +28,9 @@ import {
   Globe,
   Edit,
   Trash2,
+  Send,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { authService } from "@/lib/auth";
@@ -82,6 +85,25 @@ interface QuizAttempt {
   profiles?: { full_name: string; email: string };
 }
 
+interface Ticket {
+  id: string;
+  subject: string;
+  status: "open" | "in_progress" | "resolved" | "closed";
+  priority: "low" | "medium" | "high" | "urgent";
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  profiles?: { full_name: string; email: string };
+  support_messages: Array<{
+    id: string;
+    message: string;
+    is_admin: boolean;
+    created_at: string;
+    sender_id: string;
+    profiles?: { full_name: string; email: string };
+  }>;
+}
+
 export default function AdminPage() {
   const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<AdminStats>({
@@ -94,11 +116,14 @@ export default function AdminPage() {
     totalQuizAttempts: 0,
   });
   const [users, setUsers] = useState<any[]>([]);
-  const [tickets, setTickets] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [languageRequests, setLanguageRequests] = useState<any[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [sending, setSending] = useState(false);
   const [newLesson, setNewLesson] = useState<Partial<Lesson>>({
     title: "",
     description: "",
@@ -124,6 +149,9 @@ export default function AdminPage() {
   });
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const router = useRouter();
@@ -135,7 +163,6 @@ export default function AdminPage() {
   const checkAdminAccess = async () => {
     try {
       const currentUser = await authService.getCurrentUser();
-      console.log("AdminPage currentUser:", currentUser);
       if (
         !currentUser ||
         (currentUser.profile?.role !== "admin" && currentUser.profile?.email !== "anyaibe050@gmail.com")
@@ -155,7 +182,20 @@ export default function AdminPage() {
 
   const loadAdminData = async () => {
     try {
-      const [usersCount, translationsCount, ticketsCount, lessonsCount, quizzesCount, quizAttemptsCount, usersData, ticketsData, requestsData, lessonsData, quizzesData, attemptsData] = await Promise.allSettled([
+      const [
+        usersCount,
+        translationsCount,
+        ticketsCount,
+        lessonsCount,
+        quizzesCount,
+        quizAttemptsCount,
+        usersData,
+        ticketsData,
+        requestsData,
+        lessonsData,
+        quizzesData,
+        attemptsData,
+      ] = await Promise.all([
         supabase.from("profiles").select("id", { count: "exact" }),
         supabase.from("translations").select("id", { count: "exact" }),
         supabase.from("support_tickets").select("id", { count: "exact" }).neq("status", "closed"),
@@ -165,8 +205,7 @@ export default function AdminPage() {
         supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(50),
         supabase
           .from("support_tickets")
-          .select("*, profiles:user_id (full_name, email)")
-          .neq("status", "closed")
+          .select("*, profiles:user_id (full_name, email), support_messages(*, profiles:sender_id(full_name, email))")
           .order("created_at", { ascending: false }),
         supabase
           .from("language_requests")
@@ -182,21 +221,21 @@ export default function AdminPage() {
       ]);
 
       setStats({
-        totalUsers: usersCount.status === "fulfilled" ? usersCount.value.count || 0 : 150,
-        activeUsers: usersCount.status === "fulfilled" ? Math.floor((usersCount.value.count || 0) * 0.7) : 105,
-        totalTranslations: translationsCount.status === "fulfilled" ? translationsCount.value.count || 0 : 25000,
-        openTickets: ticketsCount.status === "fulfilled" ? ticketsCount.value.count || 0 : 3,
-        totalLessons: lessonsCount.status === "fulfilled" ? lessonsCount.value.count || 0 : 45,
-        totalQuizzes: quizzesCount.status === "fulfilled" ? quizzesCount.value.count || 0 : 30,
-        totalQuizAttempts: quizAttemptsCount.status === "fulfilled" ? quizAttemptsCount.value.count || 0 : 0,
+        totalUsers: usersCount.data?.count || 0,
+        activeUsers: Math.floor((usersCount.data?.count || 0) * 0.7),
+        totalTranslations: translationsCount.data?.count || 0,
+        openTickets: ticketsCount.data?.count || 0,
+        totalLessons: lessonsCount.data?.count || 0,
+        totalQuizzes: quizzesCount.data?.count || 0,
+        totalQuizAttempts: quizAttemptsCount.data?.count || 0,
       });
 
-      setUsers(usersData.status === "fulfilled" ? usersData.value.data || [] : []);
-      setTickets(ticketsData.status === "fulfilled" ? ticketsData.value.data || [] : []);
-      setLanguageRequests(requestsData.status === "fulfilled" ? requestsData.value.data || [] : []);
-      setLessons(lessonsData.status === "fulfilled" ? lessonsData.value.data || [] : []);
-      setQuizzes(quizzesData.status === "fulfilled" ? quizzesData.value.data || [] : []);
-      setQuizAttempts(attemptsData.status === "fulfilled" ? attemptsData.value.data || [] : []);
+      setUsers(usersData.data || []);
+      setTickets(ticketsData.data || []);
+      setLanguageRequests(requestsData.data || []);
+      setLessons(lessonsData.data || []);
+      setQuizzes(quizzesData.data || []);
+      setQuizAttempts(attemptsData.data || []);
     } catch (error) {
       console.error("Error loading admin data:", error);
       toast.error("Failed to load admin data");
@@ -365,6 +404,54 @@ export default function AdminPage() {
     }
   };
 
+  const sendSupportMessage = async (ticketId: string) => {
+    if (!newMessage.trim()) {
+      toast.error("Please enter a message");
+      return;
+    }
+    setSending(true);
+    try {
+      const { error } = await supabase.from("support_messages").insert({
+        ticket_id: ticketId,
+        sender_id: user.id,
+        message: newMessage.trim(),
+        is_admin: true,
+      });
+      if (error) throw error;
+
+      await supabase.from("support_tickets").update({ status: "in_progress", updated_at: new Date().toISOString() }).eq("id", ticketId);
+
+      toast.success("Message sent!");
+      setNewMessage("");
+      await loadAdminData();
+      const updatedTicket = tickets.find((t) => t.id === ticketId);
+      if (updatedTicket) {
+        setSelectedTicket(updatedTicket);
+      }
+    } catch (error) {
+      console.error("Error sending support message:", error);
+      toast.error("Failed to send message");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const updateTicketStatus = async (ticketId: string, status: "open" | "in_progress" | "resolved" | "closed") => {
+    try {
+      const { error } = await supabase.from("support_tickets").update({ status, updated_at: new Date().toISOString() }).eq("id", ticketId);
+      if (error) throw error;
+      toast.success(`Ticket status updated to ${status}`);
+      await loadAdminData();
+      const updatedTicket = tickets.find((t) => t.id === ticketId);
+      if (updatedTicket) {
+        setSelectedTicket(updatedTicket);
+      }
+    } catch (error) {
+      console.error("Error updating ticket status:", error);
+      toast.error("Failed to update ticket status");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
@@ -412,7 +499,7 @@ export default function AdminPage() {
       <div className="container mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-6">System Overview</h1>
-          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-7">
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
               <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
                 <CardContent className="p-4">
@@ -723,39 +810,167 @@ export default function AdminPage() {
                   exit={{ opacity: 0, x: 20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle className="text-white">Support Tickets</CardTitle>
-                      <CardDescription className="text-slate-300">
-                        View and manage user support tickets
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {tickets.length === 0 ? (
-                          <div className="text-center py-8 text-slate-400">
-                            <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                            <p>No open support tickets</p>
-                          </div>
-                        ) : (
-                          tickets.map((ticket) => (
-                            <div key={ticket.id} className="p-4 bg-white/5 rounded-lg mb-2">
-                              <div className="flex justify-between items-center mb-2">
-                                <div>
-                                  <h4 className="font-medium text-white">{ticket.subject}</h4>
-                                  <p className="text-sm text-slate-400">
-                                    {ticket.profiles?.full_name || "Unknown"} • {ticket.profiles?.email}
-                                  </p>
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle className="text-white">Support Tickets</CardTitle>
+                        <CardDescription className="text-slate-300">
+                          View and manage user support tickets
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ScrollArea className="h-96">
+                          <div className="space-y-3">
+                            {tickets.map((ticket) => (
+                              <div
+                                key={ticket.id}
+                                className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                                  selectedTicket?.id === ticket.id
+                                    ? "border-blue-300 bg-blue-500/10"
+                                    : "border-white/10 hover:bg-white/10"
+                                }`}
+                                onClick={() => setSelectedTicket(ticket)}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <Badge
+                                    className={
+                                      ticket.status === "open"
+                                        ? "bg-red-500/20 text-red-300"
+                                        : ticket.status === "in_progress"
+                                        ? "bg-yellow-500/20 text-yellow-300"
+                                        : ticket.status === "resolved" || ticket.status === "closed"
+                                        ? "bg-green-500/20 text-green-300"
+                                        : "bg-gray-500/20 text-gray-300"
+                                    }
+                                  >
+                                    {ticket.status === "open" && <AlertCircle className="h-4 w-4 mr-1" />}
+                                    {ticket.status === "in_progress" && <Clock className="h-4 w-4 mr-1" />}
+                                    {(ticket.status === "resolved" || ticket.status === "closed") && (
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                    )}
+                                    {ticket.status.replace("_", " ")}
+                                  </Badge>
+                                  <span className="text-xs text-slate-400">
+                                    {new Date(ticket.created_at).toLocaleDateString()}
+                                  </span>
                                 </div>
-                                <Badge className="bg-yellow-500/20 text-yellow-300">{ticket.status}</Badge>
+                                <h4 className="font-medium text-white text-sm mb-1">{ticket.subject}</h4>
+                                <p className="text-xs text-slate-400">
+                                  {ticket.profiles?.full_name || "Unknown"} • {ticket.profiles?.email}
+                                </p>
+                                <p className="text-xs text-slate-400">Priority: {ticket.priority}</p>
                               </div>
-                              <p className="text-slate-300 mb-2">{ticket.message}</p>
+                            ))}
+                            {tickets.length === 0 && (
+                              <div className="text-center py-8 text-slate-400">
+                                <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p>No support tickets</p>
+                              </div>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
+
+                    {selectedTicket && (
+                      <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+                        <CardHeader>
+                          <CardTitle className="text-white">{selectedTicket.subject}</CardTitle>
+                          <CardDescription className="text-slate-300">
+                            Ticket #{selectedTicket.id.slice(0, 8)} • {selectedTicket.profiles?.email}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-2 mb-4">
+                            <Select
+                              value={selectedTicket.status}
+                              onValueChange={(value) =>
+                                updateTicketStatus(selectedTicket.id, value as "open" | "in_progress" | "resolved" | "closed")
+                              }
+                            >
+                              <SelectTrigger className="w-32 border-white/20 bg-white/5 text-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="open">Open</SelectItem>
+                                <SelectItem value="in_progress">In Progress</SelectItem>
+                                <SelectItem value="resolved">Resolved</SelectItem>
+                                <SelectItem value="closed">Closed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Badge
+                              className={
+                                selectedTicket.priority === "urgent"
+                                  ? "bg-red-500/20 text-red-300"
+                                  : selectedTicket.priority === "high"
+                                  ? "bg-orange-500/20 text-orange-300"
+                                  : selectedTicket.priority === "medium"
+                                  ? "bg-yellow-500/20 text-yellow-300"
+                                  : "bg-green-500/20 text-green-300"
+                              }
+                            >
+                              {selectedTicket.priority}
+                            </Badge>
+                          </div>
+                          <ScrollArea className="h-64 mb-4">
+                            <div className="space-y-3">
+                              {selectedTicket.support_messages
+                                .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                                .map((message) => (
+                                  <div
+                                    key={message.id}
+                                    className={`p-3 rounded-lg ${
+                                      message.is_admin ? "bg-blue-500/20 ml-4" : "bg-white/10 mr-4"
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-sm font-medium text-white">
+                                        {message.is_admin ? "Support Team" : message.profiles?.full_name || "User"}
+                                      </span>
+                                      <span className="text-xs text-slate-400">
+                                        {new Date(message.created_at).toLocaleString()}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-slate-300">{message.message}</p>
+                                  </div>
+                                ))}
                             </div>
-                          ))
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                          </ScrollArea>
+                          {selectedTicket.status !== "closed" && (
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                sendSupportMessage(selectedTicket.id);
+                              }}
+                              className="space-y-3"
+                            >
+                              <Textarea
+                                placeholder="Type your response..."
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                rows={3}
+                                className="border-white/20 bg-white/5 text-white"
+                              />
+                              <Button
+                                type="submit"
+                                disabled={sending}
+                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                              >
+                                {sending ? (
+                                  "Sending..."
+                                ) : (
+                                  <>
+                                    <Send className="mr-2 h-4 w-4" />
+                                    Send Response
+                                  </>
+                                )}
+                              </Button>
+                            </form>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
                 </motion.div>
               </TabsContent>
 
@@ -854,8 +1069,8 @@ export default function AdminPage() {
                                   request.status === "pending"
                                     ? "bg-yellow-500/20 text-yellow-300"
                                     : request.status === "approved"
-                                      ? "bg-green-500/20 text-green-300"
-                                      : "bg-red-500/20 text-red-300"
+                                    ? "bg-green-500/20 text-green-300"
+                                    : "bg-red-500/20 text-red-300"
                                 }
                               >
                                 {request.status}
@@ -1031,24 +1246,78 @@ export default function AdminPage() {
                           <div className="md:col-span-2">
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Content (JSON)</label>
                             <Textarea
-                              placeholder='{"text": "Lesson content"}'
+                              placeholder='{"content": "Your lesson content here"}'
                               value={JSON.stringify(newLesson.content) || "{}"}
-                              onChange={(e) => setNewLesson({ ...newLesson, content: JSON.parse(e.target.value || "{}") })}
-                              className="border-white/20 bg-white/5 text-white"
+                              onChange={(e) => {
+                                try {
+                                  setNewLesson({ ...newLesson, content: JSON.parse(e.target.value) });
+                                } catch {
+                                  toast.error("Invalid JSON format");
+                                }
+                              }}
+                              className="border-white/20 bg-white/5 text-white font-mono"
+                              rows={4}
                             />
                           </div>
                         </div>
                         <Button
                           onClick={addLesson}
-                          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                         >
                           Add Lesson
                         </Button>
                       </div>
 
+                      <div className="mt-6">
+                        <h3 className="text-lg font-semibold text-white mb-4">Existing Lessons</h3>
+                        <ScrollArea className="h-96">
+                          <div className="space-y-4">
+                            {lessons.map((lesson) => (
+                              <motion.div
+                                key={lesson.id}
+                                className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                                whileHover={{ scale: 1.01 }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium text-white">{lesson.title}</h4>
+                                    <p className="text-sm text-slate-400">
+                                      {lesson.language.toUpperCase()} • {lesson.difficulty} • {lesson.content_type}
+                                    </p>
+                                    <Badge className={lesson.is_published ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
+                                      {lesson.is_published ? "Published" : "Draft"}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setEditingLesson(lesson)}
+                                      className="border-white/20 text-white hover:bg-white/10"
+                                    >
+                                      <Edit className="h-4 w-4 mr-1" />
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => deleteLesson(lesson.id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-1" />
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+
                       {editingLesson && (
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-white">Edit Lesson</h3>
+                        <div className="mt-6 p-4 bg-white/5 rounded-lg">
+                          <h3 className="text-lg font-semibold text-white mb-4">Edit Lesson</h3>
                           <div className="grid gap-4 md:grid-cols-2">
                             <div>
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
@@ -1115,7 +1384,7 @@ export default function AdminPage() {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Order Index</label>
                               <Input
                                 type="number"
-                                value={editingLesson.order_index}
+                                value={editingLesson.order_index || 0}
                                 onChange={(e) => setEditingLesson({ ...editingLesson, order_index: parseInt(e.target.value) })}
                                 className="border-white/20 bg-white/5 text-white"
                               />
@@ -1133,7 +1402,7 @@ export default function AdminPage() {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
                               <Input
                                 type="number"
-                                value={editingLesson.xp_reward}
+                                value={editingLesson.xp_reward || 20}
                                 onChange={(e) => setEditingLesson({ ...editingLesson, xp_reward: parseInt(e.target.value) })}
                                 className="border-white/20 bg-white/5 text-white"
                               />
@@ -1165,74 +1434,35 @@ export default function AdminPage() {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Content (JSON)</label>
                               <Textarea
                                 value={JSON.stringify(editingLesson.content) || "{}"}
-                                onChange={(e) => setEditingLesson({ ...editingLesson, content: JSON.parse(e.target.value || "{}") })}
-                                className="border-white/20 bg-white/5 text-white"
+                                onChange={(e) => {
+                                  try {
+                                    setEditingLesson({ ...editingLesson, content: JSON.parse(e.target.value) });
+                                  } catch {
+                                    toast.error("Invalid JSON format");
+                                  }
+                                }}
+                                className="border-white/20 bg-white/5 text-white font-mono"
+                                rows={4}
                               />
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 mt-4">
                             <Button
                               onClick={updateLesson}
-                              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                             >
-                              Update Lesson
+                              Save Changes
                             </Button>
                             <Button
                               variant="outline"
                               onClick={() => setEditingLesson(null)}
-                              className="border-white/20 text-white hover:bg-white/10"
+                              className="flex-1 border-white/20 text-white hover:bg-white/10"
                             >
                               Cancel
                             </Button>
                           </div>
                         </div>
                       )}
-
-                      <ScrollArea className="h-96">
-                        <div className="space-y-4">
-                          {lessons.map((lesson) => (
-                            <motion.div
-                              key={lesson.id}
-                              className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
-                              whileHover={{ scale: 1.01 }}
-                            >
-                              <div>
-                                <h4 className="font-medium text-white">{lesson.title}</h4>
-                                <p className="text-sm text-slate-400">
-                                  {lesson.language} • {lesson.difficulty} • {lesson.content_type}
-                                </p>
-                                <Badge className={lesson.is_published ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
-                                  {lesson.is_published ? "Published" : "Draft"}
-                                </Badge>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setEditingLesson(lesson)}
-                                  className="border-white/20 text-white hover:bg-white/10"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => deleteLesson(lesson.id)}
-                                  className="border-red-300/20 text-red-300 hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </motion.div>
-                          ))}
-                          {lessons.length === 0 && (
-                            <div className="text-center py-8 text-slate-400">
-                              <BookOpen className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                              <p>No lessons available</p>
-                            </div>
-                          )}
-                        </div>
-                      </ScrollArea>
                     </CardContent>
                   </Card>
                 </motion.div>
@@ -1353,24 +1583,78 @@ export default function AdminPage() {
                           <div className="md:col-span-2">
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
                             <Textarea
-                              placeholder='[{"question": "What is hello in Spanish?", "options": ["Hola", "Adiós"], "correct": "Hola"}]'
+                              placeholder='[{"question": "Example?", "options": ["A", "B", "C"], "correct": 0}]'
                               value={JSON.stringify(newQuiz.questions) || "{}"}
-                              onChange={(e) => setNewQuiz({ ...newQuiz, questions: JSON.parse(e.target.value || "{}") })}
-                              className="border-white/20 bg-white/5 text-white"
+                              onChange={(e) => {
+                                try {
+                                  setNewQuiz({ ...newQuiz, questions: JSON.parse(e.target.value) });
+                                } catch {
+                                  toast.error("Invalid JSON format");
+                                }
+                              }}
+                              className="border-white/20 bg-white/5 text-white font-mono"
+                              rows={4}
                             />
                           </div>
                         </div>
                         <Button
                           onClick={addQuiz}
-                          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                          className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
                         >
                           Add Quiz
                         </Button>
                       </div>
 
+                      <div className="mt-6">
+                        <h3 className="text-lg font-semibold text-white mb-4">Existing Quizzes</h3>
+                        <ScrollArea className="h-96">
+                          <div className="space-y-4">
+                            {quizzes.map((quiz) => (
+                              <motion.div
+                                key={quiz.id}
+                                className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                                whileHover={{ scale: 1.01 }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium text-white">{quiz.title}</h4>
+                                    <p className="text-sm text-slate-400">
+                                      {quiz.language.toUpperCase()} • {quiz.difficulty} • {quiz.passing_score}% pass
+                                    </p>
+                                    <Badge className={quiz.is_published ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
+                                      {quiz.is_published ? "Published" : "Draft"}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setEditingQuiz(quiz)}
+                                      className="border-white/20 text-white hover:bg-white/10"
+                                    >
+                                      <Edit className="h-4 w-4 mr-1" />
+                                      Edit
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => deleteQuiz(quiz.id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-1" />
+                                      Delete
+                                    </Button>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+
                       {editingQuiz && (
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-white">Edit Quiz</h3>
+                        <div className="mt-6 p-4 bg-white/5 rounded-lg">
+                          <h3 className="text-lg font-semibold text-white mb-4">Edit Quiz</h3>
                           <div className="grid gap-4 md:grid-cols-2">
                             <div>
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
@@ -1427,7 +1711,7 @@ export default function AdminPage() {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Passing Score (%)</label>
                               <Input
                                 type="number"
-                                value={editingQuiz.passing_score}
+                                value={editingQuiz.passing_score || 70}
                                 onChange={(e) => setEditingQuiz({ ...editingQuiz, passing_score: parseInt(e.target.value) })}
                                 className="border-white/20 bg-white/5 text-white"
                               />
@@ -1436,7 +1720,7 @@ export default function AdminPage() {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
                               <Input
                                 type="number"
-                                value={editingQuiz.xp_reward}
+                                value={editingQuiz.xp_reward || 50}
                                 onChange={(e) => setEditingQuiz({ ...editingQuiz, xp_reward: parseInt(e.target.value) })}
                                 className="border-white/20 bg-white/5 text-white"
                               />
@@ -1468,106 +1752,35 @@ export default function AdminPage() {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
                               <Textarea
                                 value={JSON.stringify(editingQuiz.questions) || "{}"}
-                                onChange={(e) => setEditingQuiz({ ...editingQuiz, questions: JSON.parse(e.target.value || "{}") })}
-                                className="border-white/20 bg-white/5 text-white"
+                                onChange={(e) => {
+                                  try {
+                                    setEditingQuiz({ ...editingQuiz, questions: JSON.parse(e.target.value) });
+                                  } catch {
+                                    toast.error("Invalid JSON format");
+                                  }
+                                }}
+                                className="border-white/20 bg-white/5 text-white font-mono"
+                                rows={4}
                               />
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          <div className="flex gap-2 mt-4">
                             <Button
                               onClick={updateQuiz}
-                              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                              className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover: to-purple-700"
                             >
-                              Update Quiz
+                              Save Changes
                             </Button>
                             <Button
                               variant="outline"
                               onClick={() => setEditingQuiz(null)}
-                              className="border-white/20 text-white hover:bg-white/10"
+                              className="flex-1 border-white/20 text-white hover:bg-white/10"
                             >
                               Cancel
                             </Button>
                           </div>
                         </div>
                       )}
-
-                      <ScrollArea className="h-96">
-                        <div className="space-y-4">
-                          {quizzes.map((quiz) => (
-                            <motion.div
-                              key={quiz.id}
-                              className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
-                              whileHover={{ scale: 1.01 }}
-                            >
-                              <div>
-                                <h4 className="font-medium text-white">{quiz.title}</h4>
-                                <p className="text-sm text-slate-400">
-                                  {quiz.language} • {quiz.difficulty} • {quiz.passing_score}% pass
-                                </p>
-                                <Badge className={quiz.is_published ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
-                                  {quiz.is_published ? "Published" : "Draft"}
-                                </Badge>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => setEditingQuiz(quiz)}
-                                  className="border-white/20 text-white hover:bg-white/10"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => deleteQuiz(quiz.id)}
-                                  className="border-red-300/20 text-red-300 hover:bg-red-500/10"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </motion.div>
-                          ))}
-                          {quizzes.length === 0 && (
-                            <div className="text-center py-8 text-slate-400">
-                              <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                              <p>No quizzes available</p>
-                            </div>
-                          )}
-                        </div>
-                      </ScrollArea>
-
-                      <div className="mt-6">
-                        <h3 className="text-lg font-semibold text-white">Quiz Attempts</h3>
-                        <ScrollArea className="h-96 mt-4">
-                          <div className="space-y-4">
-                            {quizAttempts.map((attempt) => (
-                              <motion.div
-                                key={attempt.id}
-                                className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
-                                whileHover={{ scale: 1.01 }}
-                              >
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <h4 className="font-medium text-white">
-                                      {attempt.profiles?.full_name || "Unknown"} • {attempt.profiles?.email}
-                                    </h4>
-                                    <p className="text-sm text-slate-400">Score: {attempt.score}%</p>
-                                    <p className="text-sm text-slate-400">Time Taken: {attempt.time_taken || "N/A"} sec</p>
-                                  </div>
-                                  <p className="text-sm text-slate-400">{new Date(attempt.completed_at).toLocaleDateString()}</p>
-                                </div>
-                              </motion.div>
-                            ))}
-                            {quizAttempts.length === 0 && (
-                              <div className="text-center py-8 text-slate-400">
-                                <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                <p>No quiz attempts yet</p>
-                              </div>
-                            )}
-                          </div>
-                        </ScrollArea>
-                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
