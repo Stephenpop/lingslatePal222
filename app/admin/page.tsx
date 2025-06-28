@@ -1512,409 +1512,424 @@ export default function AdminPage() {
                 </motion.div>
               </TabsContent>
 
-              <TabsContent value="quizzes" key="quizzes">
+             <TabsContent value="quizzes" key="quizzes">
+  <motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: 20 }}
+    transition={{ duration: 0.3 }}
+  >
+    <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+      <CardHeader>
+        <CardTitle>Quiz Management</CardTitle>
+        <CardDescription className="text-slate-300">Add, edit, and delete quizzes</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Add New Quiz</h3>
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
+              <Input
+                placeholder="Quiz title"
+                value={newQuiz.title}
+                onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
+                className="border-white/20 bg-white/5 text-white w-full"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Language</label>
+              <Select
+                value={newQuiz.language}
+                onValueChange={(value) => setNewQuiz({ ...newQuiz, language: value })}
+              >
+                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="es">Spanish (ES)</SelectItem>
+                  <SelectItem value="fr">French (FR)</SelectItem>
+                  <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                  <SelectItem value="de">German (DE)</SelectItem>
+                  <SelectItem value="it">Italian (IT)</SelectItem>
+                  <SelectItem value="pt">Portuguese (PT)</SelectItem>
+                  <SelectItem value="ru">Russian (RU)</SelectItem>
+                  <SelectItem value="ja">Japanese (JA)</SelectItem>
+                  <SelectItem value="zh">Chinese (ZH)</SelectItem>
+                  <SelectItem value="ar">Arabic (AR)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
+              <Select
+                value={newQuiz.difficulty}
+                onValueChange={(value) => setNewQuiz({ ...newQuiz, difficulty: value as any })}
+              >
+                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Category</label>
+              <Select
+                value={newQuiz.category_id || "none"}
+                onValueChange={(value) => setNewQuiz({ ...newQuiz, category_id: value === "none" ? null : value })}
+              >
+                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Category</SelectItem>
+                  {Array.from(new Set(quizzes.map(q => q.categories?.name).filter(Boolean))).map((category) => {
+                    const quiz = quizzes.find(q => q.categories?.name === category);
+                    if (!quiz?.category_id) {
+                      console.warn(`Category "${category}" has no valid category_id`);
+                      return null;
+                    }
+                    return (
+                      <SelectItem key={quiz.category_id} value={quiz.category_id}>
+                        {category}
+                      </SelectItem>
+                    );
+                  }).filter(Boolean)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Time Limit (min)</label>
+              <Input
+                type="number"
+                value={newQuiz.time_limit || 30}
+                onChange={(e) => setNewQuiz({ ...newQuiz, time_limit: Number(e.target.value) })}
+                className="border-white/20 bg-white/5 text-white w-full"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Passing Score (%)</label>
+              <Input
+                type="number"
+                value={newQuiz.passing_score || 60}
+                onChange={(e) => setNewQuiz({ ...newQuiz, passing_score: Number(e.target.value) })}
+                className="border-white/20 bg-white/5 text-white w-full"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
+              <Input
+                type="number"
+                value={newQuiz.xp_reward || 50}
+                onChange={(e) => setNewQuiz({ ...newQuiz, xp_reward: Number(e.target.value) })}
+                className="border-white/20 bg-white/5 text-white w-full"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Published</label>
+              <Select
+                value={newQuiz.is_published ? "true" : "false"}
+                onValueChange={(value) => setNewQuiz({ ...newQuiz, is_published: value === "true" })}
+              >
+                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Published</SelectItem>
+                  <SelectItem value="false">Draft</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-1 md:col-span-2">
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
+              <Textarea
+                placeholder="Quiz description"
+                value={newQuiz.description || ""}
+                onChange={(e) => setNewQuiz({ ...newQuiz, description: e.target.value })}
+                className="border-white/20 bg-white/5 text-white w-full"
+              />
+            </div>
+            <div className="sm:col-span-1 md:col-span-2">
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
+              <Textarea
+                placeholder='[{"id": 1, "question": "Example?", "type": "multiple_choice", "options": ["A", "B", "C"], "correct_answer": 0, "explanation": "Explanation"}]'
+                value={JSON.stringify(newQuiz.questions || [], null, 2)}
+                onChange={(e) => {
+                  try {
+                    const questions = JSON.parse(e.target.value);
+                    setNewQuiz({ ...newQuiz, questions });
+                  } catch {
+                    toast.error("Invalid JSON format for questions");
+                  }
+                }}
+                className="border-white/20 bg-white/5 text-white font-mono w-full"
+                rows={6}
+              />
+            </div>
+          </div>
+          <Button onClick={addQuiz} className="w-full bg-blue-600 hover:bg-blue-700">
+            <Trophy className="mr-2 h-4 w-4" /> Add Quiz
+          </Button>
+        </div>
+
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-4">Existing Quizzes</h3>
+          <ScrollArea className="h-96">
+            <div className="space-y-4">
+              {quizzes.map((quiz) => (
                 <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.3 }}
+                  key={quiz.id}
+                  className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                  whileHover={{ scale: 1.01 }}
                 >
-                  <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
-                    <CardHeader>
-                      <CardTitle>Quiz Management</CardTitle>
-                      <CardDescription className="text-slate-300">Add, edit, and delete quizzes</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Add New Quiz</h3>
-                        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
-                          <div>
-                            <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
-                            <Input
-                              placeholder="Quiz title"
-                              value={newQuiz.title}
-                              onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
-                              className="border-white/20 bg-white/5 text-white w-full"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-slate-300 mb-2 block">Language</label>
-                            <Select
-                              value={newQuiz.language}
-                              onValueChange={(value) => setNewQuiz({ ...newQuiz, language: value })}
-                            >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
-                                <SelectValue placeholder="Select language" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="es">Spanish (ES)</SelectItem>
-                                <SelectItem value="fr">French (FR)</SelectItem>
-                                <SelectItem value="yo">Yoruba (YO)</SelectItem>
-                                <SelectItem value="de">German (DE)</SelectItem>
-                                <SelectItem value="it">Italian (IT)</SelectItem>
-                                <SelectItem value="pt">Portuguese (PT)</SelectItem>
-                                <SelectItem value="ru">Russian (RU)</SelectItem>
-                                <SelectItem value="ja">Japanese (JA)</SelectItem>
-                                <SelectItem value="zh">Chinese (ZH)</SelectItem>
-                                <SelectItem value="ar">Arabic (AR)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
-                            <Select
-                              value={newQuiz.difficulty}
-                              onValueChange={(value) => setNewQuiz({ ...newQuiz, difficulty: value as any })}
-                            >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="beginner">Beginner</SelectItem>
-                                <SelectItem value="intermediate">Intermediate</SelectItem>
-                                <SelectItem value="advanced">Advanced</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-slate-300 mb-2 block">Category</label>
-                            <Select
-                              value={newQuiz.category_id || ""}
-                              onValueChange={(value) => setNewQuiz({ ...newQuiz, category_id: value === "" ? null : value })}
-                            >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
-                                <SelectValue placeholder="Select category" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="">No Category</SelectItem>
-                                {Array.from(new Set(quizzes.map(q => q.categories?.name).filter(Boolean))).map((category, idx) => (
-                                  <SelectItem key={idx} value={quizzes.find(q => q.categories?.name === category)?.category_id || ""}>
-                                    {category}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-slate-300 mb-2 block">Time Limit (min)</label>
-                            <Input
-                              type="number"
-                              value={newQuiz.time_limit || 30}
-                              onChange={(e) => setNewQuiz({ ...newQuiz, time_limit: Number(e.target.value) })}
-                              className="border-white/20 bg-white/5 text-white w-full"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-slate-300 mb-2 block">Passing Score (%)</label>
-                            <Input
-                              type="number"
-                              value={newQuiz.passing_score || 60}
-                              onChange={(e) => setNewQuiz({ ...newQuiz, passing_score: Number(e.target.value) })}
-                              className="border-white/20 bg-white/5 text-white w-full"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
-                            <Input
-                              type="number"
-                              value={newQuiz.xp_reward || 50}
-                              onChange={(e) => setNewQuiz({ ...newQuiz, xp_reward: Number(e.target.value) })}
-                              className="border-white/20 bg-white/5 text-white w-full"
-                            />
-                          </div>
-                          <div>
-                           <label className="text-sm font-medium text-slate-300 mb-2 block">Published</label>
-                            <Select
-                              value={newQuiz.is_published ? "true" : "false"}
-                              onValueChange={(value) => setNewQuiz({ ...newQuiz, is_published: value === "true" })}
-                            >
-                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="true">Published</SelectItem>
-                                <SelectItem value="false">Draft</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="sm:col-span-1 md:col-span-2">
-                            <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
-                            <Textarea
-                              placeholder="Quiz description"
-                              value={newQuiz.description || ""}
-                              onChange={(e) => setNewQuiz({ ...newQuiz, description: e.target.value })}
-                              className="border-white/20 bg-white/5 text-white w-full"
-                            />
-                          </div>
-                          <div className="sm:col-span-1 md:col-span-2">
-                            <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
-                            <Textarea
-                              placeholder='[{"id": 1, "question": "Example?", "type": "multiple_choice", "options": ["A", "B", "C"], "correct_answer": 0, "explanation": "Explanation"}]'
-                              value={JSON.stringify(newQuiz.questions || [], null, 2)}
-                              onChange={(e) => {
-                                try {
-                                  const questions = JSON.parse(e.target.value);
-                                  setNewQuiz({ ...newQuiz, questions });
-                                } catch {
-                                  toast.error("Invalid JSON format for questions");
-                                }
-                              }}
-                              className="border-white/20 bg-white/5 text-white font-mono w-full"
-                              rows={6}
-                            />
-                          </div>
-                        </div>
-                        <Button onClick={addQuiz} className="w-full bg-blue-600 hover:bg-blue-700">
-                          <Trophy className="mr-2 h-4 w-4" /> Add Quiz
-                        </Button>
-                      </div>
-
-                      <div className="mt-6">
-                        <h3 className="text-lg font-semibold mb-4">Existing Quizzes</h3>
-                        <ScrollArea className="h-96">
-                          <div className="space-y-4">
-                            {quizzes.map((quiz) => (
-                              <motion.div
-                                key={quiz.id}
-                                className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
-                                whileHover={{ scale: 1.01 }}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h4 className="font-medium">{quiz.title}</h4>
-                                    <p className="text-sm text-slate-400">
-                                      {quiz.language.toUpperCase()} • {quiz.difficulty} • {quiz.questions.length} questions
-                                    </p>
-                                    <Badge className={quiz.is_published ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
-                                      {quiz.is_published ? "Published" : "Draft"}
-                                    </Badge>
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => setEditingQuiz(quiz)}
-                                      className="border-white/20 text-white hover:bg-white/10"
-                                    >
-                                      <Edit className="h-4 w-4 mr-1" /> Edit
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="destructive"
-                                      onClick={() => deleteQuiz(quiz.id)}
-                                      className="bg-red-600 hover:bg-red-700"
-                                    >
-                                      <Trash2 className="h-4 w-4 mr-1" /> Delete
-                                    </Button>
-                                  </div>
-                                </div>
-                              </motion.div>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
-
-                      {editingQuiz && (
-                        <div className="mt-6 p-4 bg-white/5 rounded-lg">
-                          <h3 className="text-lg font-semibold mb-4">Edit Quiz</h3>
-                          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
-                            <div>
-                              <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
-                              <Input
-                                value={editingQuiz.title}
-                                onChange={(e) => setEditingQuiz({ ...editingQuiz, title: e.target.value })}
-                                className="border-white/20 bg-white/5 text-white w-full"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-slate-300 mb-2 block">Language</label>
-                              <Select
-                                value={editingQuiz.language}
-                                onValueChange={(value) => setEditingQuiz({ ...editingQuiz, language: value })}
-                              >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="es">Spanish (ES)</SelectItem>
-                                  <SelectItem value="fr">French (FR)</SelectItem>
-                                  <SelectItem value="yo">Yoruba (YO)</SelectItem>
-                                  <SelectItem value="de">German (DE)</SelectItem>
-                                  <SelectItem value="it">Italian (IT)</SelectItem>
-                                  <SelectItem value="pt">Portuguese (PT)</SelectItem>
-                                  <SelectItem value="ru">Russian (RU)</SelectItem>
-                                  <SelectItem value="ja">Japanese (JA)</SelectItem>
-                                  <SelectItem value="zh">Chinese (ZH)</SelectItem>
-                                  <SelectItem value="ar">Arabic (AR)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
-                              <Select
-                                value={editingQuiz.difficulty}
-                                onValueChange={(value) => setEditingQuiz({ ...editingQuiz, difficulty: value as any })}
-                              >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="beginner">Beginner</SelectItem>
-                                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                                  <SelectItem value="advanced">Advanced</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-slate-300 mb-2 block">Category</label>
-                              <Select
-                                value={editingQuiz.category_id || ""}
-                                onValueChange={(value) => setEditingQuiz({ ...editingQuiz, category_id: value === "" ? null : value })}
-                              >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
-                                  <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="">No Category</SelectItem>
-                                  {Array.from(new Set(quizzes.map(q => q.categories?.name).filter(Boolean))).map((category, idx) => (
-                                    <SelectItem key={idx} value={quizzes.find(q => q.categories?.name === category)?.category_id || ""}>
-                                      {category}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-slate-300 mb-2 block">Time Limit (min)</label>
-                              <Input
-                                type="number"
-                                value={editingQuiz.time_limit || 30}
-                                onChange={(e) => setEditingQuiz({ ...editingQuiz, time_limit: Number(e.target.value) })}
-                                className="border-white/20 bg-white/5 text-white w-full"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-slate-300 mb-2 block">Passing Score (%)</label>
-                              <Input
-                                type="number"
-                                value={editingQuiz.passing_score || 60}
-                                onChange={(e) => setEditingQuiz({ ...editingQuiz, passing_score: Number(e.target.value) })}
-                                className="border-white/20 bg-white/5 text-white w-full"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
-                              <Input
-                                type="number"
-                                value={editingQuiz.xp_reward || 50}
-                                onChange={(e) => setEditingQuiz({ ...editingQuiz, xp_reward: Number(e.target.value) })}
-                                className="border-white/20 bg-white/5 text-white w-full"
-                              />
-                            </div>
-                            <div>
-                              <label className="text-sm font-medium text-slate-300 mb-2 block">Published</label>
-                              <Select
-                                value={editingQuiz.is_published ? "true" : "false"}
-                                onValueChange={(value) => setEditingQuiz({ ...editingQuiz, is_published: value === "true" })}
-                              >
-                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="true">Published</SelectItem>
-                                  <SelectItem value="false">Draft</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="sm:col-span-1 md:col-span-2">
-                              <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
-                              <Textarea
-                                value={editingQuiz.description || ""}
-                                onChange={(e) => setEditingQuiz({ ...editingQuiz, description: e.target.value })}
-                                className="border-white/20 bg-white/5 text-white w-full"
-                              />
-                            </div>
-                            <div className="sm:col-span-1 md:col-span-2">
-                              <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
-                              <Textarea
-                                value={JSON.stringify(editingQuiz.questions || [], null, 2)}
-                                onChange={(e) => {
-                                  try {
-                                    const questions = JSON.parse(e.target.value);
-                                    setEditingQuiz({ ...editingQuiz, questions });
-                                  } catch {
-                                    toast.error("Invalid JSON format for questions");
-                                  }
-                                }}
-                                className="border-white/20 bg-white/5 text-white font-mono w-full"
-                                rows={6}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex gap-2 mt-4">
-                            <Button
-                              onClick={updateQuiz}
-                              className="flex-1 bg-green-600 hover:bg-green-700"
-                            >
-                              <CheckCircle className="mr-2 h-4 w-4" /> Save Changes
-                            </Button>
-                            <Button
-                              variant="outline"
-                              onClick={() => setEditingQuiz(null)}
-                              className="flex-1 border-white/20 text-white hover:bg-white/10"
-                            >
-                              Cancel
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-
-                  <div className="mt-6">
-                    <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
-                      <CardHeader>
-                        <CardTitle>Quiz Attempts</CardTitle>
-                        <CardDescription className="text-slate-300">Recent quiz attempts by users</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <ScrollArea className="h-96">
-                          <div className="space-y-4">
-                            {quizAttempts.map((attempt) => (
-                              <motion.div
-                                key={attempt.id}
-                                className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
-                                whileHover={{ scale: 1.01 }}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <h4 className="font-medium">{attempt.profiles?.full_name || "Unknown"}</h4>
-                                    <p className="text-sm text-slate-400">
-                                      Quiz ID: {attempt.quiz_id.slice(0, 8)} • Score: {attempt.score}%
-                                    </p>
-                                    <p className="text-sm text-slate-400">
-                                      Completed: {new Date(attempt.completed_at).toLocaleString()}
-                                    </p>
-                                  </div>
-                                  <Badge
-                                    className={
-                                      attempt.score >= (quizzes.find((q) => q.id === attempt.quiz_id)?.passing_score || 60)
-                                        ? "bg-green-500/20 text-green-300"
-                                        : "bg-red-500/20 text-red-300"
-                                    }
-                                  >
-                                    {attempt.score >= (quizzes.find((q) => q.id === attempt.quiz_id)?.passing_score || 60) ? "Passed" : "Failed"}
-                                  </Badge>
-                                </div>
-                              </motion.div>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </CardContent>
-                    </Card>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{quiz.title}</h4>
+                      <p className="text-sm text-slate-400">
+                        {quiz.language.toUpperCase()} • {quiz.difficulty} • {quiz.questions.length} questions
+                      </p>
+                      <Badge className={quiz.is_published ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
+                        {quiz.is_published ? "Published" : "Draft"}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingQuiz(quiz)}
+                        className="border-white/20 text-white hover:bg-white/10"
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteQuiz(quiz.id)}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" /> Delete
+                      </Button>
+                    </div>
                   </div>
                 </motion.div>
-              </TabsContent>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {editingQuiz && (
+          <div className="mt-6 p-4 bg-white/5 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4">Edit Quiz</h3>
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
+                <Input
+                  value={editingQuiz.title}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, title: e.target.value })}
+                  className="border-white/20 bg-white/5 text-white w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Language</label>
+                <Select
+                  value={editingQuiz.language}
+                  onValueChange={(value) => setEditingQuiz({ ...editingQuiz, language: value })}
+                >
+                  <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="es">Spanish (ES)</SelectItem>
+                    <SelectItem value="fr">French (FR)</SelectItem>
+                    <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                    <SelectItem value="de">German (DE)</SelectItem>
+                    <SelectItem value="it">Italian (IT)</SelectItem>
+                    <SelectItem value="pt">Portuguese (PT)</SelectItem>
+                    <SelectItem value="ru">Russian (RU)</SelectItem>
+                    <SelectItem value="ja">Japanese (JA)</SelectItem>
+                    <SelectItem value="zh">Chinese (ZH)</SelectItem>
+                    <SelectItem value="ar">Arabic (AR)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
+                <Select
+                  value={editingQuiz.difficulty}
+                  onValueChange={(value) => setEditingQuiz({ ...editingQuiz, difficulty: value as any })}
+                >
+                  <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Category</label>
+                <Select
+                  value={editingQuiz.category_id || "none"}
+                  onValueChange={(value) => setEditingQuiz({ ...editingQuiz, category_id: value === "none" ? null : value })}
+                >
+                  <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Category</SelectItem>
+                    {Array.from(new Set(quizzes.map(q => q.categories?.name).filter(Boolean))).map((category) => {
+                      const quiz = quizzes.find(q => q.categories?.name === category);
+                      if (!quiz?.category_id) {
+                        console.warn(`Category "${category}" has no valid category_id`);
+                        return null;
+                      }
+                      return (
+                        <SelectItem key={quiz.category_id} value={quiz.category_id}>
+                          {category}
+                        </SelectItem>
+                      );
+                    }).filter(Boolean)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Time Limit (min)</label>
+                <Input
+                  type="number"
+                  value={editingQuiz.time_limit || 30}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, time_limit: Number(e.target.value) })}
+                  className="border-white/20 bg-white/5 text-white w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Passing Score (%)</label>
+                <Input
+                  type="number"
+                  value={editingQuiz.passing_score || 60}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, passing_score: Number(e.target.value) })}
+                  className="border-white/20 bg-white/5 text-white w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
+                <Input
+                  type="number"
+                  value={editingQuiz.xp_reward || 50}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, xp_reward: Number(e.target.value) })}
+                  className="border-white/20 bg-white/5 text-white w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Published</label>
+                <Select
+                  value={editingQuiz.is_published ? "true" : "false"}
+                  onValueChange={(value) => setEditingQuiz({ ...editingQuiz, is_published: value === "true" })}
+                >
+                  <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Published</SelectItem>
+                    <SelectItem value="false">Draft</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-1 md:col-span-2">
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
+                <Textarea
+                  value={editingQuiz.description || ""}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, description: e.target.value })}
+                  className="border-white/20 bg-white/5 text-white w-full"
+                />
+              </div>
+              <div className="sm:col-span-1 md:col-span-2">
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
+                <Textarea
+                  value={JSON.stringify(editingQuiz.questions || [], null, 2)}
+                  onChange={(e) => {
+                    try {
+                      const questions = JSON.parse(e.target.value);
+                      setEditingQuiz({ ...editingQuiz, questions });
+                    } catch {
+                      toast.error("Invalid JSON format for questions");
+                    }
+                  }}
+                  className="border-white/20 bg-white/5 text-white font-mono w-full"
+                  rows={6}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button
+                onClick={updateQuiz}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="mr-2 h-4 w-4" /> Save Changes
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setEditingQuiz(null)}
+                className="flex-1 border-white/20 text-white hover:bg-white/10"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    <div className="mt-6">
+      <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Quiz Attempts</CardTitle>
+          <CardDescription className="text-slate-300">Recent quiz attempts by users</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-96">
+            <div className="space-y-4">
+              {quizAttempts.map((attempt) => (
+                <motion.div
+                  key={attempt.id}
+                  className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                  whileHover={{ scale: 1.01 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{attempt.profiles?.full_name || "Unknown"}</h4>
+                      <p className="text-sm text-slate-400">
+                        Quiz ID: {attempt.quiz_id.slice(0, 8)} • Score: {attempt.score}%
+                      </p>
+                      <p className="text-sm text-slate-400">
+                        Completed: {new Date(attempt.completed_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <Badge
+                      className={
+                        attempt.score >= (quizzes.find((q) => q.id === attempt.quiz_id)?.passing_score || 60)
+                          ? "bg-green-500/20 text-green-300"
+                          : "bg-red-500/20 text-red-300"
+                      }
+                    >
+                      {attempt.score >= (quizzes.find((q) => q.id === attempt.quiz_id)?.passing_score || 60) ? "Passed" : "Failed"}
+                    </Badge>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+  </motion.div>
+</TabsContent>
+
             </AnimatePresence>
           </Tabs>
         </motion.div>
