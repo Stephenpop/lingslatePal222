@@ -51,7 +51,7 @@ const features = [
     icon: BookOpen,
     title: "Interactive Lessons",
     description: "Learn with engaging lessons designed by language experts and native speakers",
-    color: "text-green-600",
+    color: "text-emerald-600",
   },
   {
     icon: Brain,
@@ -63,7 +63,7 @@ const features = [
     icon: Trophy,
     title: "Track Progress",
     description: "Monitor your learning journey with detailed analytics and achievement badges",
-    color: "text-yellow-600",
+    color: "text-amber-600",
   },
   {
     icon: Camera,
@@ -132,7 +132,7 @@ export default function HomePage() {
       const { error } = await supabase.from("language_requests").insert({
         user_id: user.id,
         language_name: languageName,
-        language_code: languageCode,
+        language_code: languageCode || null,
         reason,
         status: "pending",
       });
@@ -151,9 +151,9 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
-      <nav className="border-b border-slate-200 bg-white shadow-sm">
+      <nav className="border-b border-gray-300 bg-white shadow-md">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <motion.div
@@ -164,7 +164,7 @@ export default function HomePage() {
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
                 <Languages className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-slate-800">LingslatePal</span>
+              <span className="text-xl font-bold text-gray-800">LingslatePal</span>
             </motion.div>
 
             <motion.div
@@ -172,23 +172,8 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center space-x-4"
             >
-              <Link href="/learn?difficulty=beginner">
-                <Button variant="ghost" className="text-slate-700 hover:bg-slate-100">
-                  Beginner Lessons
-                </Button>
-              </Link>
-              <Link href="/learn?difficulty=intermediate">
-                <Button variant="ghost" className="text-slate-700 hover:bg-slate-100">
-                  Intermediate Lessons
-                </Button>
-              </Link>
-              <Link href="/quiz">
-                <Button variant="ghost" className="text-slate-700 hover:bg-slate-100">
-                  Take Assessment
-                </Button>
-              </Link>
               <Link href="/auth/login">
-                <Button variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
+                <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
                   Login
                 </Button>
               </Link>
@@ -203,7 +188,7 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-12">
         <div className="text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <Badge className="mb-4 bg-blue-100 text-blue-600 hover:bg-blue-200">
@@ -211,13 +196,13 @@ export default function HomePage() {
               100% Free Translation & Learning Platform
             </Badge>
 
-            <h1 className="mb-6 text-4xl font-bold text-slate-800 sm:text-5xl lg:text-6xl">
+            <h1 className="mb-6 text-4xl font-bold text-gray-800 sm:text-5xl lg:text-6xl">
               Master Languages with LingslatePal
               <br />
               Your AI Language Companion
             </h1>
 
-            <p className="mx-auto mb-8 max-w-2xl text-lg text-slate-600 sm:text-xl">
+            <p className="mx-auto mb-8 max-w-2xl text-lg text-gray-600 sm:text-xl">
               Translate instantly, learn interactively, and track your progress with our comprehensive language learning
               platform. Powered by LibreTranslate and designed for learners worldwide.
             </p>
@@ -230,14 +215,14 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link href="/translate">
-                <Button size="lg" variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
+                <Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
                   <PlayCircle className="mr-2 h-4 w-4" />
                   Try Translation
                 </Button>
               </Link>
             </div>
 
-            <div className="mt-8 flex items-center justify-center gap-6 text-sm text-slate-600">
+            <div className="mt-8 flex items-center justify-center gap-6 text-sm text-gray-600">
               <div className="flex items-center gap-1">
                 <CheckCircle className="h-4 w-4 text-green-600" />
                 No Credit Card Required
@@ -256,7 +241,7 @@ export default function HomePage() {
       </section>
 
       {/* Quick Translate Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -264,15 +249,15 @@ export default function HomePage() {
           className="mx-auto max-w-4xl"
         >
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-slate-800 mb-4">Instant Translation</h2>
-            <p className="text-slate-600">Powered by LibreTranslate - try our free translation service now</p>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">Instant Translation</h2>
+            <p className="text-gray-600">Powered by LibreTranslate - try our free translation service now</p>
           </div>
           <QuickTranslate />
         </motion.div>
       </section>
 
       {/* Stats Section */}
-      <section className="container mx-auto px-4 py-16 bg-slate-50">
+      <section className="container mx-auto px-4 py-12 bg-gray-100">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -281,28 +266,28 @@ export default function HomePage() {
         >
           {stats.map((stat, index) => (
             <div key={stat.label} className="text-center">
-              <div className="text-3xl font-bold text-slate-800 md:text-4xl">
+              <div className="text-3xl font-bold text-gray-800 md:text-4xl">
                 <AnimatedCounter value={stat.value} suffix={stat.suffix} delay={index * 0.1} />
               </div>
-              <div className="text-sm text-slate-600">{stat.label}</div>
+              <div className="text-sm text-gray-600">{stat.label}</div>
             </div>
           ))}
         </motion.div>
       </section>
 
       {/* Language Showcase */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
           className="text-center mb-8"
         >
-          <h2 className="text-3xl font-bold text-slate-800 mb-4">Popular Languages</h2>
-          <p className="text-slate-600">Join millions learning these languages</p>
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Popular Languages</h2>
+          <p className="text-gray-600">Join millions learning these languages</p>
           <Button
             variant="outline"
-            className="mt-4 border-slate-300 text-slate-700 hover:bg-slate-100"
+            className="mt-4 border-gray-300 text-gray-700 hover:bg-gray-100"
             onClick={() => setIsLanguageRequestOpen(true)}
           >
             Request a Language
@@ -318,15 +303,15 @@ export default function HomePage() {
       <LearningPath />
 
       {/* Features Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.6 }}
-          className="text-center mb-12"
+          className="text-center mb-8"
         >
-          <h2 className="text-3xl font-bold text-slate-800 mb-4">Everything You Need to Master Languages</h2>
-          <p className="mx-auto max-w-2xl text-slate-600">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Everything You Need to Master Languages</h2>
+          <p className="mx-auto max-w-2xl text-gray-600">
             From instant translation to comprehensive learning paths, we've got you covered with cutting-edge features
           </p>
         </motion.div>
@@ -345,51 +330,51 @@ export default function HomePage() {
       <TestimonialSection />
 
       {/* Gamification Preview */}
-      <section className="container mx-auto px-4 py-16 bg-slate-50">
+      <section className="container mx-auto px-4 py-12 bg-gray-100">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.8 }}
-          className="text-center mb-12"
+          className="text-center mb-8"
         >
-          <h2 className="text-3xl font-bold text-slate-800 mb-4">Make Learning Fun with Gamification</h2>
-          <p className="mx-auto max-w-2xl text-slate-600">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Make Learning Fun with Gamification</h2>
+          <p className="mx-auto max-w-2xl text-gray-600">
             Earn XP, unlock achievements, and compete with friends while mastering new languages
           </p>
         </motion.div>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <Card className="border-slate-200 bg-white shadow-sm">
+          <Card className="border-gray-300 bg-white shadow-md">
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-yellow-100">
-                  <Trophy className="h-6 w-6 text-yellow-600" />
+                <div className="p-2 rounded-lg bg-amber-100">
+                  <Trophy className="h-6 w-6 text-amber-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-slate-800">Achievements</CardTitle>
-                  <CardDescription className="text-slate-600">Unlock badges and rewards</CardDescription>
+                  <CardTitle className="text-gray-800">Achievements</CardTitle>
+                  <CardDescription className="text-gray-600">Unlock badges and rewards</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
-                  <Award className="h-4 w-4 text-yellow-600" />
-                  <span className="text-slate-800">First Translation</span>
-                  <Badge variant="secondary" className="ml-auto bg-yellow-100 text-yellow-600">
+                  <Award className="h-4 w-4 text-amber-600" />
+                  <span className="text-gray-800">First Translation</span>
+                  <Badge variant="secondary" className="ml-auto bg-amber-100 text-amber-600">
                     +10 XP
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Award className="h-4 w-4 text-blue-600" />
-                  <span className="text-slate-800">7-Day Streak</span>
+                  <span className="text-gray-800">7-Day Streak</span>
                   <Badge variant="secondary" className="ml-auto bg-blue-100 text-blue-600">
                     +50 XP
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Award className="h-4 w-4 text-purple-600" />
-                  <span className="text-slate-800">Quiz Master</span>
+                  <span className="text-gray-800">Quiz Master</span>
                   <Badge variant="secondary" className="ml-auto bg-purple-100 text-purple-600">
                     +100 XP
                   </Badge>
@@ -398,64 +383,64 @@ export default function HomePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 bg-white shadow-sm">
+          <Card className="border-gray-300 bg-white shadow-md">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-orange-100">
                   <TrendingUp className="h-6 w-6 text-orange-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-slate-800">Streaks</CardTitle>
-                  <CardDescription className="text-slate-600">Maintain daily learning habits</CardDescription>
+                  <CardTitle className="text-gray-800">Streaks</CardTitle>
+                  <CardDescription className="text-gray-600">Maintain daily learning habits</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="text-center">
                 <div className="text-3xl font-bold text-orange-600 mb-2">🔥 15</div>
-                <p className="text-sm text-slate-600">Day Streak</p>
+                <p className="text-sm text-gray-600">Day Streak</p>
                 <div className="mt-4 flex justify-center gap-1">
                   {[...Array(7)].map((_, i) => (
-                    <div key={i} className={`w-3 h-3 rounded-full ${i < 5 ? "bg-orange-600" : "bg-slate-200"}`} />
+                    <div key={i} className={`w-3 h-3 rounded-full ${i < 5 ? "bg-orange-600" : "bg-gray-200"}`} />
                   ))}
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200 bg-white shadow-sm">
+          <Card className="border-gray-300 bg-white shadow-md">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-lg bg-green-100">
                   <Users className="h-6 w-6 text-green-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-slate-800">Leaderboard</CardTitle>
-                  <CardDescription className="text-slate-600">Compete with friends</CardDescription>
+                  <CardTitle className="text-gray-800">Leaderboard</CardTitle>
+                  <CardDescription className="text-gray-600">Compete with friends</CardDescription>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
-                  <div className="w-6 h-6 rounded-full bg-yellow-600 flex items-center justify-center text-xs font-bold text-white">
+                  <div className="w-6 h-6 rounded-full bg-amber-600 flex items-center justify-center text-xs font-bold text-white">
                     1
                   </div>
-                  <span className="text-slate-800">Maria</span>
-                  <span className="ml-auto text-yellow-600">2,450 XP</span>
+                  <span className="text-gray-800">Maria</span>
+                  <span className="ml-auto text-amber-600">2,450 XP</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-xs font-bold text-white">
                     2
                   </div>
-                  <span className="text-slate-800">You</span>
+                  <span className="text-gray-800">You</span>
                   <span className="ml-auto text-gray-600">2,100 XP</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <div className="w-6 h-6 rounded-full bg-orange-600 flex items-center justify-center text-xs font-bold text-white">
                     3
                   </div>
-                  <span className="text-slate-800">John</span>
+                  <span className="text-gray-800">John</span>
                   <span className="ml-auto text-orange-600">1,890 XP</span>
                 </div>
               </div>
@@ -465,17 +450,17 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="container mx-auto px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.8 }}
           className="text-center"
         >
-          <Card className="mx-auto max-w-2xl border-slate-200 bg-white shadow-sm">
+          <Card className="mx-auto max-w-2xl border-gray-300 bg-white shadow-md">
             <CardHeader>
-              <CardTitle className="text-2xl text-slate-800 sm:text-3xl">Ready to Start Your Language Journey?</CardTitle>
-              <CardDescription className="text-slate-600">
+              <CardTitle className="text-2xl text-gray-800 sm:text-3xl">Ready to Start Your Language Journey?</CardTitle>
+              <CardDescription className="text-gray-600">
                 Join thousands of learners who are already mastering new languages with LingslatePal
               </CardDescription>
             </CardHeader>
@@ -488,7 +473,7 @@ export default function HomePage() {
                   </Button>
                 </Link>
                 <Link href="/learn">
-                  <Button size="lg" variant="outline" className="border-slate-300 text-slate-700 hover:bg-slate-100">
+                  <Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
                     <BookOpen className="mr-2 h-4 w-4" />
                     Explore Lessons
                   </Button>
@@ -501,13 +486,13 @@ export default function HomePage() {
 
       {/* Language Request Modal */}
       <Dialog open={isLanguageRequestOpen} onOpenChange={setIsLanguageRequestOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="bg-white text-gray-800 border-gray-300 shadow-lg sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-slate-800">Request a New Language</DialogTitle>
+            <DialogTitle className="text-gray-800">Request a New Language</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="language-name" className="text-slate-700">
+              <Label htmlFor="language-name" className="text-gray-700">
                 Language Name *
               </Label>
               <Input
@@ -515,11 +500,11 @@ export default function HomePage() {
                 value={languageName}
                 onChange={(e) => setLanguageName(e.target.value)}
                 placeholder="e.g., Swahili"
-                className="mt-1"
+                className={`mt-1 ${!languageName && reason && "border-red-500"}`}
               />
             </div>
             <div>
-              <Label htmlFor="language-code" className="text-slate-700">
+              <Label htmlFor="language-code" className="text-gray-700">
                 Language Code (optional)
               </Label>
               <Input
@@ -531,7 +516,7 @@ export default function HomePage() {
               />
             </div>
             <div>
-              <Label htmlFor="reason" className="text-slate-700">
+              <Label htmlFor="reason" className="text-gray-700">
                 Reason for Request *
               </Label>
               <Textarea
@@ -539,14 +524,14 @@ export default function HomePage() {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Why should we add this language?"
-                className="mt-1"
+                className={`mt-1 ${!reason && languageName && "border-red-500"}`}
               />
             </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
-              className="border-slate-300 text-slate-700 hover:bg-slate-100"
+              className="border-gray-300 text-gray-700 hover:bg-gray-100"
               onClick={() => setIsLanguageRequestOpen(false)}
             >
               Cancel
@@ -559,7 +544,7 @@ export default function HomePage() {
       </Dialog>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-slate-50">
+      <footer className="border-t border-gray-300 bg-gray-50">
         <div className="container mx-auto px-4 py-12">
           <div className="grid gap-8 md:grid-cols-4">
             <div className="space-y-4">
@@ -567,30 +552,25 @@ export default function HomePage() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
                   <Languages className="h-5 w-5 text-white" />
                 </div>
-                <span className="text-xl font-bold text-slate-800">LingslatePal</span>
+                <span className="text-xl font-bold text-gray-800">LingslatePal</span>
               </div>
-              <p className="text-sm text-slate-600">
+              <p className="text-sm text-gray-600">
                 Your AI-powered language learning companion. Master new languages with free translation and interactive
                 lessons.
               </p>
             </div>
 
             <div>
-              <h3 className="font-semibold text-slate-800 mb-4">Features</h3>
-              <ul className="space-y-2 text-sm text-slate-600">
+              <h3 className="font-semibold text-gray-800 mb-4">Features</h3>
+              <ul className="space-y-2 text-sm text-gray-600">
                 <li>
                   <Link href="/translate" className="hover:text-blue-600">
                     Free Translation
                   </Link>
                 </li>
                 <li>
-                  <Link href="/learn?difficulty=beginner" className="hover:text-blue-600">
-                    Beginner Lessons
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/learn?difficulty=intermediate" className="hover:text-blue-600">
-                    Intermediate Lessons
+                  <Link href="/learn" className="hover:text-blue-600">
+                    Interactive Lessons
                   </Link>
                 </li>
                 <li>
@@ -607,8 +587,8 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-slate-800 mb-4">Languages</h3>
-              <ul className="space-y-2 text-sm text-slate-600">
+              <h3 className="font-semibold text-gray-800 mb-4">Languages</h3>
+              <ul className="space-y-2 text-sm text-gray-600">
                 <li>Spanish • French • German</li>
                 <li>Italian • Portuguese • Russian</li>
                 <li>Japanese • Korean • Chinese</li>
@@ -625,8 +605,8 @@ export default function HomePage() {
             </div>
 
             <div>
-              <h3 className="font-semibold text-slate-800 mb-4">Support</h3>
-              <ul className="space-y-2 text-sm text-slate-600">
+              <h3 className="font-semibold text-gray-800 mb-4">Support</h3>
+              <ul className="space-y-2 text-sm text-gray-600">
                 <li>
                   <Link href="/help" className="hover:text-blue-600">
                     Help Center
@@ -651,8 +631,8 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="border-t border-slate-200 mt-8 pt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <p className="text-sm text-slate-600">© 2025 LingslatePal. Made with ❤️ for language learners worldwide.</p>
+          <div className="border-t border-gray-300 mt-8 pt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <p className="text-sm text-gray-600">© 2025 LingslatePal. Made with ❤️ for language learners worldwide.</p>
             <div className="flex items-center gap-4">
               <Badge variant="secondary" className="bg-green-100 text-green-600">
                 <div className="w-2 h-2 bg-green-600 rounded-full mr-2 animate-pulse" />
