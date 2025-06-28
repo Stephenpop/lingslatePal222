@@ -22,6 +22,7 @@ import {
   Play,
   RotateCcw,
   SkipForward,
+  Volume2,
 } from "lucide-react";
 import Link from "next/link";
 import { supabase, type Quiz, type QuizAttempt } from "@/lib/supabase";
@@ -59,8 +60,8 @@ export default function QuizPage() {
   const [recentAttempts, setRecentAttempts] = useState<QuizAttempt[]>([]);
   const [completedQuizIds, setCompletedQuizIds] = useState<string[]>([]);
   const [learningLanguage, setLearningLanguage] = useState<string>("multilingual");
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Available languages for selection (based on provided quiz and lessons)
   const availableLanguages = [
     { code: "multilingual", name: "Multilingual" },
     { code: "es", name: "Spanish" },
@@ -95,11 +96,9 @@ export default function QuizPage() {
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
 
-      // Set learning language from user profile or default to 'multilingual'
       const userLearningLanguage = currentUser?.profile?.learning_language || learningLanguage;
       setLearningLanguage(userLearningLanguage);
 
-      // Load quizzes for the selected language
       const { data: quizzesData, error } = await supabase
         .from("quizzes")
         .select(`
@@ -112,7 +111,6 @@ export default function QuizPage() {
 
       if (error) throw error;
 
-      // Group quizzes by category
       const groupedByCategory = quizzesData?.reduce((acc, quiz) => {
         const categoryName = quiz.category?.name || "Uncategorized";
         const categoryId = quiz.category_id || "uncategorized";
@@ -131,7 +129,6 @@ export default function QuizPage() {
 
       setCategories(groupedByCategory);
 
-      // Load recent attempts and completed quizzes if user is logged in
       if (currentUser) {
         const { data: attemptsData } = await supabase
           .from("quiz_attempts")
@@ -187,6 +184,7 @@ export default function QuizPage() {
     if (quiz.time_limit) {
       setTimeLeft(quiz.time_limit * 60);
     }
+    speakText(quiz.questions[0].question);
   };
 
   const handleAnswer = (questionId: number, answer: any) => {
@@ -207,6 +205,13 @@ export default function QuizPage() {
   const nextQuestion = () => {
     if (selectedQuiz && currentQuestion < selectedQuiz.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
+      const nextQuestion = selectedQuiz.questions[currentQuestion + 1];
+      speakText(nextQuestion.question);
+      if (nextQuestion.type === "multiple_choice" && nextQuestion.options) {
+        nextQuestion.options.forEach((option, index) => {
+          speakText(`${index + 1}. ${option}`);
+        });
+      }
     } else {
       finishQuiz();
     }
@@ -215,6 +220,26 @@ export default function QuizPage() {
   const previousQuestion = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
+      const prevQuestion = selectedQuiz!.questions[currentQuestion - 1];
+      speakText(prevQuestion.question);
+      if (prevQuestion.type === "multiple_choice" && prevQuestion.options) {
+        prevQuestion.options.forEach((option, index) => {
+          speakText(`${index + 1}. ${option}`);
+        });
+      }
+    }
+  };
+
+  const speakText = (text: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = learningLanguage === "multilingual" ? "en-US" : learningLanguage;
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    } else {
+      toast.error("Text-to-speech is not supported in this browser");
     }
   };
 
@@ -283,6 +308,31 @@ export default function QuizPage() {
         toast.error("Failed to save quiz attempt");
       }
     }
+
+    // Speak results
+    speakText(`Quiz completed. You scored ${finalScore} percent.`);
+    selectedQuiz.questions.forEach((question: Question) => {
+      const userAnswer = answers[question.id];
+      const wasSkipped = skippedQuestions.includes(question.id);
+      let isCorrect = false;
+
+      if (!wasSkipped) {
+        if (question.type === "multiple_choice") {
+          isCorrect = userAnswer === question.correct_answer;
+        } else if (question.type === "text_input") {
+          const correctAnswer = question.correct_answer as string;
+          const alternatives = question.alternatives || [];
+          const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim());
+          isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim());
+        }
+      }
+
+      const correctAnswerText = question.type === "multiple_choice" 
+        ? question.options![question.correct_answer as number]
+        : question.correct_answer as string;
+      const userAnswerText = wasSkipped ? "Skipped" : (question.type === Imped "multiple_choice" ? question.options![userAnswer] : userAnswer) || "No answer";
+      speakText(`Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`);
+    });
   };
 
   const resetQuiz = () => {
@@ -294,6 +344,7 @@ export default function QuizPage() {
     setScore(0);
     setTimeLeft(null);
     setQuizStarted(false);
+    window.speechSynthesis.cancel();
   };
 
   const formatTime = (seconds: number) => {
@@ -329,19 +380,20 @@ export default function QuizPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 sm:h-10 sm:w-10">
                 <Languages className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-slate-800">LingslatePal</span>
+              <span className="text-xl font-bold text-slate-800 hidden sm:inline">LingslatePal</span>
             </Link>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-slate-600">
-                {user?.profile?.full_name || "User"} • {user?.profile?.xp_points || 0} XP
+                {user?.profile?.xp_points || 0} XP
               </span>
               <Link href="/dashboard">
-                <Button variant="ghost" className="text-slate-700 hover:bg-slate-100">
+                <Button variant="ghost" size="sm" className="text-slate-700 hover:bg-slate-100">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Dashboard
+                  <span className="hidden sm:inline">Dashboard</span>
+                  <span className="sm:hidden">Back</span>
                 </Button>
               </Link>
             </div>
@@ -573,19 +625,40 @@ export default function QuizPage() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-slate-800 mb-2">{question.question}</p>
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium text-slate-800 mb-2">{question.question}</p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => speakText(
+                                  `Question: ${question.question}. Your answer: ${
+                                    wasSkipped ? "Skipped" : 
+                                    question.type === "multiple_choice" ? question.options![userAnswer] : userAnswer || "No answer"
+                                  }. Correct answer: ${
+                                    question.type === "multiple_choice" 
+                                      ? question.options![question.correct_answer as number]
+                                      : question.correct_answer as string
+                                  }.`
+                                )}
+                                disabled={isSpeaking}
+                              >
+                                <Volume2 className="h-4 w-4" />
+                              </Button>
+                            </div>
 
                             {question.type === "multiple_choice" && question.options && (
                               <div className="space-y-1 mb-2">
                                 {question.options.map((option, optionIndex) => (
                                   <div
                                     key={optionIndex}
-                                    className={`text-sm p-2 rounded ${
+                                    className={`text-sm p-2 rounded flex items-center ${
                                       optionIndex === question.correct_answer
                                         ? "bg-green-100 text-green-800"
                                         : optionIndex === userAnswer && !wasSkipped
                                         ? "bg-red-100 text-red-800"
-                                        : "text-slate-600"
+                                        : answers[question.id] === optionIndex
+                                        ? "bg-blue-100 text-blue-800"
+                                        : "text-slate-800 bg-gray-50"
                                     }`}
                                   >
                                     {option}
@@ -658,7 +731,25 @@ export default function QuizPage() {
 
             <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-slate-800">{selectedQuiz.questions[currentQuestion].question}</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-slate-800">{selectedQuiz.questions[currentQuestion].question}</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const question = selectedQuiz.questions[currentQuestion];
+                      speakText(question.question);
+                      if (question.type === "multiple_choice" && question.options) {
+                        question.options.forEach((option, index) => {
+                          speakText(`${index + 1}. ${option}`);
+                        });
+                      }
+                    }}
+                    disabled={isSpeaking}
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {selectedQuiz.questions[currentQuestion].type === "multiple_choice" ? (
@@ -671,7 +762,14 @@ export default function QuizPage() {
                     {selectedQuiz.questions[currentQuestion].options?.slice(0, 5).map((option, index) => (
                       <div key={index} className="flex items-center space-x-2">
                         <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                        <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
+                        <Label
+                          htmlFor={`option-${index}`}
+                          className={`flex-1 cursor-pointer p-2 rounded ${
+                            answers[selectedQuiz.questions[currentQuestion].id] === index
+                              ? "bg-blue-100 text-blue-800"
+                              : "text-slate-800 bg-gray-50"
+                          }`}
+                        >
                           {option}
                         </Label>
                       </div>
