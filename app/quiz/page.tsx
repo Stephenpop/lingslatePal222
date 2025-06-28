@@ -340,8 +340,7 @@ export default function QuizPage() {
       const correctAnswerText = question.type === "multiple_choice" 
         ? question.options![question.correct_answer as number]
         : question.correct_answer as string;
-      const userAnswerText = wasSkipped ? "Skipped" : (question.type === Imped "multiple_choice" ? question.options![userAnswer] : userAnswer) || "No answer";
-      speakText(`Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`);
+const userAnswerText = wasSkipped ? "Skipped" : (question.type === "multiple_choice" ? question.options![userAnswer] : userAnswer) || "No answer";      speakText(`Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`);
     });
   };
 
