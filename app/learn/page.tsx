@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Clock, Trophy, Filter, ArrowLeft, ArrowRight, CheckCircle, XCircle, Languages } from "lucide-react";
+import { BookOpen, Clock, Trophy, Filter, ArrowLeft, ArrowRight, CheckCircle, XCircle, Languages, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { authService } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
@@ -54,10 +54,10 @@ export default function LearnPage() {
   const [score, setScore] = useState(0);
   const [loading, setLoading] = useState(true);
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
-  const [learningLanguage, setLearningLanguage] = useState<string>("es"); // Default to Spanish
+  const [learningLanguage, setLearningLanguage] = useState<string>("es");
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const router = useRouter();
 
-  // Available languages for selection (based on provided lessons)
   const availableLanguages = [
     { code: "es", name: "Spanish" },
     { code: "fr", name: "French" },
@@ -86,11 +86,9 @@ export default function LearnPage() {
       }
       setUser(currentUser);
 
-      // Set learning language from user profile or default to 'es'
       const userLearningLanguage = currentUser.profile?.learning_language || learningLanguage;
       setLearningLanguage(userLearningLanguage);
 
-      // Fetch lessons for the selected language
       const { data: lessonsData, error } = await supabase
         .from("lessons")
         .select("*")
@@ -101,7 +99,6 @@ export default function LearnPage() {
       if (error) throw error;
       setLessons(lessonsData || []);
 
-      // Load completed lessons
       const { data: completionsData } = await supabase
         .from("lesson_completions")
         .select("lesson_id")
@@ -138,11 +135,19 @@ export default function LearnPage() {
     setAnswers({});
     setShowResults(false);
     setScore(0);
+    speakText(lesson.title + ". " + (lesson.description || ""));
   };
 
   const startQuestions = () => {
     if (selectedLesson && selectedLesson.content.questions.length > 0) {
       setCurrentQuestion(0);
+      const firstQuestion = selectedLesson.content.questions[0];
+      speakText(firstQuestion.question);
+      if (firstQuestion.type === "multiple_choice" && firstQuestion.options) {
+        firstQuestion.options.forEach((option, index) => {
+          speakText(`${index + 1}. ${option}`);
+        });
+      }
     } else {
       completeLesson();
     }
@@ -158,6 +163,13 @@ export default function LearnPage() {
   const nextQuestion = () => {
     if (selectedLesson && currentQuestion !== null && currentQuestion < selectedLesson.content.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
+      const nextQuestion = selectedLesson.content.questions[currentQuestion + 1];
+      speakText(nextQuestion.question);
+      if (nextQuestion.type === "multiple_choice" && nextQuestion.options) {
+        nextQuestion.options.forEach((option, index) => {
+          speakText(`${index + 1}. ${option}`);
+        });
+      }
     } else {
       finishQuestions();
     }
@@ -166,6 +178,26 @@ export default function LearnPage() {
   const previousQuestion = () => {
     if (currentQuestion !== null && currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
+      const prevQuestion = selectedLesson!.content.questions[currentQuestion - 1];
+      speakText(prevQuestion.question);
+      if (prevQuestion.type === "multiple_choice" && prevQuestion.options) {
+        prevQuestion.options.forEach((option, index) => {
+          speakText(`${index + 1}. ${option}`);
+        });
+      }
+    }
+  };
+
+  const speakText = (text: string) => {
+    if ('speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = learningLanguage;
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    } else {
+      toast.error("Text-to-speech is not supported in this browser");
     }
   };
 
@@ -196,6 +228,27 @@ export default function LearnPage() {
     const finalScore = Math.round((correctAnswers / totalQuestions) * 100);
     setScore(finalScore);
     setShowResults(true);
+
+    speakText(`Lesson completed. You scored ${finalScore} percent.`);
+    selectedLesson.content.questions.forEach((question: Question) => {
+      const userAnswer = answers[question.id];
+      let isCorrect = false;
+
+      if (question.type === "multiple_choice") {
+        isCorrect = userAnswer === question.correct_answer;
+      } else if (question.type === "text_input") {
+        const correctAnswer = question.correct_answer as string;
+        const alternatives = question.alternatives || [];
+        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim());
+        isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim());
+      }
+
+      const correctAnswerText = question.type === "multiple_choice" 
+        ? question.options![question.correct_answer as number]
+        : question.correct_answer as string;
+      const userAnswerText = question.type === "multiple_choice" ? question.options![userAnswer] : userAnswer || "No answer";
+      speakText(`Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`);
+    });
 
     if (finalScore >= 70) {
       await completeLesson();
@@ -252,7 +305,6 @@ export default function LearnPage() {
     }
   };
 
-  // Filter lessons based on difficulty
   const filteredLessons = difficultyFilter === "all"
     ? lessons
     : lessons.filter((lesson) => lesson.difficulty === difficultyFilter);
@@ -274,19 +326,20 @@ export default function LearnPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 sm:h-10 sm:w-10">
                 <Languages className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold text-slate-800">LingslatePal</span>
+              <span className="text-xl font-bold text-slate-800 hidden sm:inline">LingslatePal</span>
             </Link>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-slate-600">
-                {user?.profile?.full_name || "User"} • {user?.profile?.xp_points || 0} XP
+                {user?.profile?.xp_points || 0} XP
               </span>
               <Link href="/dashboard">
-                <Button variant="ghost" className="text-slate-700 hover:bg-slate-100">
+                <Button variant="ghost" size="sm" className="text-slate-700 hover:bg-slate-100">
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Dashboard
+                  <span className="hidden sm:inline">Dashboard</span>
+                  <span className="sm:hidden">Back</span>
                 </Button>
               </Link>
             </div>
@@ -457,19 +510,39 @@ export default function LearnPage() {
                             )}
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-slate-800 mb-2">{question.question}</p>
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium text-slate-800 mb-2">{question.question}</p>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => speakText(
+                                  `Question: ${question.question}. Your answer: ${
+                                    question.type === "multiple_choice" ? question.options![userAnswer] : userAnswer || "No answer"
+                                  }. Correct answer: ${
+                                    question.type === "multiple_choice" 
+                                      ? question.options![question.correct_answer as number]
+                                      : question.correct_answer as string
+                                  }.`
+                                )}
+                                disabled={isSpeaking}
+                              >
+                                <Volume2 className="h-4 w-4" />
+                              </Button>
+                            </div>
 
                             {question.type === "multiple_choice" && question.options && (
                               <div className="space-y-1 mb-2">
                                 {question.options.map((option, optionIndex) => (
                                   <div
                                     key={optionIndex}
-                                    className={`text-sm p-2 rounded ${
+                                    className={`text-sm p-2 rounded flex items-center ${
                                       optionIndex === question.correct_answer
                                         ? "bg-green-100 text-green-800"
                                         : optionIndex === userAnswer
                                         ? "bg-red-100 text-red-800"
-                                        : "text-slate-600"
+                                        : answers[question.id] === optionIndex
+                                        ? "bg-blue-100 text-blue-800"
+                                        : "text-slate-800 bg-gray-50"
                                     }`}
                                   >
                                     {option}
@@ -542,7 +615,25 @@ export default function LearnPage() {
 
             <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
               <CardHeader>
-                <CardTitle className="text-slate-800">{selectedLesson.content.questions[currentQuestion].question}</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-slate-800">{selectedLesson.content.questions[currentQuestion].question}</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const question = selectedLesson.content.questions[currentQuestion];
+                      speakText(question.question);
+                      if (question.type === "multiple_choice" && question.options) {
+                        question.options.forEach((option, index) => {
+                          speakText(`${index + 1}. ${option}`);
+                        });
+                      }
+                    }}
+                    disabled={isSpeaking}
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 {selectedLesson.content.questions[currentQuestion].type === "multiple_choice" ? (
@@ -555,7 +646,14 @@ export default function LearnPage() {
                     {selectedLesson.content.questions[currentQuestion].options?.map((option, index) => (
                       <div key={index} className="flex items-center space-x-2">
                         <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                        <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
+                        <Label
+                          htmlFor={`option-${index}`}
+                          className={`flex-1 cursor-pointer p-2 rounded ${
+                            answers[selectedLesson.content.questions[currentQuestion].id] === index
+                              ? "bg-blue-100 text-blue-800"
+                              : "text-slate-800 bg-gray-50"
+                          }`}
+                        >
                           {option}
                         </Label>
                       </div>
@@ -604,9 +702,14 @@ export default function LearnPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-slate-800">{selectedLesson.title}</CardTitle>
-                  <Badge className={getDifficultyColor(selectedLesson.difficulty)}>
-                    {selectedLesson.difficulty}
-                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => speakText(selectedLesson.title + ". " + (selectedLesson.description || ""))}
+                    disabled={isSpeaking}
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
                 </div>
                 <CardDescription className="text-slate-600">{selectedLesson.description || "No description"}</CardDescription>
               </CardHeader>
