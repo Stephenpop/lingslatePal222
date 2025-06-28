@@ -1,14 +1,15 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Input } from "@/components/ui/input"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Trophy,
   Clock,
@@ -21,90 +22,114 @@ import {
   Play,
   RotateCcw,
   SkipForward,
-} from "lucide-react"
-import Link from "next/link"
-import { supabase, type Quiz, type QuizAttempt } from "@/lib/supabase"
-import { authService } from "@/lib/auth"
-import { toast } from "sonner"
+} from "lucide-react";
+import Link from "next/link";
+import { supabase, type Quiz, type QuizAttempt } from "@/lib/supabase";
+import { authService } from "@/lib/auth";
+import { toast } from "sonner";
 
 interface Question {
-  id: number
-  question: string
-  type: "multiple_choice" | "text_input"
-  options?: string[] // Up to 5 options for multiple_choice
-  correct_answer: number | string
-  alternatives?: string[] // For text_input alternative correct answers
-  explanation?: string
+  id: number;
+  question: string;
+  type: "multiple_choice" | "text_input";
+  options?: string[];
+  correct_answer: number | string;
+  alternatives?: string[];
+  explanation?: string;
 }
 
 interface Category {
-  id: string
-  name: string
-  quizzes: Quiz[]
+  id: string;
+  name: string;
+  quizzes: Quiz[];
 }
 
 export default function QuizPage() {
-  const [user, setUser] = useState<any>(null)
-  const [categories, setCategories] = useState<Category[]>([])
-  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null)
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [answers, setAnswers] = useState<Record<number, any>>({})
-  const [skippedQuestions, setSkippedQuestions] = useState<number[]>([])
-  const [showResults, setShowResults] = useState(false)
-  const [score, setScore] = useState(0)
-  const [timeLeft, setTimeLeft] = useState<number | null>(null)
-  const [quizStarted, setQuizStarted] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [recentAttempts, setRecentAttempts] = useState<QuizAttempt[]>([])
-  const [completedQuizIds, setCompletedQuizIds] = useState<string[]>([])
+  const [user, setUser] = useState<any>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [skippedQuestions, setSkippedQuestions] = useState<number[]>([]);
+  const [showResults, setShowResults] = useState(false);
+  const [score, setScore] = useState(0);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [quizStarted, setQuizStarted] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [recentAttempts, setRecentAttempts] = useState<QuizAttempt[]>([]);
+  const [completedQuizIds, setCompletedQuizIds] = useState<string[]>([]);
+  const [learningLanguage, setLearningLanguage] = useState<string>("multilingual");
+
+  // Available languages for selection (based on provided quiz and lessons)
+  const availableLanguages = [
+    { code: "multilingual", name: "Multilingual" },
+    { code: "es", name: "Spanish" },
+    { code: "fr", name: "French" },
+    { code: "yo", name: "Yoruba" },
+    { code: "de", name: "German" },
+    { code: "it", name: "Italian" },
+    { code: "pt", name: "Portuguese" },
+    { code: "ru", name: "Russian" },
+    { code: "ja", name: "Japanese" },
+    { code: "zh", name: "Chinese" },
+    { code: "ar", name: "Arabic" },
+  ];
 
   useEffect(() => {
-    loadQuizData()
-  }, [])
+    loadQuizData();
+  }, [learningLanguage]);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout
+    let timer: NodeJS.Timeout;
     if (timeLeft !== null && timeLeft > 0 && quizStarted && !showResults) {
-      timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
+      timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
     } else if (timeLeft === 0) {
-      finishQuiz()
+      finishQuiz();
     }
-    return () => clearTimeout(timer)
-  }, [timeLeft, quizStarted, showResults])
+    return () => clearTimeout(timer);
+  }, [timeLeft, quizStarted, showResults]);
 
   const loadQuizData = async () => {
     try {
-      const currentUser = await authService.getCurrentUser()
-      setUser(currentUser)
+      setLoading(true);
+      const currentUser = await authService.getCurrentUser();
+      setUser(currentUser);
 
-      // Load categories and quizzes
-      const { data: quizzesData } = await supabase
+      // Set learning language from user profile or default to 'multilingual'
+      const userLearningLanguage = currentUser?.profile?.learning_language || learningLanguage;
+      setLearningLanguage(userLearningLanguage);
+
+      // Load quizzes for the selected language
+      const { data: quizzesData, error } = await supabase
         .from("quizzes")
         .select(`
           *,
           category:categories(name)
         `)
         .eq("is_published", true)
-        .order("created_at", { ascending: false })
+        .eq("language", userLearningLanguage)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
 
       // Group quizzes by category
       const groupedByCategory = quizzesData?.reduce((acc, quiz) => {
-        const categoryName = quiz.category?.name || "Uncategorized"
-        const categoryId = quiz.category_id || "uncategorized"
-        const existingCategory = acc.find((cat) => cat.id === categoryId)
+        const categoryName = quiz.category?.name || "Uncategorized";
+        const categoryId = quiz.category_id || "uncategorized";
+        const existingCategory = acc.find((cat) => cat.id === categoryId);
         if (existingCategory) {
-          existingCategory.quizzes.push(quiz)
+          existingCategory.quizzes.push(quiz);
         } else {
           acc.push({
             id: categoryId,
             name: categoryName,
             quizzes: [quiz],
-          })
+          });
         }
-        return acc
-      }, [] as Category[]) || []
+        return acc;
+      }, [] as Category[]) || [];
 
-      setCategories(groupedByCategory)
+      setCategories(groupedByCategory);
 
       // Load recent attempts and completed quizzes if user is logged in
       if (currentUser) {
@@ -116,97 +141,112 @@ export default function QuizPage() {
           `)
           .eq("user_id", currentUser.id)
           .order("completed_at", { ascending: false })
-          .limit(5)
+          .limit(5);
 
-        setRecentAttempts(attemptsData || [])
-        setCompletedQuizIds(attemptsData?.map((attempt) => attempt.quiz_id) || [])
+        setRecentAttempts(attemptsData || []);
+        setCompletedQuizIds(attemptsData?.map((attempt) => attempt.quiz_id) || []);
       }
     } catch (error) {
-      console.error("Error loading quiz data:", error)
+      console.error("Error loading quiz data:", error);
+      toast.error("Failed to load quizzes");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
+
+  const handleLanguageChange = async (languageCode: string) => {
+    try {
+      setLearningLanguage(languageCode);
+      if (user) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ learning_language: languageCode })
+          .eq("id", user.id);
+        if (error) throw error;
+        toast.success(`Quiz language set to ${availableLanguages.find((lang) => lang.code === languageCode)?.name}`);
+      }
+    } catch (error) {
+      console.error("Error updating learning language:", error);
+      toast.error("Failed to update quiz language");
+    }
+  };
 
   const startQuiz = (quiz: Quiz) => {
     if (quiz.questions.length < 20) {
-      toast.error("This quiz does not have enough questions (minimum 20 required).")
-      return
+      toast.error("This quiz does not have enough questions (minimum 20 required).");
+      return;
     }
-    setSelectedQuiz(quiz)
-    setCurrentQuestion(0)
-    setAnswers({})
-    setSkippedQuestions([])
-    setShowResults(false)
-    setScore(0)
-    setQuizStarted(true)
+    setSelectedQuiz(quiz);
+    setCurrentQuestion(0);
+    setAnswers({});
+    setSkippedQuestions([]);
+    setShowResults(false);
+    setScore(0);
+    setQuizStarted(true);
 
     if (quiz.time_limit) {
-      setTimeLeft(quiz.time_limit * 60) // Convert minutes to seconds
+      setTimeLeft(quiz.time_limit * 60);
     }
-  }
+  };
 
   const handleAnswer = (questionId: number, answer: any) => {
     setAnswers((prev) => ({
       ...prev,
       [questionId]: answer,
-    }))
-    // Remove from skipped questions if answered
-    setSkippedQuestions((prev) => prev.filter((id) => id !== questionId))
-  }
+    }));
+    setSkippedQuestions((prev) => prev.filter((id) => id !== questionId));
+  };
 
   const skipQuestion = () => {
     if (selectedQuiz) {
-      setSkippedQuestions((prev) => [...prev, selectedQuiz.questions[currentQuestion].id])
-      nextQuestion()
+      setSkippedQuestions((prev) => [...prev, selectedQuiz.questions[currentQuestion].id]);
+      nextQuestion();
     }
-  }
+  };
 
   const nextQuestion = () => {
     if (selectedQuiz && currentQuestion < selectedQuiz.questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1)
+      setCurrentQuestion(currentQuestion + 1);
     } else {
-      finishQuiz()
+      finishQuiz();
     }
-  }
+  };
 
   const previousQuestion = () => {
     if (currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1)
+      setCurrentQuestion(currentQuestion - 1);
     }
-  }
+  };
 
   const finishQuiz = async () => {
-    if (!selectedQuiz) return
+    if (!selectedQuiz) return;
 
-    // Calculate score
-    let correctAnswers = 0
-    const totalQuestions = selectedQuiz.questions.length
+    let correctAnswers = 0;
+    const totalQuestions = selectedQuiz.questions.length;
 
     selectedQuiz.questions.forEach((question: Question) => {
-      const userAnswer = answers[question.id]
+      const userAnswer = answers[question.id];
 
       if (question.type === "multiple_choice") {
         if (userAnswer === question.correct_answer) {
-          correctAnswers++
+          correctAnswers++;
         }
       } else if (question.type === "text_input") {
-        const correctAnswer = question.correct_answer as string
-        const alternatives = question.alternatives || []
-        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim())
+        const correctAnswer = question.correct_answer as string;
+        const alternatives = question.alternatives || [];
+        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim());
 
         if (userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim())) {
-          correctAnswers++
+          correctAnswers++;
         }
       }
-    })
+    });
 
-    const finalScore = Math.round((correctAnswers / totalQuestions) * 100)
-    setScore(finalScore)
-    setShowResults(true)
-    setQuizStarted(false)
+    const finalScore = Math.round((correctAnswers / totalQuestions) * 100);
+    setScore(finalScore);
+    setShowResults(true);
+    setQuizStarted(false);
 
-    // Save attempt to database if user is logged in
     if (user) {
       try {
         const { error } = await supabase.from("quiz_attempts").insert({
@@ -218,76 +258,73 @@ export default function QuizPage() {
             answer,
           })),
           time_taken: selectedQuiz.time_limit ? selectedQuiz.time_limit * 60 - (timeLeft || 0) : null,
-        })
+        });
 
-        if (error) throw error
+        if (error) throw error;
 
-        // Award XP if passed
         if (finalScore >= selectedQuiz.passing_score) {
-          toast.success(`Quiz completed! You earned ${selectedQuiz.xp_reward} XP!`)
+          toast.success(`Quiz completed! You earned ${selectedQuiz.xp_reward} XP!`);
 
-          // Update user XP
           if (user.profile) {
             const { error: updateError } = await supabase
               .from("profiles")
               .update({
                 xp_points: (user.profile.xp_points || 0) + selectedQuiz.xp_reward,
               })
-              .eq("id", user.id)
+              .eq("id", user.id);
 
-            if (updateError) console.error("Error updating XP:", updateError)
+            if (updateError) console.error("Error updating XP:", updateError);
           }
         }
 
-        // Reload recent attempts and completed quizzes
-        await loadQuizData()
+        await loadQuizData();
       } catch (error) {
-        console.error("Error saving quiz attempt:", error)
+        console.error("Error saving quiz attempt:", error);
+        toast.error("Failed to save quiz attempt");
       }
     }
-  }
+  };
 
   const resetQuiz = () => {
-    setSelectedQuiz(null)
-    setCurrentQuestion(0)
-    setAnswers({})
-    setSkippedQuestions([])
-    setShowResults(false)
-    setScore(0)
-    setTimeLeft(null)
-    setQuizStarted(false)
-  }
+    setSelectedQuiz(null);
+    setCurrentQuestion(0);
+    setAnswers({});
+    setSkippedQuestions([]);
+    setShowResults(false);
+    setScore(0);
+    setTimeLeft(null);
+    setQuizStarted(false);
+  };
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, "0")}`
-  }
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
 
   const getDifficultyColor = (difficulty?: string) => {
     switch (difficulty) {
       case "beginner":
-        return "bg-green-100 text-green-700"
+        return "bg-green-100 text-green-700";
       case "intermediate":
-        return "bg-yellow-100 text-yellow-700"
+        return "bg-yellow-100 text-yellow-700";
       case "advanced":
-        return "bg-red-100 text-red-700"
+        return "bg-red-100 text-red-700";
       default:
-        return "bg-gray-100 text-gray-700"
+        return "bg-gray-100 text-gray-700";
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
         <div className="text-slate-600">Loading quizzes...</div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Navigation */}
       <nav className="border-b border-slate-200 bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -297,8 +334,10 @@ export default function QuizPage() {
               </div>
               <span className="text-xl font-bold text-slate-800">LingslatePal</span>
             </Link>
-
             <div className="flex items-center space-x-4">
+              <span className="text-sm text-slate-600">
+                {user?.profile?.full_name || "User"} • {user?.profile?.xp_points || 0} XP
+              </span>
               <Link href="/dashboard">
                 <Button variant="ghost" className="text-slate-700 hover:bg-slate-100">
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -312,83 +351,102 @@ export default function QuizPage() {
 
       <div className="container mx-auto px-4 py-8">
         {!selectedQuiz ? (
-          // Quiz Selection
           <div>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
               <h1 className="text-3xl font-bold text-slate-800 mb-2">Language Quizzes</h1>
-              <p className="text-slate-600">Test your knowledge and earn XP points</p>
+              <p className="text-slate-600 mb-4">Test your knowledge and earn XP points</p>
+              <Select value={learningLanguage} onValueChange={handleLanguageChange}>
+                <SelectTrigger className="w-48 border-slate-200 bg-white/80 text-slate-800">
+                  <Languages className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableLanguages.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      {lang.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </motion.div>
 
             <div className="grid gap-8 lg:grid-cols-3">
-              {/* Available Quizzes by Category */}
               <div className="lg:col-span-2">
-                {categories.map((category) => (
-                  <div key={category.id} className="mb-8">
-                    <h2 className="text-xl font-semibold text-slate-800 mb-4">{category.name}</h2>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {category.quizzes.map((quiz) => (
-                        <Card
-                          key={quiz.id}
-                          className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow"
-                        >
-                          <CardHeader>
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-slate-800">{quiz.title}</CardTitle>
-                              <div className="flex items-center gap-2">
-                                {completedQuizIds.includes(quiz.id) && (
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                )}
-                                <Badge className={getDifficultyColor(quiz.difficulty)}>
-                                  {quiz.difficulty || "beginner"}
-                                </Badge>
-                              </div>
-                            </div>
-                            <CardDescription className="text-slate-600">{quiz.description}</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-600">Questions:</span>
-                                <span className="font-medium text-slate-800">{quiz.questions.length}</span>
-                              </div>
-                              {quiz.time_limit && (
-                                <div className="flex items-center justify-between text-sm">
-                                  <span className="text-slate-600">Time Limit:</span>
-                                  <span className="font-medium text-slate-800 flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {quiz.time_limit} min
-                                  </span>
+                {categories.length === 0 ? (
+                  <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
+                    <CardContent className="p-8 text-center">
+                      <Trophy className="h-12 w-12 mx-auto mb-3 text-slate-400" />
+                      <p className="text-slate-500">No quizzes available for this language</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  categories.map((category) => (
+                    <div key={category.id} className="mb-8">
+                      <h2 className="text-xl font-semibold text-slate-800 mb-4">{category.name}</h2>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        {category.quizzes.map((quiz) => (
+                          <Card
+                            key={quiz.id}
+                            className="border-slate-200 bg-white/80 backdrop-blur-sm hover:shadow-lg transition-shadow"
+                          >
+                            <CardHeader>
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-slate-800">{quiz.title}</CardTitle>
+                                <div className="flex items-center gap-2">
+                                  {completedQuizIds.includes(quiz.id) && (
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                  )}
+                                  <Badge className={getDifficultyColor(quiz.difficulty)}>
+                                    {quiz.difficulty || "beginner"}
+                                  </Badge>
                                 </div>
-                              )}
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-600">Passing Score:</span>
-                                <span className="font-medium text-slate-800">{quiz.passing_score}%</span>
                               </div>
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="text-slate-600">XP Reward:</span>
-                                <Badge className="bg-yellow-100 text-yellow-700">
-                                  <Star className="h-3 w-3 mr-1" />
-                                  {quiz.xp_reward} XP
-                                </Badge>
+                              <CardDescription className="text-slate-600">{quiz.description}</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-slate-600">Questions:</span>
+                                  <span className="font-medium text-slate-800">{quiz.questions.length}</span>
+                                </div>
+                                {quiz.time_limit && (
+                                  <div className="flex items-center justify-between text-sm">
+                                    <span className="text-slate-600">Time Limit:</span>
+                                    <span className="font-medium text-slate-800 flex items-center gap-1">
+                                      <Clock className="h-3 w-3" />
+                                      {quiz.time_limit} min
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-slate-600">Passing Score:</span>
+                                  <span className="font-medium text-slate-800">{quiz.passing_score}%</span>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span className="text-slate-600">XP Reward:</span>
+                                  <Badge className="bg-yellow-100 text-yellow-700">
+                                    <Star className="h-3 w-3 mr-1" />
+                                    {quiz.xp_reward} XP
+                                  </Badge>
+                                </div>
                               </div>
-                            </div>
-                            <Button
-                              onClick={() => startQuiz(quiz)}
-                              className="w-full mt-4"
-                              disabled={quiz.questions.length < 20}
-                            >
-                              <Play className="mr-2 h-4 w-4" />
-                              {completedQuizIds.includes(quiz.id) ? "Retake Quiz" : "Start Quiz"}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
+                              <Button
+                                onClick={() => startQuiz(quiz)}
+                                className="w-full mt-4"
+                                disabled={quiz.questions.length < 20}
+                              >
+                                <Play className="mr-2 h-4 w-4" />
+                                {completedQuizIds.includes(quiz.id) ? "Retake Quiz" : "Start Quiz"}
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
-              {/* Recent Attempts */}
               <div>
                 <h2 className="text-xl font-semibold text-slate-800 mb-4">Recent Attempts</h2>
                 {user ? (
@@ -439,7 +497,6 @@ export default function QuizPage() {
             </div>
           </div>
         ) : showResults ? (
-          // Quiz Results
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto">
             <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
               <CardHeader className="text-center">
@@ -481,22 +538,21 @@ export default function QuizPage() {
                   </div>
                 )}
 
-                {/* Review Answers */}
                 <div className="space-y-4">
                   <h3 className="font-semibold text-slate-800">Review Your Answers</h3>
-                  {selectedQuiz.questions.map((question: Question, index: number) => {
-                    const userAnswer = answers[question.id]
-                    const wasSkipped = skippedQuestions.includes(question.id)
-                    let isCorrect = false
+                  {selectedQuiz.questions.map((question: Question) => {
+                    const userAnswer = answers[question.id];
+                    const wasSkipped = skippedQuestions.includes(question.id);
+                    let isCorrect = false;
 
                     if (!wasSkipped) {
                       if (question.type === "multiple_choice") {
-                        isCorrect = userAnswer === question.correct_answer
+                        isCorrect = userAnswer === question.correct_answer;
                       } else if (question.type === "text_input") {
-                        const correctAnswer = question.correct_answer as string
-                        const alternatives = question.alternatives || []
-                        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim())
-                        isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim())
+                        const correctAnswer = question.correct_answer as string;
+                        const alternatives = question.alternatives || [];
+                        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim());
+                        isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim());
                       }
                     }
 
@@ -528,8 +584,8 @@ export default function QuizPage() {
                                       optionIndex === question.correct_answer
                                         ? "bg-green-100 text-green-800"
                                         : optionIndex === userAnswer && !wasSkipped
-                                          ? "bg-red-100 text-red-800"
-                                          : "text-slate-600"
+                                        ? "bg-red-100 text-red-800"
+                                        : "text-slate-600"
                                     }`}
                                   >
                                     {option}
@@ -561,7 +617,7 @@ export default function QuizPage() {
                           </div>
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
 
@@ -579,9 +635,7 @@ export default function QuizPage() {
             </Card>
           </motion.div>
         ) : (
-          // Quiz Taking Interface
           <div className="max-w-2xl mx-auto">
-            {/* Quiz Header */}
             <Card className="border-slate-200 bg-white/80 backdrop-blur-sm mb-6">
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -602,7 +656,6 @@ export default function QuizPage() {
               </CardHeader>
             </Card>
 
-            {/* Current Question */}
             <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-slate-800">{selectedQuiz.questions[currentQuestion].question}</CardTitle>
@@ -668,5 +721,5 @@ export default function QuizPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
