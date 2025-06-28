@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,12 +30,14 @@ import {
   Send,
   Clock,
   AlertCircle,
+  Home,
 } from "lucide-react";
 import Link from "next/link";
 import { authService } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 
 interface AdminStats {
   totalUsers: number;
@@ -146,6 +147,7 @@ export default function AdminPage() {
   const [newMessage, setNewMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [newLesson, setNewLesson] = useState<Partial<Lesson>>({
+    id: "",
     title: "",
     description: "",
     language: "",
@@ -155,9 +157,10 @@ export default function AdminPage() {
     is_published: false,
     content_type: "text",
     estimated_duration: 10,
-    xp_reward: 20,
+    xp_reward: 50,
   });
   const [newQuiz, setNewQuiz] = useState<Partial<Quiz>>({
+    id: "",
     title: "",
     description: "",
     language: "",
@@ -165,7 +168,7 @@ export default function AdminPage() {
     category_id: null,
     questions: [],
     time_limit: 30,
-    passing_score: 70,
+    passing_score: 60,
     xp_reward: 50,
     is_published: false,
   });
@@ -181,21 +184,20 @@ export default function AdminPage() {
   useEffect(() => {
     checkAdminAccess();
 
-    // Subscribe to real-time updates for support tickets and messages
     const ticketSubscription = supabase
       .channel("support_tickets")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "support_tickets" },
         async () => {
-          await loadAdminData(); // Reload tickets on any change
+          await loadAdminData();
         }
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "support_messages" },
         async () => {
-          await loadAdminData(); // Reload tickets on new messages
+          await loadAdminData();
         }
       )
       .subscribe();
@@ -255,7 +257,7 @@ export default function AdminPage() {
         supabase
           .from("profiles")
           .select("id", { count: "exact" })
-          .gte("last_activity_date", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()), // Active in last 7 days
+          .gte("last_activity_date", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
         supabase.from("translations").select("id", { count: "exact" }),
         supabase.from("support_tickets").select("id", { count: "exact" }).neq("status", "closed"),
         supabase.from("lessons").select("id", { count: "exact" }),
@@ -356,10 +358,19 @@ export default function AdminPage() {
       return;
     }
     try {
-      const { error } = await supabase.from("lessons").insert([newLesson]);
+      const lessonToAdd = {
+        ...newLesson,
+        id: uuidv4(),
+        content: {
+          main_content: newLesson.content?.main_content || "",
+          questions: newLesson.content?.questions || [],
+        },
+      };
+      const { error } = await supabase.from("lessons").insert([lessonToAdd]);
       if (error) throw error;
       toast.success("Lesson added successfully");
       setNewLesson({
+        id: "",
         title: "",
         description: "",
         language: "",
@@ -369,7 +380,7 @@ export default function AdminPage() {
         is_published: false,
         content_type: "text",
         estimated_duration: 10,
-        xp_reward: 20,
+        xp_reward: 50,
       });
       await loadAdminData();
     } catch (error) {
@@ -408,15 +419,20 @@ export default function AdminPage() {
   };
 
   const addQuiz = async () => {
-    if (!newQuiz.title || !newQuiz.language || !newQuiz.difficulty || !newQuiz.questions || newQuiz.questions.length < 20) {
-      toast.error("Please fill in all required quiz fields and ensure at least 20 questions");
+    if (!newQuiz.title || !newQuiz.language || !newQuiz.difficulty || !newQuiz.questions || newQuiz.questions.length < 10) {
+      toast.error("Please fill in all required quiz fields and ensure at least 10 questions");
       return;
     }
     try {
-      const { error } = await supabase.from("quizzes").insert([newQuiz]);
+      const quizToAdd = {
+        ...newQuiz,
+        id: uuidv4(),
+      };
+      const { error } = await supabase.from("quizzes").insert([quizToAdd]);
       if (error) throw error;
       toast.success("Quiz added successfully");
       setNewQuiz({
+        id: "",
         title: "",
         description: "",
         language: "",
@@ -424,7 +440,7 @@ export default function AdminPage() {
         category_id: null,
         questions: [],
         time_limit: 30,
-        passing_score: 70,
+        passing_score: 60,
         xp_reward: 50,
         is_published: false,
       });
@@ -436,8 +452,8 @@ export default function AdminPage() {
   };
 
   const updateQuiz = async () => {
-    if (!editingQuiz || !editingQuiz.title || !editingQuiz.language || !editingQuiz.difficulty || !editingQuiz.questions || editingQuiz.questions.length < 20) {
-      toast.error("Please fill in all required quiz fields and ensure at least 20 questions");
+    if (!editingQuiz || !editingQuiz.title || !editingQuiz.language || !editingQuiz.difficulty || !editingQuiz.questions || editingQuiz.questions.length < 10) {
+      toast.error("Please fill in all required quiz fields and ensure at least 10 questions");
       return;
     }
     try {
@@ -483,7 +499,6 @@ export default function AdminPage() {
 
       toast.success("Message sent!");
       setNewMessage("");
-      // No need to manually reload here; real-time subscription will handle it
     } catch (error) {
       console.error("Error sending support message:", error);
       toast.error("Failed to send message");
@@ -497,7 +512,6 @@ export default function AdminPage() {
       const { error } = await supabase.from("support_tickets").update({ status, updated_at: new Date().toISOString() }).eq("id", ticketId);
       if (error) throw error;
       toast.success(`Ticket status updated to ${status}`);
-      // No need to manually reload here; real-time subscription will handle it
     } catch (error) {
       console.error("Error updating ticket status:", error);
       toast.error("Failed to update ticket status");
@@ -546,17 +560,12 @@ export default function AdminPage() {
               </motion.div>
               <span className="text-xl font-bold">Admin Panel</span>
             </div>
-            <div className="flex items-center space-x-4">
-              <Badge className="bg-red-500/20 text-red-300 border-red-400/30">
-                <Shield className="mr-1 h-3 w-3" />
-                Administrator
-              </Badge>
-              <Link href="/dashboard">
-                <Button variant="outline" className="border-white/20 text-white hover:bg-white/10">
-                  Back to Dashboard
-                </Button>
-              </Link>
-            </div>
+            <Link href="/dashboard">
+              <Button size="sm" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                <Home className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </Button>
+            </Link>
           </div>
         </div>
       </motion.nav>
@@ -564,7 +573,7 @@ export default function AdminPage() {
       <div className="container mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <h1 className="text-3xl font-bold mb-6">System Overview</h1>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-7">
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
               <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
                 <CardContent className="p-4 w-full">
@@ -677,25 +686,32 @@ export default function AdminPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
             <TabsList className="grid w-full grid-cols-7 bg-white/5 border border-white/10">
               <TabsTrigger value="overview" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
-                Overview
+                <Activity className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Overview</span>
               </TabsTrigger>
               <TabsTrigger value="users" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
-                Users
+                <Users className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Users</span>
               </TabsTrigger>
               <TabsTrigger value="support" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
-                Support
+                <MessageCircle className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Support</span>
               </TabsTrigger>
               <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
-                Notifications
+                <Bell className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Notifications</span>
               </TabsTrigger>
               <TabsTrigger value="requests" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
-                Language Requests
+                <Languages className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Language Requests</span>
               </TabsTrigger>
               <TabsTrigger value="lessons" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
-                Lessons
+                <BookOpen className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Lessons</span>
               </TabsTrigger>
               <TabsTrigger value="quizzes" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
-                Quizzes
+                <Trophy className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Quizzes</span>
               </TabsTrigger>
             </TabsList>
 
@@ -1152,12 +1168,16 @@ export default function AdminPage() {
                                 <SelectValue placeholder="Select language" />
                               </SelectTrigger>
                               <SelectContent>
-                                {Array.from(new Set(lessons.map(l => l.language))).map(lang => (
-                                  <SelectItem key={lang} value={lang}>{lang.toUpperCase()}</SelectItem>
-                                ))}
-                                <SelectItem value="es">ES</SelectItem>
-                                <SelectItem value="fr">FR</SelectItem>
-                                <SelectItem value="yo">YO</SelectItem>
+                                <SelectItem value="es">Spanish (ES)</SelectItem>
+                                <SelectItem value="fr">French (FR)</SelectItem>
+                                <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                                <SelectItem value="de">German (DE)</SelectItem>
+                                <SelectItem value="it">Italian (IT)</SelectItem>
+                                <SelectItem value="pt">Portuguese (PT)</SelectItem>
+                                <SelectItem value="ru">Russian (RU)</SelectItem>
+                                <SelectItem value="ja">Japanese (JA)</SelectItem>
+                                <SelectItem value="zh">Chinese (ZH)</SelectItem>
+                                <SelectItem value="ar">Arabic (AR)</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1216,7 +1236,7 @@ export default function AdminPage() {
                             <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
                             <Input
                               type="number"
-                              value={newLesson.xp_reward || 20}
+                              value={newLesson.xp_reward || 50}
                               onChange={(e) => setNewLesson({ ...newLesson, xp_reward: Number(e.target.value) })}
                               className="border-white/20 bg-white/5 text-white w-full"
                             />
@@ -1259,7 +1279,7 @@ export default function AdminPage() {
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
                             <Textarea
                               placeholder='[{"id": 1, "question": "Example?", "type": "multiple_choice", "options": ["A", "B", "C"], "correct_answer": 0, "explanation": "Explanation"}]'
-                              value={JSON.stringify(newLesson.content?.questions || [])}
+                              value={JSON.stringify(newLesson.content?.questions || [], null, 2)}
                               onChange={(e) => {
                                 try {
                                   const questions = JSON.parse(e.target.value);
@@ -1269,7 +1289,7 @@ export default function AdminPage() {
                                 }
                               }}
                               className="border-white/20 bg-white/5 text-white font-mono w-full"
-                              rows={4}
+                              rows={6}
                             />
                           </div>
                         </div>
@@ -1345,12 +1365,16 @@ export default function AdminPage() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {Array.from(new Set(lessons.map(l => l.language))).map(lang => (
-                                    <SelectItem key={lang} value={lang}>{lang.toUpperCase()}</SelectItem>
-                                  ))}
-                                  <SelectItem value="es">ES</SelectItem>
-                                  <SelectItem value="fr">FR</SelectItem>
-                                  <SelectItem value="yo">YO</SelectItem>
+                                  <SelectItem value="es">Spanish (ES)</SelectItem>
+                                  <SelectItem value="fr">French (FR)</SelectItem>
+                                  <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                                  <SelectItem value="de">German (DE)</SelectItem>
+                                  <SelectItem value="it">Italian (IT)</SelectItem>
+                                  <SelectItem value="pt">Portuguese (PT)</SelectItem>
+                                  <SelectItem value="ru">Russian (RU)</SelectItem>
+                                  <SelectItem value="ja">Japanese (JA)</SelectItem>
+                                  <SelectItem value="zh">Chinese (ZH)</SelectItem>
+                                  <SelectItem value="ar">Arabic (AR)</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -1409,7 +1433,7 @@ export default function AdminPage() {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
                               <Input
                                 type="number"
-                                value={editingLesson.xp_reward || 20}
+                                value={editingLesson.xp_reward || 50}
                                 onChange={(e) => setEditingLesson({ ...editingLesson, xp_reward: Number(e.target.value) })}
                                 className="border-white/20 bg-white/5 text-white w-full"
                               />
@@ -1449,7 +1473,7 @@ export default function AdminPage() {
                             <div className="sm:col-span-1 md:col-span-2">
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
                               <Textarea
-                                value={JSON.stringify(editingLesson.content?.questions || [])}
+                                value={JSON.stringify(editingLesson.content?.questions || [], null, 2)}
                                 onChange={(e) => {
                                   try {
                                     const questions = JSON.parse(e.target.value);
@@ -1459,7 +1483,7 @@ export default function AdminPage() {
                                   }
                                 }}
                                 className="border-white/20 bg-white/5 text-white font-mono w-full"
-                                rows={4}
+                                rows={6}
                               />
                             </div>
                           </div>
@@ -1520,12 +1544,16 @@ export default function AdminPage() {
                                 <SelectValue placeholder="Select language" />
                               </SelectTrigger>
                               <SelectContent>
-                                {Array.from(new Set(quizzes.map(q => q.language))).map(lang => (
-                                  <SelectItem key={lang} value={lang}>{lang.toUpperCase()}</SelectItem>
-                                ))}
-                                <SelectItem value="es">ES</SelectItem>
-                                <SelectItem value="fr">FR</SelectItem>
-                                <SelectItem value="yo">YO</SelectItem>
+                                <SelectItem value="es">Spanish (ES)</SelectItem>
+                                <SelectItem value="fr">French (FR)</SelectItem>
+                                <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                                <SelectItem value="de">German (DE)</SelectItem>
+                                <SelectItem value="it">Italian (IT)</SelectItem>
+                                <SelectItem value="pt">Portuguese (PT)</SelectItem>
+                                <SelectItem value="ru">Russian (RU)</SelectItem>
+                                <SelectItem value="ja">Japanese (JA)</SelectItem>
+                                <SelectItem value="zh">Chinese (ZH)</SelectItem>
+                                <SelectItem value="ar">Arabic (AR)</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1577,7 +1605,7 @@ export default function AdminPage() {
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Passing Score (%)</label>
                             <Input
                               type="number"
-                              value={newQuiz.passing_score || 70}
+                              value={newQuiz.passing_score || 60}
                               onChange={(e) => setNewQuiz({ ...newQuiz, passing_score: Number(e.target.value) })}
                               className="border-white/20 bg-white/5 text-white w-full"
                             />
@@ -1586,6 +1614,8 @@ export default function AdminPage() {
                             <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
                             <Input
                               type="number"
+                              value={newQuiz.xp_reward || 50}
+                              onChange={(                               type="number"
                               value={newQuiz.xp_reward || 50}
                               onChange={(e) => setNewQuiz({ ...newQuiz, xp_reward: Number(e.target.value) })}
                               className="border-white/20 bg-white/5 text-white w-full"
@@ -1619,7 +1649,7 @@ export default function AdminPage() {
                             <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
                             <Textarea
                               placeholder='[{"id": 1, "question": "Example?", "type": "multiple_choice", "options": ["A", "B", "C"], "correct_answer": 0, "explanation": "Explanation"}]'
-                              value={JSON.stringify(newQuiz.questions || [])}
+                              value={JSON.stringify(newQuiz.questions || [], null, 2)}
                               onChange={(e) => {
                                 try {
                                   const questions = JSON.parse(e.target.value);
@@ -1629,7 +1659,7 @@ export default function AdminPage() {
                                 }
                               }}
                               className="border-white/20 bg-white/5 text-white font-mono w-full"
-                              rows={4}
+                              rows={6}
                             />
                           </div>
                         </div>
@@ -1643,7 +1673,7 @@ export default function AdminPage() {
                         <ScrollArea className="h-96">
                           <div className="space-y-4">
                             {quizzes.map((quiz) => (
-                                                           <motion.div
+                              <motion.div
                                 key={quiz.id}
                                 className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
                                 whileHover={{ scale: 1.01 }}
@@ -1652,7 +1682,7 @@ export default function AdminPage() {
                                   <div>
                                     <h4 className="font-medium">{quiz.title}</h4>
                                     <p className="text-sm text-slate-400">
-                                      {quiz.language.toUpperCase()} • {quiz.difficulty} • {quiz.questions.length} questions
+                                      {quiz.language.toUpperCase()} • {quiz.difficulty} • {quiz.questions?.length || 0} questions
                                     </p>
                                     <Badge className={quiz.is_published ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
                                       {quiz.is_published ? "Published" : "Draft"}
@@ -1682,7 +1712,7 @@ export default function AdminPage() {
                             {quizzes.length === 0 && (
                               <div className="text-center py-8 text-slate-400">
                                 <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                <p>No quizzes available</p>
+                                <p>No quizzes yet</p>
                               </div>
                             )}
                           </div>
@@ -1711,14 +1741,16 @@ export default function AdminPage() {
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {Array.from(new Set(quizzes.map((q) => q.language))).map((lang) => (
-                                    <SelectItem key={lang} value={lang}>
-                                      {lang.toUpperCase()}
-                                    </SelectItem>
-                                  ))}
-                                  <SelectItem value="es">ES</SelectItem>
-                                  <SelectItem value="fr">FR</SelectItem>
-                                  <SelectItem value="yo">YO</SelectItem>
+                                  <SelectItem value="es">Spanish (ES)</SelectItem>
+                                  <SelectItem value="fr">French (FR)</SelectItem>
+                                  <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                                  <SelectItem value="de">German (DE)</SelectItem>
+                                  <SelectItem value="it">Italian (IT)</SelectItem>
+                                  <SelectItem value="pt">Portuguese (PT)</SelectItem>
+                                  <SelectItem value="ru">Russian (RU)</SelectItem>
+                                  <SelectItem value="ja">Japanese (JA)</SelectItem>
+                                  <SelectItem value="zh">Chinese (ZH)</SelectItem>
+                                  <SelectItem value="ar">Arabic (AR)</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -1749,8 +1781,8 @@ export default function AdminPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="">No Category</SelectItem>
-                                  {Array.from(new Set(quizzes.map((q) => q.categories?.name).filter(Boolean))).map((category, idx) => (
-                                    <SelectItem key={idx} value={quizzes.find((q) => q.categories?.name === category)?.category_id || ""}>
+                                  {Array.from(new Set(quizzes.map(q => q.categories?.name).filter(Boolean))).map((category, idx) => (
+                                    <SelectItem key={idx} value={quizzes.find(q => q.categories?.name === category)?.category_id || ""}>
                                       {category}
                                     </SelectItem>
                                   ))}
@@ -1770,7 +1802,7 @@ export default function AdminPage() {
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Passing Score (%)</label>
                               <Input
                                 type="number"
-                                value={editingQuiz.passing_score || 70}
+                                value={editingQuiz.passing_score || 60}
                                 onChange={(e) => setEditingQuiz({ ...editingQuiz, passing_score: Number(e.target.value) })}
                                 className="border-white/20 bg-white/5 text-white w-full"
                               />
@@ -1810,7 +1842,7 @@ export default function AdminPage() {
                             <div className="sm:col-span-1 md:col-span-2">
                               <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
                               <Textarea
-                                value={JSON.stringify(editingQuiz.questions || [])}
+                                value={JSON.stringify(editingQuiz.questions || [], null, 2)}
                                 onChange={(e) => {
                                   try {
                                     const questions = JSON.parse(e.target.value);
@@ -1820,7 +1852,7 @@ export default function AdminPage() {
                                   }
                                 }}
                                 className="border-white/20 bg-white/5 text-white font-mono w-full"
-                                rows={4}
+                                rows={6}
                               />
                             </div>
                           </div>
@@ -1843,6 +1875,43 @@ export default function AdminPage() {
                       )}
                     </CardContent>
                   </Card>
+
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold mb-4">Quiz Attempts</h3>
+                    <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+                      <CardContent>
+                        <ScrollArea className="h-96">
+                          <div className="space-y-4">
+                            {quizAttempts.map((attempt) => (
+                              <motion.div
+                                key={attempt.id}
+                                className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                                whileHover={{ scale: 1.01 }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium">{attempt.profiles?.full_name || "Unknown"}</h4>
+                                    <p className="text-sm text-slate-400">
+                                      Quiz ID: {attempt.quiz_id.slice(0, 8)} • Score: {attempt.score}% • Time Taken: {attempt.time_taken || "N/A"}s
+                                    </p>
+                                    <p className="text-sm text-slate-400">
+                                      Completed: {new Date(attempt.completed_at).toLocaleString()}
+                                    </p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                            {quizAttempts.length === 0 && (
+                              <div className="text-center py-8 text-slate-400">
+                                <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p>No quiz attempts yet</p>
+                              </div>
+                            )}
+                          </div>
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </motion.div>
               </TabsContent>
             </AnimatePresence>
