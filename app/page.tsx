@@ -45,19 +45,19 @@ const features = [
     icon: Globe,
     title: "Free Translation",
     description: "Translate between 100+ languages instantly with our free LibreTranslate integration",
-    color: "text-blue-600",
+    color: "text-blue-800",
   },
   {
     icon: BookOpen,
     title: "Interactive Lessons",
     description: "Learn with engaging lessons designed by language experts and native speakers",
-    color: "text-emerald-600",
+    color: "text-emerald-800",
   },
   {
     icon: Brain,
     title: "Smart Quizzes",
     description: "Test your knowledge with adaptive quizzes that adjust to your learning pace",
-    color: "text-purple-600",
+    color: "text-amber-600",
   },
   {
     icon: Trophy,
@@ -151,7 +151,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       {/* Navigation */}
       <nav className="border-b border-gray-300 bg-white shadow-md">
         <div className="container mx-auto px-4 py-4">
@@ -161,7 +161,7 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center space-x-2"
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-800">
                 <Languages className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl font-bold text-gray-800">LingslatePal</span>
@@ -173,12 +173,12 @@ export default function HomePage() {
               className="flex items-center space-x-4"
             >
               <Link href="/auth/login">
-                <Button variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                <Button variant="outline" className="border-gray-300 text-gray-800 hover:bg-gray-200">
                   Login
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button className="bg-blue-600 text-white hover:bg-blue-700">
+                <Button className="bg-blue-800 text-white hover:bg-blue-900">
                   Get Started
                 </Button>
               </Link>
@@ -188,10 +188,10 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-12">
+      <section className="container mx-auto px-4 py-12 bg-gray-100">
         <div className="text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-            <Badge className="mb-4 bg-blue-100 text-blue-600 hover:bg-blue-200">
+            <Badge className="mb-4 bg-blue-50 text-blue-800 hover:bg-blue-100">
               <Zap className="mr-1 h-3 w-3" />
               100% Free Translation & Learning Platform
             </Badge>
@@ -209,13 +209,13 @@ export default function HomePage() {
 
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/auth/register">
-                <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700">
+                <Button size="lg" className="bg-blue-800 text-white hover:bg-blue-900">
                   Start Learning Free
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <Link href="/translate">
-                <Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                <Button size="lg" variant="outline" className="border-gray-300 text-gray-800 hover:bg-gray-200">
                   <PlayCircle className="mr-2 h-4 w-4" />
                   Try Translation
                 </Button>
@@ -224,15 +224,15 @@ export default function HomePage() {
 
             <div className="mt-8 flex items-center justify-center gap-6 text-sm text-gray-600">
               <div className="flex items-center gap-1">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-emerald-800" />
                 No Credit Card Required
               </div>
               <div className="flex items-center gap-1">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-emerald-800" />
                 100% Free Forever
               </div>
               <div className="flex items-center gap-1">
-                <CheckCircle className="h-4 w-4 text-green-600" />
+                <CheckCircle className="h-4 w-4 text-emerald-800" />
                 Works Offline
               </div>
             </div>
@@ -241,7 +241,7 @@ export default function HomePage() {
       </section>
 
       {/* Quick Translate Section */}
-      <section className="container mx-auto px-4 py-12">
+      <section className="container mx-auto px-4 py-12 bg-blue-50">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -257,7 +257,7 @@ export default function HomePage() {
       </section>
 
       {/* Stats Section */}
-      <section className="container mx-auto px-4 py-12 bg-gray-100">
+      <section className="container mx-auto px-4 py-12 bg-emerald-50">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -276,7 +276,7 @@ export default function HomePage() {
       </section>
 
       {/* Language Showcase */}
-      <section className="container mx-auto px-4 py-12">
+      <section className="container mx-auto px-4 py-12 bg-gray-100">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -287,7 +287,7 @@ export default function HomePage() {
           <p className="text-gray-600">Join millions learning these languages</p>
           <Button
             variant="outline"
-            className="mt-4 border-gray-300 text-gray-700 hover:bg-gray-100"
+            className="mt-4 border-gray-300 text-gray-800 hover:bg-gray-200"
             onClick={() => setIsLanguageRequestOpen(true)}
           >
             Request a Language
@@ -303,7 +303,7 @@ export default function HomePage() {
       <LearningPath />
 
       {/* Features Section */}
-      <section className="container mx-auto px-4 py-12">
+      <section className="container mx-auto px-4 py-12 bg-emerald-50">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -366,16 +366,16 @@ export default function HomePage() {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Award className="h-4 w-4 text-blue-600" />
+                  <Award className="h-4 w-4 text-blue-800" />
                   <span className="text-gray-800">7-Day Streak</span>
-                  <Badge variant="secondary" className="ml-auto bg-blue-100 text-blue-600">
+                  <Badge variant="secondary" className="ml-auto bg-blue-100 text-blue-800">
                     +50 XP
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <Award className="h-4 w-4 text-purple-600" />
+                  <Award className="h-4 w-4 text-amber-600" />
                   <span className="text-gray-800">Quiz Master</span>
-                  <Badge variant="secondary" className="ml-auto bg-purple-100 text-purple-600">
+                  <Badge variant="secondary" className="ml-auto bg-amber-100 text-amber-600">
                     +100 XP
                   </Badge>
                 </div>
@@ -411,8 +411,8 @@ export default function HomePage() {
           <Card className="border-gray-300 bg-white shadow-md">
             <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-green-100">
-                  <Users className="h-6 w-6 text-green-600" />
+                <div className="p-2 rounded-lg bg-emerald-100">
+                  <Users className="h-6 w-6 text-emerald-800" />
                 </div>
                 <div>
                   <CardTitle className="text-gray-800">Leaderboard</CardTitle>
@@ -450,7 +450,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-12">
+      <section className="container mx-auto px-4 py-12 bg-gray-100">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -467,13 +467,13 @@ export default function HomePage() {
             <CardContent>
               <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
                 <Link href="/auth/register">
-                  <Button size="lg" className="bg-blue-600 text-white hover:bg-blue-700">
+                  <Button size="lg" className="bg-blue-800 text-white hover:bg-blue-900">
                     <Users className="mr-2 h-4 w-4" />
                     Join Free Today
                   </Button>
                 </Link>
                 <Link href="/learn">
-                  <Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+                  <Button size="lg" variant="outline" className="border-gray-300 text-gray-800 hover:bg-gray-200">
                     <BookOpen className="mr-2 h-4 w-4" />
                     Explore Lessons
                   </Button>
@@ -500,7 +500,7 @@ export default function HomePage() {
                 value={languageName}
                 onChange={(e) => setLanguageName(e.target.value)}
                 placeholder="e.g., Swahili"
-                className={`mt-1 ${!languageName && reason && "border-red-500"}`}
+                className={`mt-1 ${!languageName && reason && "border-red-700"}`}
               />
             </div>
             <div>
@@ -524,19 +524,19 @@ export default function HomePage() {
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Why should we add this language?"
-                className={`mt-1 ${!reason && languageName && "border-red-500"}`}
+                className={`mt-1 ${!reason && languageName && "border-red-700"}`}
               />
             </div>
           </div>
           <DialogFooter>
             <Button
               variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-100"
+              className="border-gray-300 text-gray-800 hover:bg-gray-200"
               onClick={() => setIsLanguageRequestOpen(false)}
             >
               Cancel
             </Button>
-            <Button className="bg-blue-600 text-white hover:bg-blue-700" onClick={handleLanguageRequest}>
+            <Button className="bg-blue-800 text-white hover:bg-blue-900" onClick={handleLanguageRequest}>
               Submit Request
             </Button>
           </DialogFooter>
@@ -549,7 +549,7 @@ export default function HomePage() {
           <div className="grid gap-8 md:grid-cols-4">
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-800">
                   <Languages className="h-5 w-5 text-white" />
                 </div>
                 <span className="text-xl font-bold text-gray-800">LingslatePal</span>
@@ -564,22 +564,22 @@ export default function HomePage() {
               <h3 className="font-semibold text-gray-800 mb-4">Features</h3>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li>
-                  <Link href="/translate" className="hover:text-blue-600">
+                  <Link href="/translate" className="hover:text-blue-800">
                     Free Translation
                   </Link>
                 </li>
                 <li>
-                  <Link href="/learn" className="hover:text-blue-600">
+                  <Link href="/learn" className="hover:text-blue-800">
                     Interactive Lessons
                   </Link>
                 </li>
                 <li>
-                  <Link href="/quiz" className="hover:text-blue-600">
+                  <Link href="/quiz" className="hover:text-blue-800">
                     Smart Quizzes
                   </Link>
                 </li>
                 <li>
-                  <Link href="/profile" className="hover:text-blue-600">
+                  <Link href="/profile" className="hover:text-blue-800">
                     Progress Tracking
                   </Link>
                 </li>
@@ -596,7 +596,7 @@ export default function HomePage() {
                 <li>
                   <button
                     onClick={() => setIsLanguageRequestOpen(true)}
-                    className="text-blue-600 hover:underline"
+                    className="text-blue-800 hover:underline"
                   >
                     Request a Language
                   </button>
@@ -608,22 +608,22 @@ export default function HomePage() {
               <h3 className="font-semibold text-gray-800 mb-4">Support</h3>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li>
-                  <Link href="/help" className="hover:text-blue-600">
+                  <Link href="/help" className="hover:text-blue-800">
                     Help Center
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="hover:text-blue-600">
+                  <Link href="/contact" className="hover:text-blue-800">
                     Contact Us
                   </Link>
                 </li>
                 <li>
-                  <Link href="/privacy" className="hover:text-blue-600">
+                  <Link href="/privacy" className="hover:text-blue-800">
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/terms" className="hover:text-blue-600">
+                  <Link href="/terms" className="hover:text-blue-800">
                     Terms of Service
                   </Link>
                 </li>
@@ -634,8 +634,8 @@ export default function HomePage() {
           <div className="border-t border-gray-300 mt-8 pt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
             <p className="text-sm text-gray-600">© 2025 LingslatePal. Made with ❤️ for language learners worldwide.</p>
             <div className="flex items-center gap-4">
-              <Badge variant="secondary" className="bg-green-100 text-green-600">
-                <div className="w-2 h-2 bg-green-600 rounded-full mr-2 animate-pulse" />
+              <Badge variant="secondary" className="bg-emerald-100 text-emerald-800">
+                <div className="w-2 h-2 bg-emerald-800 rounded-full mr-2 animate-pulse" />
                 All Systems Operational
               </Badge>
             </div>
