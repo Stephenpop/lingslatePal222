@@ -1,6 +1,7 @@
+
 "use client";
 
-import React from "react"; // Added explicit import
+import React from "react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -1616,14 +1617,12 @@ export default function AdminPage() {
                             <Input
                               type="number"
                               value={newQuiz.xp_reward || 50}
-                              onChange={(                               type="number"
-                              value={newQuiz.xp_reward || 50}
                               onChange={(e) => setNewQuiz({ ...newQuiz, xp_reward: Number(e.target.value) })}
                               className="border-white/20 bg-white/5 text-white w-full"
                             />
                           </div>
                           <div>
-                            <label className="text-sm font-medium text-slate-300 mb-2 block">Published</label>
+                           <label className="text-sm font-medium text-slate-300 mb-2 block">Published</label>
                             <Select
                               value={newQuiz.is_published ? "true" : "false"}
                               onValueChange={(value) => setNewQuiz({ ...newQuiz, is_published: value === "true" })}
@@ -1683,7 +1682,7 @@ export default function AdminPage() {
                                   <div>
                                     <h4 className="font-medium">{quiz.title}</h4>
                                     <p className="text-sm text-slate-400">
-                                      {quiz.language.toUpperCase()} • {quiz.difficulty} • {quiz.questions?.length || 0} questions
+                                      {quiz.language.toUpperCase()} • {quiz.difficulty} • {quiz.questions.length} questions
                                     </p>
                                     <Badge className={quiz.is_published ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
                                       {quiz.is_published ? "Published" : "Draft"}
@@ -1710,12 +1709,6 @@ export default function AdminPage() {
                                 </div>
                               </motion.div>
                             ))}
-                            {quizzes.length === 0 && (
-                              <div className="text-center py-8 text-slate-400">
-                                <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                <p>No quizzes yet</p>
-                              </div>
-                            )}
                           </div>
                         </ScrollArea>
                       </div>
@@ -1878,8 +1871,11 @@ export default function AdminPage() {
                   </Card>
 
                   <div className="mt-6">
-                    <h3 className="text-lg font-semibold mb-4">Quiz Attempts</h3>
                     <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle>Quiz Attempts</CardTitle>
+                        <CardDescription className="text-slate-300">Recent quiz attempts by users</CardDescription>
+                      </CardHeader>
                       <CardContent>
                         <ScrollArea className="h-96">
                           <div className="space-y-4">
@@ -1893,21 +1889,24 @@ export default function AdminPage() {
                                   <div>
                                     <h4 className="font-medium">{attempt.profiles?.full_name || "Unknown"}</h4>
                                     <p className="text-sm text-slate-400">
-                                      Quiz ID: {attempt.quiz_id.slice(0, 8)} • Score: {attempt.score}% • Time Taken: {attempt.time_taken || "N/A"}s
+                                      Quiz ID: {attempt.quiz_id.slice(0, 8)} • Score: {attempt.score}%
                                     </p>
                                     <p className="text-sm text-slate-400">
                                       Completed: {new Date(attempt.completed_at).toLocaleString()}
                                     </p>
                                   </div>
+                                  <Badge
+                                    className={
+                                      attempt.score >= (quizzes.find((q) => q.id === attempt.quiz_id)?.passing_score || 60)
+                                        ? "bg-green-500/20 text-green-300"
+                                        : "bg-red-500/20 text-red-300"
+                                    }
+                                  >
+                                    {attempt.score >= (quizzes.find((q) => q.id === attempt.quiz_id)?.passing_score || 60) ? "Passed" : "Failed"}
+                                  </Badge>
                                 </div>
                               </motion.div>
                             ))}
-                            {quizAttempts.length === 0 && (
-                              <div className="text-center py-8 text-slate-400">
-                                <Trophy className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                                <p>No quiz attempts yet</p>
-                              </div>
-                            )}
                           </div>
                         </ScrollArea>
                       </CardContent>
@@ -1922,5 +1921,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-
