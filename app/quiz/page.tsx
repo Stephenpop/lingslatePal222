@@ -60,6 +60,7 @@ export default function QuizPage() {
   const [recentAttempts, setRecentAttempts] = useState<QuizAttempt[]>([]);
   const [completedQuizIds, setCompletedQuizIds] = useState<string[]>([]);
   const [learningLanguage, setLearningLanguage] = useState<string>("multilingual");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   const availableLanguages = [
@@ -67,6 +68,8 @@ export default function QuizPage() {
     { code: "es", name: "Spanish" },
     { code: "fr", name: "French" },
     { code: "yo", name: "Yoruba" },
+    { code: "ig", name: "Igbo" },
+    { code: "ha", name: "Hausa" },
     { code: "de", name: "German" },
     { code: "it", name: "Italian" },
     { code: "pt", name: "Portuguese" },
@@ -78,7 +81,7 @@ export default function QuizPage() {
 
   useEffect(() => {
     loadQuizData();
-  }, [learningLanguage]);
+  }, [learningLanguage, categoryFilter]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -184,7 +187,18 @@ export default function QuizPage() {
     if (quiz.time_limit) {
       setTimeLeft(quiz.time_limit * 60);
     }
-    speakText(quiz.questions[0].question);
+    // Speak quiz title and first question
+    speakQuestion(quiz.questions[0], quiz.title);
+  };
+
+  const speakQuestion = (question: Question, quizTitle?: string) => {
+    let textToSpeak = quizTitle ? `${quizTitle}. Question: ${question.question}` : question.question;
+    if (question.type === "multiple_choice" && question.options) {
+      question.options.forEach((option, index) => {
+        textToSpeak += ` Option ${String.fromCharCode(65 + index)}: ${option}.`;
+      });
+    }
+    speakText(textToSpeak);
   };
 
   const handleAnswer = (questionId: number, answer: any) => {
@@ -206,12 +220,7 @@ export default function QuizPage() {
     if (selectedQuiz && currentQuestion < selectedQuiz.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       const nextQuestion = selectedQuiz.questions[currentQuestion + 1];
-      speakText(nextQuestion.question);
-      if (nextQuestion.type === "multiple_choice" && nextQuestion.options) {
-        nextQuestion.options.forEach((option, index) => {
-          speakText(`${index + 1}. ${option}`);
-        });
-      }
+      speakQuestion(nextQuestion);
     } else {
       finishQuiz();
     }
@@ -221,12 +230,7 @@ export default function QuizPage() {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
       const prevQuestion = selectedQuiz!.questions[currentQuestion - 1];
-      speakText(prevQuestion.question);
-      if (prevQuestion.type === "multiple_choice" && prevQuestion.options) {
-        prevQuestion.options.forEach((option, index) => {
-          speakText(`${index + 1}. ${option}`);
-        });
-      }
+      speakQuestion(prevQuestion);
     }
   };
 
@@ -243,84 +247,14 @@ export default function QuizPage() {
     }
   };
 
- const finishQuiz = async () => {
-  if (!selectedQuiz) return;
+  const finishQuiz = async () => {
+    if (!selectedQuiz || !user) return;
 
-  let correctAnswers = 0;
-  const totalQuestions = selectedQuiz.questions.length;
+    let correctAnswers = 0;
+    const totalQuestions = selectedQuiz.questions.length;
 
-  selectedQuiz.questions.forEach((question: Question) => {
-    const userAnswer = answers[question.id];
-    const wasSkipped = skips.includes(question.id);
-    
-    if (!wasSkipped) {
-      if (question.type === "multiple_choice") {
-        if (userAnswer === question.correct_answer) {
-          correctAnswers++;
-        }
-      } else if (question.type === "text_input") {
-        const correctAnswer = question.correct_answer as string;
-        const alternatives = question.alternatives || [];
-        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim());
-
-        if (userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim())) {
-          correctAnswers++;
-        }
-      }
-    }
-
-    const correctAnswerText = question.type === "multiple_choice" 
-      ? question.options![question.correct_answer as number]
-      : question.correct_answer as string;
-    const userAnswerText = wasSkipped ? "Skipped" : (question.type === "multiple_choice" ? question.options![userAnswer] : userAnswer) || "No answer";
-    speakText(`Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`);
-  });
-
-
-    const finalScore = Math.round((correctAnswers / totalQuestions) * 100);
-    setScore(finalScore);
-    setShowResults(true);
-    setQuizStarted(false);
-
-    if (user) {
-      try {
-        const { error } = await supabase.from("quiz_attempts").insert({
-          user_id: user.id,
-          quiz_id: selectedQuiz.id,
-          score: finalScore,
-          answers: Object.entries(answers).map(([questionId, answer]) => ({
-            question_id: Number.parseInt(questionId),
-            answer,
-          })),
-          time_taken: selectedQuiz.time_limit ? selectedQuiz.time_limit * 60 - (timeLeft || 0) : null,
-        });
-
-        if (error) throw error;
-
-        if (finalScore >= selectedQuiz.passing_score) {
-          toast.success(`Quiz completed! You earned ${selectedQuiz.xp_reward} XP!`);
-
-          if (user.profile) {
-            const { error: updateError } = await supabase
-              .from("profiles")
-              .update({
-                xp_points: (user.profile.xp_points || 0) + selectedQuiz.xp_reward,
-              })
-              .eq("id", user.id);
-
-            if (updateError) console.error("Error updating XP:", updateError);
-          }
-        }
-
-        await loadQuizData();
-      } catch (error) {
-        console.error("Error saving quiz attempt:", error);
-        toast.error("Failed to save quiz attempt");
-      }
-    }
-
-    // Speak results
-    speakText(`Quiz completed. You scored ${finalScore} percent.`);
+    // Calculate score and prepare review text
+    let reviewText = `Quiz completed. You scored ${score} percent.`;
     selectedQuiz.questions.forEach((question: Question) => {
       const userAnswer = answers[question.id];
       const wasSkipped = skippedQuestions.includes(question.id);
@@ -328,20 +262,77 @@ export default function QuizPage() {
 
       if (!wasSkipped) {
         if (question.type === "multiple_choice") {
-          isCorrect = userAnswer === question.correct_answer;
+          if (userAnswer === question.correct_answer) {
+            correctAnswers++;
+            isCorrect = true;
+          }
         } else if (question.type === "text_input") {
           const correctAnswer = question.correct_answer as string;
           const alternatives = question.alternatives || [];
           const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim());
-          isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim());
+          if (userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim())) {
+            correctAnswers++;
+            isCorrect = true;
+          }
         }
       }
 
-      const correctAnswerText = question.type === "multiple_choice" 
+      const correctAnswerText = question.type === "multiple_choice"
         ? question.options![question.correct_answer as number]
         : question.correct_answer as string;
-const userAnswerText = wasSkipped ? "Skipped" : (question.type === "multiple_choice" ? question.options![userAnswer] : userAnswer) || "No answer";      speakText(`Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`);
+      const userAnswerText = wasSkipped
+        ? "Skipped"
+        : (question.type === "multiple_choice"
+            ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
+            : userAnswer || "No answer");
+      reviewText += ` Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`;
+      if (question.explanation) {
+        reviewText += ` Explanation: ${question.explanation}.`;
+      }
     });
+
+    const finalScore = Math.round((correctAnswers / totalQuestions) * 100);
+    setScore(finalScore);
+    setShowResults(true);
+    setQuizStarted(false);
+
+    // Speak the review text
+    speakText(reviewText);
+
+    try {
+      const { error } = await supabase.from("quiz_attempts").insert({
+        user_id: user.id,
+        quiz_id: selectedQuiz.id,
+        score: finalScore,
+        answers: Object.entries(answers).map(([questionId, answer]) => ({
+          question_id: Number.parseInt(questionId),
+          answer,
+        })),
+        time_taken: selectedQuiz.time_limit ? selectedQuiz.time_limit * 60 - (timeLeft || 0) : null,
+      });
+
+      if (error) throw error;
+
+      if (finalScore >= selectedQuiz.passing_score) {
+        toast.success(`Quiz completed! You earned ${selectedQuiz.xp_reward} XP!`);
+
+        if (user.profile) {
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              xp_points: (user.profile.xp_points || 0) + selectedQuiz.xp_reward,
+            })
+            .eq("id", user.id);
+
+          if (updateError) throw updateError;
+        }
+      }
+
+      await loadQuizData();
+    } catch (error) {
+      console.error("Error saving quiz attempt:", error);
+      toast.error("Failed to save quiz attempt");
+    }
   };
 
   const resetQuiz = () => {
@@ -374,6 +365,10 @@ const userAnswerText = wasSkipped ? "Skipped" : (question.type === "multiple_cho
         return "bg-gray-100 text-gray-700";
     }
   };
+
+  const filteredCategories = categoryFilter === "all"
+    ? categories
+    : categories.filter((category) => category.id === categoryFilter);
 
   if (loading) {
     return (
@@ -416,32 +411,48 @@ const userAnswerText = wasSkipped ? "Skipped" : (question.type === "multiple_cho
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
               <h1 className="text-3xl font-bold text-slate-800 mb-2">Language Quizzes</h1>
               <p className="text-slate-600 mb-4">Test your knowledge and earn XP points</p>
-              <Select value={learningLanguage} onValueChange={handleLanguageChange}>
-                <SelectTrigger className="w-48 border-slate-200 bg-white/80 text-slate-800">
-                  <Languages className="mr-2 h-4 w-4" />
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableLanguages.map((lang) => (
-                    <SelectItem key={lang.code} value={lang.code}>
-                      {lang.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-4">
+                <Select value={learningLanguage} onValueChange={handleLanguageChange}>
+                  <SelectTrigger className="w-48 border-slate-200 bg-white/80 text-slate-800">
+                    <Languages className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableLanguages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-48 border-slate-200 bg-white/80 text-slate-800">
+                    <Languages className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Filter by category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </motion.div>
 
             <div className="grid gap-8 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                {categories.length === 0 ? (
+                {filteredCategories.length === 0 ? (
                   <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
                     <CardContent className="p-8 text-center">
                       <Trophy className="h-12 w-12 mx-auto mb-3 text-slate-400" />
-                      <p className="text-slate-500">No quizzes available for this language</p>
+                      <p className="text-slate-500">No quizzes available for this language or category</p>
                     </CardContent>
                   </Card>
                 ) : (
-                  categories.map((category) => (
+                  filteredCategories.map((category) => (
                     <div key={category.id} className="mb-8">
                       <h2 className="text-xl font-semibold text-slate-800 mb-4">{category.name}</h2>
                       <div className="grid gap-4 md:grid-cols-2">
@@ -639,19 +650,26 @@ const userAnswerText = wasSkipped ? "Skipped" : (question.type === "multiple_cho
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => speakText(
-                                  `Question: ${question.question}. Your answer: ${
-                                    wasSkipped ? "Skipped" : 
-                                    question.type === "multiple_choice" ? question.options![userAnswer] : userAnswer || "No answer"
+                                onClick={() => {
+                                  let text = `Question: ${question.question}. Your answer: ${
+                                    wasSkipped
+                                      ? "Skipped"
+                                      : question.type === "multiple_choice"
+                                      ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
+                                      : userAnswer || "No answer"
                                   }. Correct answer: ${
-                                    question.type === "multiple_choice" 
+                                    question.type === "multiple_choice"
                                       ? question.options![question.correct_answer as number]
                                       : question.correct_answer as string
-                                  }.`
-                                )}
+                                  }.`;
+                                  if (question.explanation) {
+                                    text += ` Explanation: ${question.explanation}.`;
+                                  }
+                                  speakText(text);
+                                }}
                                 disabled={isSpeaking}
                               >
-                                <Volume2 className="h-4 w-4" />
+                                <Volume2 className="h-4 w-4 text-black" />
                               </Button>
                             </div>
 
@@ -660,17 +678,16 @@ const userAnswerText = wasSkipped ? "Skipped" : (question.type === "multiple_cho
                                 {question.options.map((option, optionIndex) => (
                                   <div
                                     key={optionIndex}
-                                    className={`text-sm p-2 rounded flex items-center ${
+                                    className={`text-sm p-2 rounded flex items-center cursor-pointer ${
                                       optionIndex === question.correct_answer
                                         ? "bg-green-100 text-green-800"
-                                        : optionIndex === userAnswer && !wasSkipped
-                                        ? "bg-red-100 text-red-800"
-                                        : answers[question.id] === optionIndex
+                                        : userAnswer === optionIndex && !wasSkipped
                                         ? "bg-blue-100 text-blue-800"
-                                        : "text-slate-800 bg-gray-50"
+                                        : "text-slate-800 bg-gray-50 hover:bg-gray-100"
                                     }`}
+                                    onClick={() => !wasSkipped && handleAnswer(question.id, optionIndex)}
                                   >
-                                    {option}
+                                    {String.fromCharCode(65 + optionIndex)}. {option}
                                     {optionIndex === question.correct_answer && " ✓"}
                                     {optionIndex === userAnswer && !wasSkipped && optionIndex !== question.correct_answer && " ✗"}
                                   </div>
@@ -745,18 +762,10 @@ const userAnswerText = wasSkipped ? "Skipped" : (question.type === "multiple_cho
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      const question = selectedQuiz.questions[currentQuestion];
-                      speakText(question.question);
-                      if (question.type === "multiple_choice" && question.options) {
-                        question.options.forEach((option, index) => {
-                          speakText(`${index + 1}. ${option}`);
-                        });
-                      }
-                    }}
+                    onClick={() => speakQuestion(selectedQuiz.questions[currentQuestion])}
                     disabled={isSpeaking}
                   >
-                    <Volume2 className="h-4 w-4" />
+                    <Volume2 className="h-4 w-4 text-black" />
                   </Button>
                 </div>
               </CardHeader>
@@ -776,10 +785,10 @@ const userAnswerText = wasSkipped ? "Skipped" : (question.type === "multiple_cho
                           className={`flex-1 cursor-pointer p-2 rounded ${
                             answers[selectedQuiz.questions[currentQuestion].id] === index
                               ? "bg-blue-100 text-blue-800"
-                              : "text-slate-800 bg-gray-50"
+                              : "text-slate-800 bg-gray-50 hover:bg-gray-100"
                           }`}
                         >
-                          {option}
+                          {String.fromCharCode(65 + index)}. {option}
                         </Label>
                       </div>
                     ))}
