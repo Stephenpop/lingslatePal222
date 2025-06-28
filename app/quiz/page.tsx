@@ -243,15 +243,17 @@ export default function QuizPage() {
     }
   };
 
-  const finishQuiz = async () => {
-    if (!selectedQuiz) return;
+ const finishQuiz = async () => {
+  if (!selectedQuiz) return;
 
-    let correctAnswers = 0;
-    const totalQuestions = selectedQuiz.questions.length;
+  let correctAnswers = 0;
+  const totalQuestions = selectedQuiz.questions.length;
 
-    selectedQuiz.questions.forEach((question: Question) => {
-      const userAnswer = answers[question.id];
-
+  selectedQuiz.questions.forEach((question: Question) => {
+    const userAnswer = answers[question.id];
+    const wasSkipped = skips.includes(question.id);
+    
+    if (!wasSkipped) {
       if (question.type === "multiple_choice") {
         if (userAnswer === question.correct_answer) {
           correctAnswers++;
@@ -265,7 +267,15 @@ export default function QuizPage() {
           correctAnswers++;
         }
       }
-    });
+    }
+
+    const correctAnswerText = question.type === "multiple_choice" 
+      ? question.options![question.correct_answer as number]
+      : question.correct_answer as string;
+    const userAnswerText = wasSkipped ? "Skipped" : (question.type === "multiple_choice" ? question.options![userAnswer] : userAnswer) || "No answer";
+    speakText(`Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`);
+  });
+
 
     const finalScore = Math.round((correctAnswers / totalQuestions) * 100);
     setScore(finalScore);
