@@ -62,6 +62,8 @@ export default function LearnPage() {
     { code: "es", name: "Spanish" },
     { code: "fr", name: "French" },
     { code: "yo", name: "Yoruba" },
+    { code: "ig", name: "Igbo" },
+    { code: "ha", name: "Hausa" },
     { code: "de", name: "German" },
     { code: "it", name: "Italian" },
     { code: "pt", name: "Portuguese" },
@@ -135,22 +137,28 @@ export default function LearnPage() {
     setAnswers({});
     setShowResults(false);
     setScore(0);
-    speakText(lesson.title + ". " + (lesson.description || ""));
+    // Speak all lesson content
+    speakText(`${lesson.title}. ${lesson.description || ""}. ${lesson.content.main_content}`);
   };
 
   const startQuestions = () => {
     if (selectedLesson && selectedLesson.content.questions.length > 0) {
       setCurrentQuestion(0);
       const firstQuestion = selectedLesson.content.questions[0];
-      speakText(firstQuestion.question);
-      if (firstQuestion.type === "multiple_choice" && firstQuestion.options) {
-        firstQuestion.options.forEach((option, index) => {
-          speakText(`${index + 1}. ${option}`);
-        });
-      }
+      speakQuestion(firstQuestion);
     } else {
       completeLesson();
     }
+  };
+
+  const speakQuestion = (question: Question) => {
+    let textToSpeak = question.question;
+    if (question.type === "multiple_choice" && question.options) {
+      question.options.forEach((option, index) => {
+        textToSpeak += ` Option ${String.fromCharCode(65 + index)}: ${option}.`;
+      });
+    }
+    speakText(textToSpeak);
   };
 
   const handleAnswer = (questionId: number, answer: any) => {
@@ -164,12 +172,7 @@ export default function LearnPage() {
     if (selectedLesson && currentQuestion !== null && currentQuestion < selectedLesson.content.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       const nextQuestion = selectedLesson.content.questions[currentQuestion + 1];
-      speakText(nextQuestion.question);
-      if (nextQuestion.type === "multiple_choice" && nextQuestion.options) {
-        nextQuestion.options.forEach((option, index) => {
-          speakText(`${index + 1}. ${option}`);
-        });
-      }
+      speakQuestion(nextQuestion);
     } else {
       finishQuestions();
     }
@@ -178,13 +181,8 @@ export default function LearnPage() {
   const previousQuestion = () => {
     if (currentQuestion !== null && currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
-      const prevQuestion = selectedLesson!.content.questions[currentQuestion - 1];
-      speakText(prevQuestion.question);
-      if (prevQuestion.type === "multiple_choice" && prevQuestion.options) {
-        prevQuestion.options.forEach((option, index) => {
-          speakText(`${index + 1}. ${option}`);
-        });
-      }
+      const prevQuestion = selectedLesson.content.questions[currentQuestion - 1];
+      speakQuestion(prevQuestion);
     }
   };
 
@@ -229,7 +227,8 @@ export default function LearnPage() {
     setScore(finalScore);
     setShowResults(true);
 
-    speakText(`Lesson completed. You scored ${finalScore} percent.`);
+    // Speak results and review
+    let reviewText = `Lesson completed. You scored ${finalScore} percent.`;
     selectedLesson.content.questions.forEach((question: Question) => {
       const userAnswer = answers[question.id];
       let isCorrect = false;
@@ -246,9 +245,15 @@ export default function LearnPage() {
       const correctAnswerText = question.type === "multiple_choice" 
         ? question.options![question.correct_answer as number]
         : question.correct_answer as string;
-      const userAnswerText = question.type === "multiple_choice" ? question.options![userAnswer] : userAnswer || "No answer";
-      speakText(`Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`);
+      const userAnswerText = question.type === "multiple_choice" 
+        ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
+        : userAnswer || "No answer";
+      reviewText += ` Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`;
+      if (question.explanation) {
+        reviewText += ` Explanation: ${question.explanation}.`;
+      }
     });
+    speakText(reviewText);
 
     if (finalScore >= 70) {
       await completeLesson();
@@ -515,18 +520,24 @@ export default function LearnPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => speakText(
-                                  `Question: ${question.question}. Your answer: ${
-                                    question.type === "multiple_choice" ? question.options![userAnswer] : userAnswer || "No answer"
+                                onClick={() => {
+                                  let text = `Question: ${question.question}. Your answer: ${
+                                    question.type === "multiple_choice" 
+                                      ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
+                                      : userAnswer || "No answer"
                                   }. Correct answer: ${
                                     question.type === "multiple_choice" 
                                       ? question.options![question.correct_answer as number]
                                       : question.correct_answer as string
-                                  }.`
-                                )}
+                                  }.`;
+                                  if (question.explanation) {
+                                    text += ` Explanation: ${question.explanation}.`;
+                                  }
+                                  speakText(text);
+                                }}
                                 disabled={isSpeaking}
                               >
-                                <Volume2 className="h-4 w-4" />
+                                <Volume2 className="h-4 w-4 text-black" />
                               </Button>
                             </div>
 
@@ -535,17 +546,16 @@ export default function LearnPage() {
                                 {question.options.map((option, optionIndex) => (
                                   <div
                                     key={optionIndex}
-                                    className={`text-sm p-2 rounded flex items-center ${
+                                    className={`text-sm p-2 rounded flex items-center cursor-pointer ${
                                       optionIndex === question.correct_answer
                                         ? "bg-green-100 text-green-800"
-                                        : optionIndex === userAnswer
-                                        ? "bg-red-100 text-red-800"
-                                        : answers[question.id] === optionIndex
+                                        : userAnswer === optionIndex
                                         ? "bg-blue-100 text-blue-800"
-                                        : "text-slate-800 bg-gray-50"
+                                        : "text-slate-800 bg-gray-50 hover:bg-gray-100"
                                     }`}
+                                    onClick={() => handleAnswer(question.id, optionIndex)}
                                   >
-                                    {option}
+                                    {String.fromCharCode(65 + optionIndex)}. {option}
                                     {optionIndex === question.correct_answer && " ✓"}
                                     {optionIndex === userAnswer && optionIndex !== question.correct_answer && " ✗"}
                                   </div>
@@ -620,18 +630,10 @@ export default function LearnPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      const question = selectedLesson.content.questions[currentQuestion];
-                      speakText(question.question);
-                      if (question.type === "multiple_choice" && question.options) {
-                        question.options.forEach((option, index) => {
-                          speakText(`${index + 1}. ${option}`);
-                        });
-                      }
-                    }}
+                    onClick={() => speakQuestion(selectedLesson.content.questions[currentQuestion])}
                     disabled={isSpeaking}
                   >
-                    <Volume2 className="h-4 w-4" />
+                    <Volume2 className="h-4 w-4 text-black" />
                   </Button>
                 </div>
               </CardHeader>
@@ -651,10 +653,10 @@ export default function LearnPage() {
                           className={`flex-1 cursor-pointer p-2 rounded ${
                             answers[selectedLesson.content.questions[currentQuestion].id] === index
                               ? "bg-blue-100 text-blue-800"
-                              : "text-slate-800 bg-gray-50"
+                              : "text-slate-800 bg-gray-50 hover:bg-gray-100"
                           }`}
                         >
-                          {option}
+                          {String.fromCharCode(65 + index)}. {option}
                         </Label>
                       </div>
                     ))}
@@ -705,10 +707,10 @@ export default function LearnPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => speakText(selectedLesson.title + ". " + (selectedLesson.description || ""))}
+                    onClick={() => speakText(`${selectedLesson.title}. ${selectedLesson.description || ""}. ${selectedLesson.content.main_content}`)}
                     disabled={isSpeaking}
                   >
-                    <Volume2 className="h-4 w-4" />
+                    <Volume2 className="h-4 w-4 text-black" />
                   </Button>
                 </div>
                 <CardDescription className="text-slate-600">{selectedLesson.description || "No description"}</CardDescription>
