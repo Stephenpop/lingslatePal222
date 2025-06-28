@@ -1,223 +1,261 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { BookOpen, Clock, Trophy, Filter, ArrowLeft, ArrowRight, CheckCircle, XCircle, Languages } from "lucide-react"
-import Link from "next/link"
-import { authService } from "@/lib/auth"
-import { supabase } from "@/lib/supabase"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { BookOpen, Clock, Trophy, Filter, ArrowLeft, ArrowRight, CheckCircle, XCircle, Languages } from "lucide-react";
+import Link from "next/link";
+import { authService } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface Question {
-  id: number
-  question: string
-  type: "multiple_choice" | "text_input"
-  options?: string[]
-  correct_answer: number | string
-  alternatives?: string[]
-  explanation?: string
+  id: number;
+  question: string;
+  type: "multiple_choice" | "text_input";
+  options?: string[];
+  correct_answer: number | string;
+  alternatives?: string[];
+  explanation?: string;
 }
 
 interface Lesson {
-  id: string
-  title: string
-  description: string | null
-  language: string
-  difficulty: "beginner" | "intermediate" | "advanced"
+  id: string;
+  title: string;
+  description: string | null;
+  language: string;
+  difficulty: "beginner" | "intermediate" | "advanced";
   content: {
-    main_content: string // Text, YouTube embed URL, or other content based on content_type
-    questions: Question[]
-  }
-  order_index: number
-  is_published: boolean
-  content_type: "text" | "video" | "audio" | "interactive"
-  estimated_duration: number | null
-  xp_reward: number
+    main_content: string;
+    questions: Question[];
+  };
+  order_index: number;
+  is_published: boolean;
+  content_type: "text" | "video" | "audio" | "interactive";
+  estimated_duration: number | null;
+  xp_reward: number;
 }
 
 export default function LearnPage() {
-  const [user, setUser] = useState<any>(null)
-  const [lessons, setLessons] = useState<Lesson[]>([])
-  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([])
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null)
-  const [currentQuestion, setCurrentQuestion] = useState<number | null>(null)
-  const [answers, setAnswers] = useState<Record<number, any>>({})
-  const [showResults, setShowResults] = useState(false)
-  const [score, setScore] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [difficultyFilter, setDifficultyFilter] = useState<string>("all")
-  const router = useRouter()
+  const [user, setUser] = useState<any>(null);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>([]);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<number | null>(null);
+  const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [showResults, setShowResults] = useState(false);
+  const [score, setScore] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
+  const [learningLanguage, setLearningLanguage] = useState<string>("es"); // Default to Spanish
+  const router = useRouter();
+
+  // Available languages for selection (based on provided lessons)
+  const availableLanguages = [
+    { code: "es", name: "Spanish" },
+    { code: "fr", name: "French" },
+    { code: "yo", name: "Yoruba" },
+    { code: "de", name: "German" },
+    { code: "it", name: "Italian" },
+    { code: "pt", name: "Portuguese" },
+    { code: "ru", name: "Russian" },
+    { code: "ja", name: "Japanese" },
+    { code: "zh", name: "Chinese" },
+    { code: "ar", name: "Arabic" },
+  ];
 
   useEffect(() => {
-    loadUserAndLessons()
-  }, [])
+    loadUserAndLessons();
+  }, [learningLanguage]);
 
   const loadUserAndLessons = async () => {
     try {
-      const currentUser = await authService.getCurrentUser()
+      setLoading(true);
+      const currentUser = await authService.getCurrentUser();
       if (!currentUser) {
-        router.push("/auth/login")
-        return
+        router.push("/auth/login");
+        toast.error("Please log in to access lessons");
+        return;
       }
-      setUser(currentUser)
+      setUser(currentUser);
 
+      // Set learning language from user profile or default to 'es'
+      const userLearningLanguage = currentUser.profile?.learning_language || learningLanguage;
+      setLearningLanguage(userLearningLanguage);
+
+      // Fetch lessons for the selected language
       const { data: lessonsData, error } = await supabase
         .from("lessons")
         .select("*")
-        .eq("language", currentUser.profile?.learning_language || "es")
+        .eq("language", userLearningLanguage)
         .eq("is_published", true)
-        .order("order_index", { ascending: true })
+        .order("order_index", { ascending: true });
 
-      if (error) throw error
-      setLessons(lessonsData || [])
+      if (error) throw error;
+      setLessons(lessonsData || []);
 
       // Load completed lessons
-      if (currentUser) {
-        const { data: completionsData } = await supabase
-          .from("lesson_completions")
-          .select("lesson_id")
-          .eq("user_id", currentUser.id)
-        setCompletedLessonIds(completionsData?.map((c) => c.lesson_id) || [])
+      const { data: completionsData } = await supabase
+        .from("lesson_completions")
+        .select("lesson_id")
+        .eq("user_id", currentUser.id);
+      setCompletedLessonIds(completionsData?.map((c) => c.lesson_id) || []);
+    } catch (error) {
+      console.error("Error loading user and lessons:", error);
+      toast.error("Failed to load lessons");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLanguageChange = async (languageCode: string) => {
+    try {
+      setLearningLanguage(languageCode);
+      if (user) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ learning_language: languageCode })
+          .eq("id", user.id);
+        if (error) throw error;
+        toast.success(`Learning language set to ${availableLanguages.find((lang) => lang.code === languageCode)?.name}`);
       }
     } catch (error) {
-      console.error("Error loading lessons:", error)
-      toast.error("Failed to load lessons")
-    } finally {
-      setLoading(false)
+      console.error("Error updating learning language:", error);
+      toast.error("Failed to update learning language");
     }
-  }
+  };
 
   const startLesson = (lesson: Lesson) => {
-    setSelectedLesson(lesson)
-    setCurrentQuestion(null)
-    setAnswers({})
-    setShowResults(false)
-    setScore(0)
-  }
+    setSelectedLesson(lesson);
+    setCurrentQuestion(null);
+    setAnswers({});
+    setShowResults(false);
+    setScore(0);
+  };
 
   const startQuestions = () => {
     if (selectedLesson && selectedLesson.content.questions.length > 0) {
-      setCurrentQuestion(0)
+      setCurrentQuestion(0);
     } else {
-      completeLesson()
+      completeLesson();
     }
-  }
+  };
 
   const handleAnswer = (questionId: number, answer: any) => {
     setAnswers((prev) => ({
       ...prev,
       [questionId]: answer,
-    }))
-  }
+    }));
+  };
 
   const nextQuestion = () => {
     if (selectedLesson && currentQuestion !== null && currentQuestion < selectedLesson.content.questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1)
+      setCurrentQuestion(currentQuestion + 1);
     } else {
-      finishQuestions()
+      finishQuestions();
     }
-  }
+  };
 
   const previousQuestion = () => {
     if (currentQuestion !== null && currentQuestion > 0) {
-      setCurrentQuestion(currentQuestion - 1)
+      setCurrentQuestion(currentQuestion - 1);
     }
-  }
+  };
 
   const finishQuestions = async () => {
-    if (!selectedLesson) return
+    if (!selectedLesson) return;
 
-    // Calculate score
-    let correctAnswers = 0
-    const totalQuestions = selectedLesson.content.questions.length
+    let correctAnswers = 0;
+    const totalQuestions = selectedLesson.content.questions.length;
 
     selectedLesson.content.questions.forEach((question: Question) => {
-      const userAnswer = answers[question.id]
+      const userAnswer = answers[question.id];
 
       if (question.type === "multiple_choice") {
         if (userAnswer === question.correct_answer) {
-          correctAnswers++
+          correctAnswers++;
         }
       } else if (question.type === "text_input") {
-        const correctAnswer = question.correct_answer as string
-        const alternatives = question.alternatives || []
-        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim())
+        const correctAnswer = question.correct_answer as string;
+        const alternatives = question.alternatives || [];
+        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim());
 
         if (userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim())) {
-          correctAnswers++
+          correctAnswers++;
         }
       }
-    })
+    });
 
-    const finalScore = Math.round((correctAnswers / totalQuestions) * 100)
-    setScore(finalScore)
-    setShowResults(true)
+    const finalScore = Math.round((correctAnswers / totalQuestions) * 100);
+    setScore(finalScore);
+    setShowResults(true);
 
     if (finalScore >= 70) {
-      await completeLesson()
+      await completeLesson();
     }
-  }
+  };
 
   const completeLesson = async () => {
-    if (!selectedLesson || !user) return
+    if (!selectedLesson || !user) return;
 
     try {
-      // Check if lesson is already completed
       if (completedLessonIds.includes(selectedLesson.id)) {
-        toast.info("Lesson already completed!")
-        setSelectedLesson(null)
-        return
+        toast.info("Lesson already completed!");
+        setSelectedLesson(null);
+        return;
       }
 
-      // Record lesson completion
       const { error: completionError } = await supabase.from("lesson_completions").insert({
         user_id: user.id,
         lesson_id: selectedLesson.id,
         score,
         completed_at: new Date().toISOString(),
-      })
+      });
 
-      if (completionError) throw completionError
+      if (completionError) throw completionError;
 
-      // Award XP
-      const currentXp = user.profile?.xp_points || 0
+      const currentXp = user.profile?.xp_points || 0;
       const { error: xpError } = await supabase
         .from("profiles")
         .update({ xp_points: currentXp + selectedLesson.xp_reward })
-        .eq("id", user.id)
+        .eq("id", user.id);
 
-      if (xpError) throw xpError
+      if (xpError) throw xpError;
 
-      toast.success(`Lesson completed! +${selectedLesson.xp_reward} XP`)
-      setCompletedLessonIds((prev) => [...prev, selectedLesson.id])
-      setSelectedLesson(null)
-      await loadUserAndLessons()
+      toast.success(`Lesson completed! +${selectedLesson.xp_reward} XP`);
+      setCompletedLessonIds((prev) => [...prev, selectedLesson.id]);
+      setSelectedLesson(null);
+      await loadUserAndLessons();
     } catch (error) {
-      console.error("Error completing lesson:", error)
-      toast.error("Failed to complete lesson")
+      console.error("Error completing lesson:", error);
+      toast.error("Failed to complete lesson");
     }
-  }
+  };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "beginner":
-        return "bg-green-100 text-green-700"
+        return "bg-green-100 text-green-700";
       case "intermediate":
-        return "bg-yellow-100 text-yellow-700"
+        return "bg-yellow-100 text-yellow-700";
       case "advanced":
-        return "bg-red-100 text-red-700"
+        return "bg-red-100 text-red-700";
       default:
-        return "bg-gray-100 text-gray-700"
+        return "bg-gray-100 text-gray-700";
     }
-  }
+  };
+
+  // Filter lessons based on difficulty
+  const filteredLessons = difficultyFilter === "all"
+    ? lessons
+    : lessons.filter((lesson) => lesson.difficulty === difficultyFilter);
 
   if (loading) {
     return (
@@ -227,7 +265,7 @@ export default function LearnPage() {
           <p className="text-slate-600">Loading lessons...</p>
         </motion.div>
       </div>
-    )
+    );
   }
 
   return (
@@ -243,7 +281,7 @@ export default function LearnPage() {
             </Link>
             <div className="flex items-center space-x-4">
               <span className="text-sm text-slate-600">
-                {user.profile?.full_name} • {user.profile?.xp_points || 0} XP
+                {user?.profile?.full_name || "User"} • {user?.profile?.xp_points || 0} XP
               </span>
               <Link href="/dashboard">
                 <Button variant="ghost" className="text-slate-700 hover:bg-slate-100">
@@ -260,10 +298,21 @@ export default function LearnPage() {
         {!selectedLesson ? (
           <div>
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-              <h1 className="text-3xl font-bold text-slate-800 mb-4">
-                Learn {user.profile?.learning_language === "es" ? "Spanish" : user.profile?.learning_language}
-              </h1>
+              <h1 className="text-3xl font-bold text-slate-800 mb-4">Learn a Language</h1>
               <div className="flex items-center gap-4">
+                <Select value={learningLanguage} onValueChange={handleLanguageChange}>
+                  <SelectTrigger className="w-48 border-slate-200 bg-white/80 text-slate-800">
+                    <Languages className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableLanguages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
                   <SelectTrigger className="w-48 border-slate-200 bg-white/80 text-slate-800">
                     <Filter className="mr-2 h-4 w-4" />
@@ -381,16 +430,16 @@ export default function LearnPage() {
                 <div className="space-y-4">
                   <h3 className="font-semibold text-slate-800">Review Your Answers</h3>
                   {selectedLesson.content.questions.map((question: Question) => {
-                    const userAnswer = answers[question.id]
-                    let isCorrect = false
+                    const userAnswer = answers[question.id];
+                    let isCorrect = false;
 
                     if (question.type === "multiple_choice") {
-                      isCorrect = userAnswer === question.correct_answer
+                      isCorrect = userAnswer === question.correct_answer;
                     } else if (question.type === "text_input") {
-                      const correctAnswer = question.correct_answer as string
-                      const alternatives = question.alternatives || []
-                      const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim())
-                      isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim())
+                      const correctAnswer = question.correct_answer as string;
+                      const alternatives = question.alternatives || [];
+                      const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim());
+                      isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim());
                     }
 
                     return (
@@ -419,8 +468,8 @@ export default function LearnPage() {
                                       optionIndex === question.correct_answer
                                         ? "bg-green-100 text-green-800"
                                         : optionIndex === userAnswer
-                                          ? "bg-red-100 text-red-800"
-                                          : "text-slate-600"
+                                        ? "bg-red-100 text-red-800"
+                                        : "text-slate-600"
                                     }`}
                                   >
                                     {option}
@@ -452,7 +501,7 @@ export default function LearnPage() {
                           </div>
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
 
@@ -586,7 +635,6 @@ export default function LearnPage() {
                 )}
                 {selectedLesson.content_type === "interactive" && (
                   <div className="text-slate-800">
-                    {/* Placeholder for interactive content */}
                     <p>{selectedLesson.content.main_content}</p>
                   </div>
                 )}
@@ -613,5 +661,5 @@ export default function LearnPage() {
         )}
       </div>
     </div>
-  )
+  );
 }
