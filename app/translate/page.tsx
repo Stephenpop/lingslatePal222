@@ -161,9 +161,9 @@ export default function TranslatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
+    <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl shadow-sm">
+      <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
@@ -206,22 +206,22 @@ export default function TranslatePage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Select value={sourceLang} onValueChange={setSourceLang}>
-                          <SelectTrigger className="w-36 sm:w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500 text-sm">
+                          <SelectTrigger className="w-36 sm:w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500 text-base font-medium shadow-sm">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white border-slate-300 shadow-md">
                             {languages.map((lang) => (
-                              <SelectItem key={lang.code} value={lang.code}>
+                              <SelectItem key={lang.code} value={lang.code} className="text-base hover:bg-blue-50">
                                 <div className="flex items-center gap-2">
                                   <span>{lang.flag}</span>
-                                  <span className="text-sm">{lang.name}</span>
+                                  <span className="font-medium">{lang.name}</span>
                                 </div>
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                         {detectedLang && (
-                          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                          <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 font-medium shadow-inner">
                             Detected: {detectedLang}
                           </Badge>
                         )}
@@ -231,20 +231,20 @@ export default function TranslatePage() {
                         placeholder="Enter text to translate..."
                         value={sourceText}
                         onChange={(e) => setSourceText(e.target.value)}
-                        className="min-h-32 sm:min-h-40 border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-blue-500 text-sm sm:text-base resize-none"
+                        className="min-h-32 sm:min-h-40 border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:ring-blue-500 text-base font-medium resize-none p-4 shadow-sm"
                         maxLength={5000}
                       />
 
                       <div className="flex items-center justify-between">
-                        <div className="flex gap-1 sm:gap-2">
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={handleListen}
                             disabled={isListening}
-                            className="text-slate-700 hover:bg-slate-100 p-2"
+                            className="text-blue-700 hover:bg-blue-100 hover:text-blue-900 p-2 shadow-sm"
                           >
-                            {isListening ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
+                            {isListening ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />}
                           </Button>
                           {sourceText && (
                             <>
@@ -252,22 +252,22 @@ export default function TranslatePage() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleSpeak(sourceText, sourceLang)}
-                                className="text-slate-700 hover:bg-slate-100 p-2"
+                                className="text-blue-700 hover:bg-blue-100 hover:text-blue-900 p-2 shadow-sm"
                               >
-                                <Volume2 className="h-4 w-4" />
+                                <Volume2 className="h-5 w-5" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleCopy(sourceText)}
-                                className="text-slate-700 hover:bg-slate-100 p-2"
+                                className="text-blue-700 hover:bg-blue-100 hover:text-blue-900 p-2 shadow-sm"
                               >
-                                <Copy className="h-4 w-4" />
+                                <Copy className="h-5 w-5" />
                               </Button>
                             </>
                           )}
                         </div>
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-700 text-xs">
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-800 font-medium shadow-inner">
                           {sourceText.length}/5000
                         </Badge>
                       </div>
@@ -280,15 +280,15 @@ export default function TranslatePage() {
                           onClick={handleTranslate}
                           disabled={!sourceText.trim() || isTranslating}
                           size="lg"
-                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-sm sm:text-base font-semibold"
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-base font-semibold"
                         >
                           {isTranslating ? (
-                            <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
+                            <Loader2 className="h-5 w-5 animate-spin" />
                           ) : (
                             <>
                               <span className="hidden sm:inline">Translate</span>
                               <span className="sm:hidden">Go</span>
-                              <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
+                              <ArrowRight className="ml-2 h-5 w-5" />
                             </>
                           )}
                         </Button>
@@ -297,9 +297,9 @@ export default function TranslatePage() {
                           variant="outline"
                           onClick={handleSwapLanguages}
                           disabled={sourceLang === "auto"}
-                          className="border-slate-300 text-slate-700 hover:bg-slate-50 bg-transparent px-4 py-3"
+                          className="border-blue-300 text-blue-900 hover:bg-blue-100 hover:border-blue-400 bg-white px-4 py-3 shadow-sm"
                         >
-                          <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
+                          <RotateCcw className="h-5 w-5" />
                         </Button>
                       </div>
                     </div>
@@ -308,17 +308,17 @@ export default function TranslatePage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Select value={targetLang} onValueChange={setTargetLang}>
-                          <SelectTrigger className="w-36 sm:w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500 text-sm">
+                          <SelectTrigger className="w-36 sm:w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500 text-base font-medium shadow-sm">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white border-slate-300 shadow-md">
                             {languages
                               .filter((lang) => lang.code !== "auto")
                               .map((lang) => (
-                                <SelectItem key={lang.code} value={lang.code}>
+                                <SelectItem key={lang.code} value={lang.code} className="text-base hover:bg-blue-50">
                                   <div className="flex items-center gap-2">
                                     <span>{lang.flag}</span>
-                                    <span className="text-sm">{lang.name}</span>
+                                    <span className="font-medium">{lang.name}</span>
                                   </div>
                                 </SelectItem>
                               ))}
@@ -326,40 +326,40 @@ export default function TranslatePage() {
                         </Select>
                       </div>
 
-                      <div className="min-h-32 sm:min-h-40 rounded-lg border border-slate-300 bg-slate-50 p-3 sm:p-4">
+                      <div className="min-h-32 sm:min-h-40 rounded-lg border border-slate-300 bg-white p-4 shadow-md">
                         {translatedText ? (
                           <motion.p
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-slate-900 text-sm sm:text-base leading-relaxed"
+                            className="text-slate-900 text-lg font-semibold leading-relaxed"
                           >
                             {translatedText}
                           </motion.p>
                         ) : (
-                          <p className="text-slate-400 text-sm sm:text-base">Translation will appear here...</p>
+                          <p className="text-slate-500 text-lg font-medium">Translation will appear here...</p>
                         )}
                       </div>
 
                       {translatedText && (
-                        <div className="flex gap-1 sm:gap-2">
+                        <div className="flex gap-2">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleSpeak(translatedText, targetLang)}
-                            className="text-slate-700 hover:bg-slate-100 p-2"
+                            className="text-blue-700 hover:bg-blue-100 hover:text-blue-900 p-2 shadow-sm"
                           >
-                            <Volume2 className="h-4 w-4" />
+                            <Volume2 className="h-5 w-5" />
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleCopy(translatedText)}
-                            className="text-slate-700 hover:bg-slate-100 p-2"
+                            className="text-blue-700 hover:bg-blue-100 hover:text-blue-900 p-2 shadow-sm"
                           >
-                            <Copy className="h-4 w-4" />
+                            <Copy className="h-5 w-5" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-slate-700 hover:bg-slate-100 p-2">
-                            <Star className="h-4 w-4" />
+                          <Button size="sm" variant="ghost" className="text-blue-700 hover:bg-blue-100 p-2 shadow-sm">
+                            <Star className="h-5 w-5" />
                           </Button>
                         </div>
                       )}
@@ -376,7 +376,7 @@ export default function TranslatePage() {
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
               <Card className="border-slate-200 bg-white shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-slate-900 text-lg">
+                  <CardTitle className="flex items-center gap-2 text-slate-900 text-lg font-bold">
                     <History className="h-5 w-5" />
                     Recent Translations
                   </CardTitle>
@@ -385,20 +385,17 @@ export default function TranslatePage() {
                   {recentTranslations.map((translation, index) => (
                     <div
                       key={index}
-                      className="cursor-pointer rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:bg-slate-50 hover:border-slate-300"
+                      className="cursor-pointer rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:bg-slate-50 hover:border-slate-300 shadow-sm"
                       onClick={() => handleRecentTranslation(translation)}
                     >
-                      <div className="text-sm text-slate-900 font-medium">{translation.source}</div>
-                      <div className="text-sm text-slate-600">{translation.target}</div>
+                      <div className="text-base text-slate-900 font-medium">{translation.source}</div>
+                      <div className="text-base text-slate-600">{translation.target}</div>
                       <div className="mt-2 flex gap-1">
-                        <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
+                        <Badge variant="secondary" className="text-sm bg-blue-100 text-blue-800 border-blue-200">
                           {languages.find((l) => l.code === translation.from)?.flag}{" "}
                           {languages.find((l) => l.code === translation.from)?.name}
                         </Badge>
-                        <Badge
-                          variant="secondary"
-                          className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200"
-                        >
+                        <Badge variant="secondary" className="text-sm bg-emerald-100 text-emerald-800 border-emerald-200">
                           {languages.find((l) => l.code === translation.to)?.flag}{" "}
                           {languages.find((l) => l.code === translation.to)?.name}
                         </Badge>
@@ -411,27 +408,27 @@ export default function TranslatePage() {
 
             {/* Upgrade CTA */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50 shadow-lg">
+              <Card className="border-blue-200 bg-white shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-slate-900 text-lg">Want to Learn More?</CardTitle>
+                  <CardTitle className="text-slate-900 text-lg font-bold">Want to Learn More?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="mb-4 text-sm text-slate-600">
+                  <p className="mb-4 text-base text-slate-600">
                     Join LingslatePal to access interactive lessons, quizzes, and track your progress!
                   </p>
                   <div className="space-y-3">
                     <Link href="/auth/register">
                       <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
-                        <BookOpen className="mr-2 h-4 w-4" />
+                        <BookOpen className="mr-2 h-5 w-5" />
                         Start Learning Free
                       </Button>
                     </Link>
                     <Link href="/learn">
                       <Button
                         variant="outline"
-                        className="w-full border-slate-300 text-slate-700 hover:bg-slate-50 bg-transparent"
+                        className="w-full border-slate-300 text-slate-700 hover:bg-slate-50 bg-white"
                       >
-                        <Sparkles className="mr-2 h-4 w-4" />
+                        <Sparkles className="mr-2 h-5 w-5" />
                         Browse Lessons
                       </Button>
                     </Link>
