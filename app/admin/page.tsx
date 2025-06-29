@@ -1,10 +1,18 @@
-"use client"
-import { useState, useEffect } from "react"
-import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
+
+"use client";
+
+import React from "react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import {
   Users,
   MessageCircle,
@@ -16,122 +24,113 @@ import {
   AlertTriangle,
   CheckCircle,
   UserCheck,
+  Mail,
   TrendingUp,
   Activity,
   Globe,
+  Edit,
+  Trash2,
+  Send,
   Clock,
   AlertCircle,
   Home,
-  BarChart3,
-  Settings,
-  Database,
-  Zap,
-  Download,
-} from "lucide-react"
-import Link from "next/link"
-import { authService } from "@/lib/auth"
-import { supabase } from "@/lib/supabase"
-import { toast } from "sonner"
-import { useRouter } from "next/navigation"
-import { v4 as uuidv4 } from "uuid"
+} from "lucide-react";
+import Link from "next/link";
+import { authService } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { v4 as uuidv4 } from "uuid";
 
 interface AdminStats {
-  totalUsers: number
-  activeUsers: number
-  totalTranslations: number
-  openTickets: number
-  totalLessons: number
-  totalQuizzes: number
-  totalQuizAttempts: number
-  newUsersToday: number
-  translationsToday: number
-  avgSessionTime: number
+  totalUsers: number;
+  activeUsers: number;
+  totalTranslations: number;
+  openTickets: number;
+  totalLessons: number;
+  totalQuizzes: number;
+  totalQuizAttempts: number;
 }
 
 interface Lesson {
-  id: string
-  title: string
-  description: string | null
-  language: string
-  difficulty: "beginner" | "intermediate" | "advanced"
+  id: string;
+  title: string;
+  description: string | null;
+  language: string;
+  difficulty: "beginner" | "intermediate" | "advanced";
   content: {
-    main_content: string
+    main_content: string;
     questions: Array<{
-      id: number
-      question: string
-      type: "multiple_choice" | "text_input"
-      options?: string[]
-      correct_answer: number | string
-      alternatives?: string[]
-      explanation?: string
-    }>
-  }
-  order_index: number
-  is_published: boolean
-  content_type: "text" | "video" | "audio" | "interactive"
-  estimated_duration: number | null
-  xp_reward: number
-  created_at: string
-  updated_at: string
+      id: number;
+      question: string;
+      type: "multiple_choice" | "text_input";
+      options?: string[];
+      correct_answer: number | string;
+      alternatives?: string[];
+      explanation?: string;
+    }>;
+  };
+  order_index: number;
+  is_published: boolean;
+  content_type: "text" | "video" | "audio" | "interactive";
+  estimated_duration: number | null;
+  xp_reward: number;
 }
 
 interface Quiz {
-  id: string
-  title: string
-  description: string | null
-  language: string
-  difficulty: "beginner" | "intermediate" | "advanced"
-  category_id: string | null
+  id: string;
+  title: string;
+  description: string | null;
+  language: string;
+  difficulty: "beginner" | "intermediate" | "advanced";
+  category_id: string | null;
   questions: Array<{
-    id: number
-    question: string
-    type: "multiple_choice" | "text_input"
-    options?: string[]
-    correct_answer: number | string
-    alternatives?: string[]
-    explanation?: string
-  }>
-  time_limit: number | null
-  passing_score: number
-  xp_reward: number
-  is_published: boolean
-  created_at: string
-  updated_at: string
-  categories?: { name: string }
+    id: number;
+    question: string;
+    type: "multiple_choice" | "text_input";
+    options?: string[];
+    correct_answer: number | string;
+    alternatives?: string[];
+    explanation?: string;
+  }>;
+  time_limit: number | null;
+  passing_score: number;
+  xp_reward: number;
+  is_published: boolean;
 }
 
 interface QuizAttempt {
-  id: string
-  user_id: string
-  quiz_id: string
-  score: number
-  answers: Array<{ question_id: number; answer: any }>
-  time_taken: number | null
-  completed_at: string
-  profiles?: { full_name: string; email: string }
+  id: string;
+  user_id: string;
+  quiz_id: string;
+  score: number;
+  answers: Array<{ question_id: number; answer: any }>;
+  time_taken: number | null;
+  completed_at: string;
+  profiles?: { full_name: string; email: string };
 }
 
 interface Ticket {
-  id: string
-  subject: string
-  status: "open" | "in_progress" | "resolved" | "closed"
-  priority: "low" | "medium" | "high" | "urgent"
-  created_at: string
-  updated_at: string
-  user_id: string
-  profiles?: { full_name: string; email: string }
+  id: string;
+  subject: string;
+  status: "open" | "in_progress" | "resolved" | "closed";
+  priority: "low" | "medium" | "high" | "urgent";
+  created_at: string;
+  updated_at: string;
+  user_id: string;
+  profiles?: { full_name: string; email: string };
   support_messages: Array<{
-    id: string
-    message: string
-    is_admin: boolean
-    created_at: string
-    sender_id: string
-    profiles?: { full_name: string; email: string }
-  }>
+    id: string;
+    message: string;
+    is_admin: boolean;
+    created_at: string;
+    sender_id: string;
+    profiles?: { full_name: string; email: string };
+  }>;
 }
 
 export default function AdminPage() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<AdminStats>({
     totalUsers: 0,
     activeUsers: 0,
@@ -140,19 +139,16 @@ export default function AdminPage() {
     totalLessons: 0,
     totalQuizzes: 0,
     totalQuizAttempts: 0,
-    newUsersToday: 0,
-    translationsToday: 0,
-    avgSessionTime: 0,
-  })
-  const [users, setUsers] = useState<any[]>([])
-  const [tickets, setTickets] = useState<Ticket[]>([])
-  const [languageRequests, setLanguageRequests] = useState<any[]>([])
-  const [lessons, setLessons] = useState<Lesson[]>([])
-  const [quizzes, setQuizzes] = useState<Quiz[]>([])
-  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([])
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
-  const [newMessage, setNewMessage] = useState("")
-  const [sending, setSending] = useState(false)
+  });
+  const [users, setUsers] = useState<any[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [languageRequests, setLanguageRequests] = useState<any[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [quizAttempts, setQuizAttempts] = useState<QuizAttempt[]>([]);
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [newMessage, setNewMessage] = useState("");
+  const [sending, setSending] = useState(false);
   const [newLesson, setNewLesson] = useState<Partial<Lesson>>({
     id: "",
     title: "",
@@ -165,7 +161,7 @@ export default function AdminPage() {
     content_type: "text",
     estimated_duration: 10,
     xp_reward: 50,
-  })
+  });
   const [newQuiz, setNewQuiz] = useState<Partial<Quiz>>({
     id: "",
     title: "",
@@ -178,71 +174,73 @@ export default function AdminPage() {
     passing_score: 60,
     xp_reward: 50,
     is_published: false,
-  })
-  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null)
-  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null)
-  const [notificationTitle, setNotificationTitle] = useState("")
-  const [notificationMessage, setNotificationMessage] = useState("")
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState("overview")
-  const router = useRouter()
+  });
+  const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
+  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
+  const router = useRouter();
 
   useEffect(() => {
-    checkAdminAccess()
+    checkAdminAccess();
 
     const ticketSubscription = supabase
       .channel("support_tickets")
-      .on("postgres_changes", { event: "*", schema: "public", table: "support_tickets" }, async () => {
-        await loadAdminData()
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "support_messages" }, async () => {
-        await loadAdminData()
-      })
-      .subscribe()
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "support_tickets" },
+        async () => {
+          await loadAdminData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "support_messages" },
+        async () => {
+          await loadAdminData();
+        }
+      )
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(ticketSubscription)
-    }
-  }, [])
+      supabase.removeChannel(ticketSubscription);
+    };
+  }, []);
 
   const checkAdminAccess = async () => {
     try {
-      const currentUser = await authService.getCurrentUser()
+      const currentUser = await authService.getCurrentUser();
       if (!currentUser) {
-        router.push("/auth/login")
-        toast.error("Please log in to access the admin panel")
-        return
+        router.push("/auth/login");
+        toast.error("Please log in to access the admin panel");
+        return;
       }
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("role, email")
         .eq("id", currentUser.id)
-        .single()
-      if (
-        profileError ||
-        !profileData ||
-        (profileData.role !== "admin" && profileData.email !== "anyaibe050@gmail.com")
-      ) {
-        router.push("/dashboard")
-        toast.error("You do not have admin access")
-        return
+        .single();
+      if (profileError || !profileData || (profileData.role !== "admin" && profileData.email !== "anyaibe050@gmail.com")) {
+        router.push("/dashboard");
+        toast.error("You do not have admin access");
+        return;
       }
-      setUser(currentUser)
-      await loadAdminData()
+      setUser(currentUser);
+      await loadAdminData();
     } catch (error) {
-      console.error("Error checking admin access:", error)
-      router.push("/auth/login")
-      toast.error("Error verifying admin access")
+      console.error("Error checking admin access:", error);
+      router.push("/auth/login");
+      toast.error("Error verifying admin access");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const loadAdminData = async () => {
     try {
-      const today = new Date().toISOString().split("T")[0]
-
       const [
         usersCount,
         activeUsersCount,
@@ -251,8 +249,6 @@ export default function AdminPage() {
         lessonsCount,
         quizzesCount,
         quizAttemptsCount,
-        newUsersToday,
-        translationsToday,
         usersData,
         ticketsData,
         requestsData,
@@ -270,8 +266,6 @@ export default function AdminPage() {
         supabase.from("lessons").select("id", { count: "exact" }),
         supabase.from("quizzes").select("id", { count: "exact" }),
         supabase.from("quiz_attempts").select("id", { count: "exact" }),
-        supabase.from("profiles").select("id", { count: "exact" }).gte("created_at", today),
-        supabase.from("translations").select("id", { count: "exact" }).gte("created_at", today),
         supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(50),
         supabase
           .from("support_tickets")
@@ -288,7 +282,7 @@ export default function AdminPage() {
           .select("*, profiles:user_id (full_name, email)")
           .order("completed_at", { ascending: false })
           .limit(50),
-      ])
+      ]);
 
       setStats({
         totalUsers: usersCount.count || 0,
@@ -298,76 +292,73 @@ export default function AdminPage() {
         totalLessons: lessonsCount.count || 0,
         totalQuizzes: quizzesCount.count || 0,
         totalQuizAttempts: quizAttemptsCount.count || 0,
-        newUsersToday: newUsersToday.count || 0,
-        translationsToday: translationsToday.count || 0,
-        avgSessionTime: 24, // Mock data
-      })
+      });
 
-      setUsers(usersData.data || [])
-      setTickets(ticketsData.data || [])
-      setLanguageRequests(requestsData.data || [])
-      setLessons(lessonsData.data || [])
-      setQuizzes(quizzesData.data || [])
-      setQuizAttempts(attemptsData.data || [])
+      setUsers(usersData.data || []);
+      setTickets(ticketsData.data || []);
+      setLanguageRequests(requestsData.data || []);
+      setLessons(lessonsData.data || []);
+      setQuizzes(quizzesData.data || []);
+      setQuizAttempts(attemptsData.data || []);
     } catch (error) {
-      console.error("Error loading admin data:", error)
-      toast.error("Failed to load admin data")
+      console.error("Error loading admin data:", error);
+      toast.error("Failed to load admin data");
     }
-  }
+  };
 
   const updateUserRole = async (userId: string, newRole: "user" | "admin") => {
     try {
-      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", userId)
-      if (error) throw error
-      toast.success(`User role updated to ${newRole}`)
-      await loadAdminData()
+      const { error } = await supabase.from("profiles").update({ role: newRole }).eq("id", userId);
+      if (error) throw error;
+      toast.success(`User role updated to ${newRole}`);
+      await loadAdminData();
     } catch (error) {
-      console.error("Error updating user role:", error)
-      toast.error("Failed to update user role")
+      console.error("Error updating user role:", error);
+      toast.error("Failed to update user role");
     }
-  }
+  };
 
   const sendNotification = async (targetUsers: string[] = []) => {
     if (!notificationTitle.trim() || !notificationMessage.trim()) {
-      toast.error("Please fill in all notification fields")
-      return
+      toast.error("Please fill in all notification fields");
+      return;
     }
     try {
-      const usersToNotify = targetUsers.length > 0 ? targetUsers : users.map((u) => u.id)
+      const usersToNotify = targetUsers.length > 0 ? targetUsers : users.map((u) => u.id);
       const notifications = usersToNotify.map((userId) => ({
         user_id: userId,
         title: notificationTitle,
         message: notificationMessage,
         type: "info",
-      }))
-      const { error } = await supabase.from("notifications").insert(notifications)
-      if (error) throw error
-      toast.success(`Notification sent to ${usersToNotify.length} users`)
-      setNotificationTitle("")
-      setNotificationMessage("")
-      setSelectedUsers([])
+      }));
+      const { error } = await supabase.from("notifications").insert(notifications);
+      if (error) throw error;
+      toast.success(`Notification sent to ${usersToNotify.length} users`);
+      setNotificationTitle("");
+      setNotificationMessage("");
+      setSelectedUsers([]);
     } catch (error) {
-      console.error("Error sending notification:", error)
-      toast.error("Failed to send notification")
+      console.error("Error sending notification:", error);
+      toast.error("Failed to send notification");
     }
-  }
+  };
 
   const updateLanguageRequestStatus = async (requestId: string, status: "approved" | "rejected") => {
     try {
-      const { error } = await supabase.from("language_requests").update({ status }).eq("id", requestId)
-      if (error) throw error
-      toast.success(`Language request ${status}`)
-      await loadAdminData()
+      const { error } = await supabase.from("language_requests").update({ status }).eq("id", requestId);
+      if (error) throw error;
+      toast.success(`Language request ${status}`);
+      await loadAdminData();
     } catch (error) {
-      console.error("Error updating language request:", error)
-      toast.error("Failed to update language request")
+      console.error("Error updating language request:", error);
+      toast.error("Failed to update language request");
     }
-  }
+  };
 
   const addLesson = async () => {
     if (!newLesson.title || !newLesson.language || !newLesson.difficulty || !newLesson.content?.main_content) {
-      toast.error("Please fill in all required lesson fields (title, language, difficulty, content)")
-      return
+      toast.error("Please fill in all required lesson fields (title, language, difficulty, content)");
+      return;
     }
     try {
       const lessonToAdd = {
@@ -377,12 +368,10 @@ export default function AdminPage() {
           main_content: newLesson.content?.main_content || "",
           questions: newLesson.content?.questions || [],
         },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-      const { error } = await supabase.from("lessons").insert([lessonToAdd])
-      if (error) throw error
-      toast.success("Lesson added successfully")
+      };
+      const { error } = await supabase.from("lessons").insert([lessonToAdd]);
+      if (error) throw error;
+      toast.success("Lesson added successfully");
       setNewLesson({
         id: "",
         title: "",
@@ -395,79 +384,56 @@ export default function AdminPage() {
         content_type: "text",
         estimated_duration: 10,
         xp_reward: 50,
-      })
-      await loadAdminData()
+      });
+      await loadAdminData();
     } catch (error) {
-      console.error("Error adding lesson:", error)
-      toast.error("Failed to add lesson")
+      console.error("Error adding lesson:", error);
+      toast.error("Failed to add lesson");
     }
-  }
+  };
 
   const updateLesson = async () => {
-    if (
-      !editingLesson ||
-      !editingLesson.title ||
-      !editingLesson.language ||
-      !editingLesson.difficulty ||
-      !editingLesson.content?.main_content
-    ) {
-      toast.error("Please fill in all required lesson fields (title, language, difficulty, content)")
-      return
+    if (!editingLesson || !editingLesson.title || !editingLesson.language || !editingLesson.difficulty || !editingLesson.content?.main_content) {
+      toast.error("Please fill in all required lesson fields (title, language, difficulty, content)");
+      return;
     }
     try {
-      const { error } = await supabase
-        .from("lessons")
-        .update({
-          ...editingLesson,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", editingLesson.id)
-      if (error) throw error
-      toast.success("Lesson updated successfully")
-      setEditingLesson(null)
-      await loadAdminData()
+      const { error } = await supabase.from("lessons").update(editingLesson).eq("id", editingLesson.id);
+      if (error) throw error;
+      toast.success("Lesson updated successfully");
+      setEditingLesson(null);
+      await loadAdminData();
     } catch (error) {
-      console.error("Error updating lesson:", error)
-      toast.error("Failed to update lesson")
+      console.error("Error updating lesson:", error);
+      toast.error("Failed to update lesson");
     }
-  }
+  };
 
   const deleteLesson = async (lessonId: string) => {
-    if (!confirm("Are you sure you want to delete this lesson? This action cannot be undone.")) {
-      return
-    }
     try {
-      const { error } = await supabase.from("lessons").delete().eq("id", lessonId)
-      if (error) throw error
-      toast.success("Lesson deleted successfully")
-      await loadAdminData()
+      const { error } = await supabase.from("lessons").delete().eq("id", lessonId);
+      if (error) throw error;
+      toast.success("Lesson deleted successfully");
+      await loadAdminData();
     } catch (error) {
-      console.error("Error deleting lesson:", error)
-      toast.error("Failed to delete lesson")
+      console.error("Error deleting lesson:", error);
+      toast.error("Failed to delete lesson");
     }
-  }
+  };
 
   const addQuiz = async () => {
-    if (
-      !newQuiz.title ||
-      !newQuiz.language ||
-      !newQuiz.difficulty ||
-      !newQuiz.questions ||
-      newQuiz.questions.length < 5
-    ) {
-      toast.error("Please fill in all required quiz fields and ensure at least 5 questions")
-      return
+    if (!newQuiz.title || !newQuiz.language || !newQuiz.difficulty || !newQuiz.questions || newQuiz.questions.length < 10) {
+      toast.error("Please fill in all required quiz fields and ensure at least 10 questions");
+      return;
     }
     try {
       const quizToAdd = {
         ...newQuiz,
         id: uuidv4(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }
-      const { error } = await supabase.from("quizzes").insert([quizToAdd])
-      if (error) throw error
-      toast.success("Quiz added successfully")
+      };
+      const { error } = await supabase.from("quizzes").insert([quizToAdd]);
+      if (error) throw error;
+      toast.success("Quiz added successfully");
       setNewQuiz({
         id: "",
         title: "",
@@ -480,195 +446,93 @@ export default function AdminPage() {
         passing_score: 60,
         xp_reward: 50,
         is_published: false,
-      })
-      await loadAdminData()
+      });
+      await loadAdminData();
     } catch (error) {
-      console.error("Error adding quiz:", error)
-      toast.error("Failed to add quiz")
+      console.error("Error adding quiz:", error);
+      toast.error("Failed to add quiz");
     }
-  }
+  };
 
   const updateQuiz = async () => {
-    if (
-      !editingQuiz ||
-      !editingQuiz.title ||
-      !editingQuiz.language ||
-      !editingQuiz.difficulty ||
-      !editingQuiz.questions ||
-      editingQuiz.questions.length < 5
-    ) {
-      toast.error("Please fill in all required quiz fields and ensure at least 5 questions")
-      return
+    if (!editingQuiz || !editingQuiz.title || !editingQuiz.language || !editingQuiz.difficulty || !editingQuiz.questions || editingQuiz.questions.length < 10) {
+      toast.error("Please fill in all required quiz fields and ensure at least 10 questions");
+      return;
     }
     try {
-      const { error } = await supabase
-        .from("quizzes")
-        .update({
-          ...editingQuiz,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", editingQuiz.id)
-      if (error) throw error
-      toast.success("Quiz updated successfully")
-      setEditingQuiz(null)
-      await loadAdminData()
+      const { error } = await supabase.from("quizzes").update(editingQuiz).eq("id", editingQuiz.id);
+      if (error) throw error;
+      toast.success("Quiz updated successfully");
+      setEditingQuiz(null);
+      await loadAdminData();
     } catch (error) {
-      console.error("Error updating quiz:", error)
-      toast.error("Failed to update quiz")
+      console.error("Error updating quiz:", error);
+      toast.error("Failed to update quiz");
     }
-  }
+  };
 
   const deleteQuiz = async (quizId: string) => {
-    if (!confirm("Are you sure you want to delete this quiz? This action cannot be undone.")) {
-      return
-    }
     try {
-      const { error } = await supabase.from("quizzes").delete().eq("id", quizId)
-      if (error) throw error
-      toast.success("Quiz deleted successfully")
-      await loadAdminData()
+      const { error } = await supabase.from("quizzes").delete().eq("id", quizId);
+      if (error) throw error;
+      toast.success("Quiz deleted successfully");
+      await loadAdminData();
     } catch (error) {
-      console.error("Error deleting quiz:", error)
-      toast.error("Failed to delete quiz")
+      console.error("Error deleting quiz:", error);
+      toast.error("Failed to delete quiz");
     }
-  }
+  };
 
   const sendSupportMessage = async (ticketId: string) => {
     if (!newMessage.trim()) {
-      toast.error("Please enter a message")
-      return
+      toast.error("Please enter a message");
+      return;
     }
-    setSending(true)
+    setSending(true);
     try {
       const { error } = await supabase.from("support_messages").insert({
         ticket_id: ticketId,
         sender_id: user.id,
         message: newMessage.trim(),
         is_admin: true,
-      })
-      if (error) throw error
+      });
+      if (error) throw error;
 
-      await supabase
-        .from("support_tickets")
-        .update({
-          status: "in_progress",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", ticketId)
+      await supabase.from("support_tickets").update({ status: "in_progress", updated_at: new Date().toISOString() }).eq("id", ticketId);
 
-      toast.success("Message sent!")
-      setNewMessage("")
-      await loadAdminData()
+      toast.success("Message sent!");
+      setNewMessage("");
     } catch (error) {
-      console.error("Error sending support message:", error)
-      toast.error("Failed to send message")
+      console.error("Error sending support message:", error);
+      toast.error("Failed to send message");
     } finally {
-      setSending(false)
+      setSending(false);
     }
-  }
+  };
 
   const updateTicketStatus = async (ticketId: string, status: "open" | "in_progress" | "resolved" | "closed") => {
     try {
-      const { error } = await supabase
-        .from("support_tickets")
-        .update({
-          status,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", ticketId)
-      if (error) throw error
-      toast.success(`Ticket status updated to ${status}`)
-      await loadAdminData()
+      const { error } = await supabase.from("support_tickets").update({ status, updated_at: new Date().toISOString() }).eq("id", ticketId);
+      if (error) throw error;
+      toast.success(`Ticket status updated to ${status}`);
     } catch (error) {
-      console.error("Error updating ticket status:", error)
-      toast.error("Failed to update ticket status")
+      console.error("Error updating ticket status:", error);
+      toast.error("Failed to update ticket status");
     }
-  }
-
-  const exportData = async (dataType: string) => {
-    try {
-      let data: any[] = []
-      let filename = ""
-
-      switch (dataType) {
-        case "users":
-          data = users
-          filename = "users_export.json"
-          break
-        case "lessons":
-          data = lessons
-          filename = "lessons_export.json"
-          break
-        case "quizzes":
-          data = quizzes
-          filename = "quizzes_export.json"
-          break
-        case "tickets":
-          data = tickets
-          filename = "support_tickets_export.json"
-          break
-        default:
-          toast.error("Invalid data type")
-          return
-      }
-
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-
-      toast.success(`${dataType} data exported successfully`)
-    } catch (error) {
-      console.error("Error exporting data:", error)
-      toast.error("Failed to export data")
-    }
-  }
+  };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
       case "beginner":
-        return "bg-green-500/20 text-green-300"
+        return "bg-green-500/20 text-green-300";
       case "intermediate":
-        return "bg-yellow-500/20 text-yellow-300"
+        return "bg-yellow-500/20 text-yellow-300";
       case "advanced":
-        return "bg-red-500/20 text-red-300"
+        return "bg-red-500/20 text-red-300";
       default:
-        return "bg-gray-500/20 text-gray-300"
+        return "bg-gray-500/20 text-gray-300";
     }
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "open":
-        return "bg-red-500/20 text-red-300"
-      case "in_progress":
-        return "bg-yellow-500/20 text-yellow-300"
-      case "resolved":
-      case "closed":
-        return "bg-green-500/20 text-green-300"
-      default:
-        return "bg-gray-500/20 text-gray-300"
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "open":
-        return <AlertCircle className="h-4 w-4" />
-      case "in_progress":
-        return <Clock className="h-4 w-4" />
-      case "resolved":
-      case "closed":
-        return <CheckCircle className="h-4 w-4" />
-      default:
-        return <AlertTriangle className="h-4 w-4" />
-    }
-  }
+  };
 
   if (loading) {
     return (
@@ -678,7 +542,7 @@ export default function AdminPage() {
           <p className="text-slate-300">Loading admin panel...</p>
         </motion.div>
       </div>
-    )
+    );
   }
 
   return (
@@ -690,252 +554,167 @@ export default function AdminPage() {
       >
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
               <motion.div
-                className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-orange-600 shadow-lg"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-red-500 to-orange-600 shadow-lg"
                 whileHover={{ scale: 1.1, rotate: 5 }}
               >
-                <Shield className="h-6 w-6 text-white" />
+                <Shield className="h-5 w-5 text-white" />
               </motion.div>
-              <div>
-                <span className="text-xl font-bold">Admin Panel</span>
-                <p className="text-xs text-slate-400">LingslatePal Management</p>
-              </div>
+              <span className="text-xl font-bold">Admin Panel</span>
             </div>
-            <div className="flex items-center space-x-4">
-              <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                <Activity className="h-3 w-3 mr-1" />
-                System Online
-              </Badge>
-              <Link href="/dashboard">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="border-white/20 text-white hover:bg-white/10 bg-transparent"
-                >
-                  <Home className="h-4 w-4 mr-1 sm:mr-2" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                </Button>
-              </Link>
-            </div>
+            <Link href="/dashboard">
+              <Button size="sm" variant="outline" className="border-white/20 text-white hover:bg-white/10">
+                <Home className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">Dashboard</span>
+              </Button>
+            </Link>
           </div>
         </div>
       </motion.nav>
 
       <div className="container mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">System Overview</h1>
-          <p className="text-slate-400">Monitor and manage your LingslatePal platform</p>
-        </motion.div>
-
-        {/* Enhanced Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 mb-8"
-        >
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-blue-500/20">
-                    <Users className="h-6 w-6 text-blue-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
-                    <div className="text-xs text-slate-400">Total Users</div>
-                    <div className="text-xs text-green-400">+{stats.newUsersToday} today</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-green-500/20">
-                    <UserCheck className="h-6 w-6 text-green-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold">{stats.activeUsers.toLocaleString()}</div>
-                    <div className="text-xs text-slate-400">Active Users (7d)</div>
-                    <div className="text-xs text-blue-400">
-                      {Math.round((stats.activeUsers / stats.totalUsers) * 100)}% retention
+          <h1 className="text-3xl font-bold mb-6">System Overview</h1>
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="p-2 rounded-lg bg-blue-500/20">
+                      <Users className="h-5 w-5 text-blue-400" />
+                    </div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.totalUsers}</div>
+                      <div className="text-xs text-slate-400">Total Users</div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-purple-500/20">
-                    <Languages className="h-6 w-6 text-purple-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold">{stats.totalTranslations.toLocaleString()}</div>
-                    <div className="text-xs text-slate-400">Translations</div>
-                    <div className="text-xs text-green-400">+{stats.translationsToday} today</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-orange-500/20">
-                    <MessageCircle className="h-6 w-6 text-orange-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold">{stats.openTickets}</div>
-                    <div className="text-xs text-slate-400">Open Tickets</div>
-                    <div className="text-xs text-yellow-400">Needs attention</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-indigo-500/20">
-                    <BookOpen className="h-6 w-6 text-indigo-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold">{stats.totalLessons}</div>
-                    <div className="text-xs text-slate-400">Lessons</div>
-                    <div className="text-xs text-blue-400">
-                      {lessons.filter((l) => l.is_published).length} published
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="p-2 rounded-lg bg-green-500/20">
+                      <UserCheck className="h-5 w-5 text-green-400" />
+                    </div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.activeUsers}</div>
+                      <div className="text-xs text-slate-400">Active Users (7d)</div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-yellow-500/20">
-                    <Trophy className="h-6 w-6 text-yellow-400" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold">{stats.totalQuizzes}</div>
-                    <div className="text-xs text-slate-400">Quizzes</div>
-                    <div className="text-xs text-green-400">
-                      {quizzes.filter((q) => q.is_published).length} published
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="p-2 rounded-lg bg-purple-500/20">
+                      <Languages className="h-5 w-5 text-purple-400" />
+                    </div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.totalTranslations.toLocaleString()}</div>
+                      <div className="text-xs text-slate-400">Translations</div>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-teal-500/20">
-                    <BarChart3 className="h-6 w-6 text-teal-400" />
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="p-2 rounded-lg bg-orange-500/20">
+                      <MessageCircle className="h-5 w-5 text-orange-400" />
+                    </div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.openTickets}</div>
+                      <div className="text-xs text-slate-400">Open Tickets</div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold">{stats.totalQuizAttempts.toLocaleString()}</div>
-                    <div className="text-xs text-slate-400">Quiz Attempts</div>
-                    <div className="text-xs text-purple-400">Avg: {stats.avgSessionTime}min</div>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="p-2 rounded-lg bg-indigo-500/20">
+                      <BookOpen className="h-5 w-5 text-indigo-400" />
+                    </div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.totalLessons}</div>
+                      <div className="text-xs text-slate-400">Lessons</div>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-            <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 rounded-xl bg-pink-500/20">
-                    <Zap className="h-6 w-6 text-pink-400" />
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="p-2 rounded-lg bg-yellow-500/20">
+                      <Trophy className="h-5 w-5 text-yellow-400" />
+                    </div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.totalQuizzes}</div>
+                      <div className="text-xs text-slate-400">Quizzes</div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="text-2xl font-bold">99.9%</div>
-                    <div className="text-xs text-slate-400">Uptime</div>
-                    <div className="text-xs text-green-400">All systems operational</div>
+                </CardContent>
+              </Card>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="w-full">
+              <Card className="border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 transition-all w-full">
+                <CardContent className="p-4 w-full">
+                  <div className="flex items-center gap-3 w-full">
+                    <div className="p-2 rounded-lg bg-teal-500/20">
+                      <Trophy className="h-5 w-5 text-teal-400" />
+                    </div>
+                    <div className="w-full">
+                      <div className="text-2xl font-bold">{stats.totalQuizAttempts}</div>
+                      <div className="text-xs text-slate-400">Quiz Attempts</div>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 bg-white/5 border border-white/10">
-              <TabsTrigger
-                value="overview"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300 text-xs lg:text-sm"
-              >
-                <Activity className="inline lg:hidden h-4 w-4" />
-                <span className="hidden lg:inline">Overview</span>
+            <TabsList className="grid w-full grid-cols-7 bg-white/5 border border-white/10">
+              <TabsTrigger value="overview" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
+                <Activity className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Overview</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="users"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300 text-xs lg:text-sm"
-              >
-                <Users className="inline lg:hidden h-4 w-4" />
-                <span className="hidden lg:inline">Users</span>
+              <TabsTrigger value="users" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
+                <Users className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Users</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="support"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300 text-xs lg:text-sm"
-              >
-                <MessageCircle className="inline lg:hidden h-4 w-4" />
-                <span className="hidden lg:inline">Support</span>
+              <TabsTrigger value="support" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
+                <MessageCircle className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Support</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="notifications"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300 text-xs lg:text-sm"
-              >
-                <Bell className="inline lg:hidden h-4 w-4" />
-                <span className="hidden lg:inline">Notifications</span>
+              <TabsTrigger value="notifications" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
+                <Bell className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Notifications</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="requests"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300 text-xs lg:text-sm"
-              >
-                <Languages className="inline lg:hidden h-4 w-4" />
-                <span className="hidden lg:inline">Requests</span>
+              <TabsTrigger value="requests" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
+                <Languages className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Language Requests</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="lessons"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300 text-xs lg:text-sm"
-              >
-                <BookOpen className="inline lg:hidden h-4 w-4" />
-                <span className="hidden lg:inline">Lessons</span>
+              <TabsTrigger value="lessons" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
+                <BookOpen className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Lessons</span>
               </TabsTrigger>
-              <TabsTrigger
-                value="quizzes"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300 text-xs lg:text-sm"
-              >
-                <Trophy className="inline lg:hidden h-4 w-4" />
-                <span className="hidden lg:inline">Quizzes</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="settings"
-                className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300 text-xs lg:text-sm"
-              >
-                <Settings className="inline lg:hidden h-4 w-4" />
-                <span className="hidden lg:inline">Settings</span>
+              <TabsTrigger value="quizzes" className="data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-300 text-slate-300">
+                <Trophy className="inline sm:hidden h-4 w-4" />
+                <span className="hidden sm:inline">Quizzes</span>
               </TabsTrigger>
             </TabsList>
 
@@ -968,13 +747,8 @@ export default function AdminPage() {
                         <span className="text-slate-300">Translation Service</span>
                         <Badge className="bg-green-500/20 text-green-300">Active</Badge>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-300">Storage</span>
-                        <Badge className="bg-yellow-500/20 text-yellow-300">85% Used</Badge>
-                      </div>
                     </CardContent>
                   </Card>
-
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -985,23 +759,18 @@ export default function AdminPage() {
                     <CardContent className="space-y-4">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-300">New Users (7d)</span>
-                        <span className="text-white font-medium">{stats.newUsersToday * 7}</span>
+                        <span className="text-white font-medium">{stats.totalUsers > 0 ? Math.floor(stats.totalUsers * 0.1) : 0}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-slate-300">Translations (24h)</span>
-                        <span className="text-white font-medium">{stats.translationsToday}</span>
+                        <span className="text-white font-medium">{Math.floor(stats.totalTranslations * 0.05)}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-slate-300">Active Sessions</span>
                         <span className="text-white font-medium">{Math.floor(stats.activeUsers * 0.3)}</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-300">Avg Session Time</span>
-                        <span className="text-white font-medium">{stats.avgSessionTime}min</span>
-                      </div>
                     </CardContent>
                   </Card>
-
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -1022,58 +791,12 @@ export default function AdminPage() {
                         <span className="text-slate-300">🇳🇬 Yoruba</span>
                         <span className="text-white font-medium">12%</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-slate-300">🇩🇪 German</span>
-                        <span className="text-white font-medium">10%</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="border-white/10 bg-white/5 backdrop-blur-sm md:col-span-2 lg:col-span-3">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Database className="h-5 w-5" />
-                        Quick Actions
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                        <Button
-                          onClick={() => exportData("users")}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
-                        >
-                          <Download className="mr-2 h-4 w-4" />
-                          Export Users
-                        </Button>
-                        <Button
-                          onClick={() => exportData("lessons")}
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                        >
-                          <Download className="mr-2 h-4 w-4" />
-                          Export Lessons
-                        </Button>
-                        <Button
-                          onClick={() => exportData("quizzes")}
-                          className="bg-purple-600 hover:bg-purple-700 text-white"
-                        >
-                          <Download className="mr-2 h-4 w-4" />
-                          Export Quizzes
-                        </Button>
-                        <Button
-                          onClick={() => exportData("tickets")}
-                          className="bg-orange-600 hover:bg-orange-700 text-white"
-                        >
-                          <Download className="mr-2 h-4 w-4" />
-                          Export Tickets
-                        </Button>
-                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
               </TabsContent>
 
-              {/* Continue with other tab contents... */}
-              <TabsContent value="settings" key="settings">
+              <TabsContent value="users" key="users">
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -1082,60 +805,1135 @@ export default function AdminPage() {
                 >
                   <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
                     <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Settings className="h-5 w-5" />
-                        System Settings
-                      </CardTitle>
-                      <CardDescription className="text-slate-300">
-                        Configure system-wide settings and preferences
-                      </CardDescription>
+                      <CardTitle>User Management</CardTitle>
+                      <CardDescription className="text-slate-300">Manage user accounts, roles, and permissions</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-6">
-                      <div className="grid gap-6 md:grid-cols-2">
+                    <CardContent>
+                      <ScrollArea className="h-96">
                         <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-white">General Settings</h3>
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-300">Maintenance Mode</span>
-                              <Badge className="bg-green-500/20 text-green-300">Disabled</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-300">User Registration</span>
-                              <Badge className="bg-green-500/20 text-green-300">Enabled</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-300">Email Notifications</span>
-                              <Badge className="bg-green-500/20 text-green-300">Enabled</Badge>
-                            </div>
-                          </div>
+                          {users.map((user) => (
+                            <motion.div
+                              key={user.id}
+                              className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                              whileHover={{ scale: 1.01 }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Avatar>
+                                  <AvatarImage src={user.avatar_url || ""} />
+                                  <AvatarFallback className="bg-slate-600 text-white">
+                                    {user.full_name?.charAt(0) || "U"}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <h4 className="font-medium">{user.full_name || "Unknown"}</h4>
+                                  <p className="text-sm text-slate-400">{user.email}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge
+                                      className={user.role === "admin" ? "bg-red-500/20 text-red-300" : "bg-blue-500/20 text-blue-300"}
+                                    >
+                                      {user.role}
+                                    </Badge>
+                                    <span className="text-xs text-slate-500">{user.xp_points || 0} XP</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <Select value={user.role} onValueChange={(value) => updateUserRole(user.id, value as "user" | "admin")}>
+                                <SelectTrigger className="w-24 border-white/20 bg-white/5 text-white">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="user">User</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </motion.div>
+                          ))}
                         </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </TabsContent>
 
-                        <div className="space-y-4">
-                          <h3 className="text-lg font-semibold text-white">API Settings</h3>
+              <TabsContent value="support" key="support">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className="grid gap-6 lg:grid-cols-2">
+                    <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+                      <CardHeader>
+                        <CardTitle>Support Tickets</CardTitle>
+                        <CardDescription className="text-slate-300">View and manage user support tickets</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ScrollArea className="h-96">
                           <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-300">Rate Limiting</span>
-                              <Badge className="bg-yellow-500/20 text-yellow-300">1000/hour</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-300">Translation API</span>
-                              <Badge className="bg-green-500/20 text-green-300">LibreTranslate</Badge>
-                            </div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-slate-300">Cache TTL</span>
-                              <Badge className="bg-blue-500/20 text-blue-300">1 hour</Badge>
-                            </div>
+                            {tickets.map((ticket) => (
+                              <div
+                                key={ticket.id}
+                                className={`p-3 rounded-lg border cursor-pointer ${
+                                  selectedTicket?.id === ticket.id ? "border-blue-300 bg-blue-500/10" : "border-white/10 hover:bg-white/10"
+                                }`}
+                                onClick={() => setSelectedTicket(ticket)}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <Badge
+                                    className={
+                                      ticket.status === "open"
+                                        ? "bg-red-500/20 text-red-300"
+                                        : ticket.status === "in_progress"
+                                        ? "bg-yellow-500/20 text-yellow-300"
+                                        : ticket.status === "resolved" || ticket.status === "closed"
+                                        ? "bg-green-500/20 text-green-300"
+                                        : "bg-gray-500/20 text-gray-300"
+                                    }
+                                  >
+                                    {ticket.status === "open" && <AlertCircle className="h-4 w-4 mr-1" />}
+                                    {ticket.status === "in_progress" && <Clock className="h-4 w-4 mr-1" />}
+                                    {(ticket.status === "resolved" || ticket.status === "closed") && <CheckCircle className="h-4 w-4 mr-1" />}
+                                    {ticket.status.replace("_", " ")}
+                                  </Badge>
+                                  <span className="text-xs text-slate-400">{new Date(ticket.updated_at).toLocaleDateString()}</span>
+                                </div>
+                                <h4 className="font-medium text-sm mb-1">{ticket.subject}</h4>
+                                <p className="text-xs text-slate-400">{ticket.profiles?.full_name || "Unknown"} • {ticket.profiles?.email}</p>
+                                <p className="text-xs text-slate-400">Priority: {ticket.priority}</p>
+                              </div>
+                            ))}
+                            {tickets.length === 0 && (
+                              <div className="text-center py-8 text-slate-400">
+                                <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                                <p>No support tickets</p>
+                              </div>
+                            )}
                           </div>
-                        </div>
+                        </ScrollArea>
+                      </CardContent>
+                    </Card>
+
+                    {selectedTicket && (
+                      <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+                        <CardHeader>
+                          <CardTitle>{selectedTicket.subject}</CardTitle>
+                          <CardDescription className="text-slate-300">
+                            Ticket #{selectedTicket.id.slice(0, 8)} • {selectedTicket.profiles?.email}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-2 mb-4">
+                            <Select
+                              value={selectedTicket.status}
+                              onValueChange={(value) =>
+                                updateTicketStatus(selectedTicket.id, value as "open" | "in_progress" | "resolved" | "closed")
+                              }
+                            >
+                              <SelectTrigger className="w-32 border-white/20 bg-white/5 text-white">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="open">Open</SelectItem>
+                                <SelectItem value="in_progress">In Progress</SelectItem>
+                                <SelectItem value="resolved">Resolved</SelectItem>
+                                <SelectItem value="closed">Closed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Badge
+                              className={
+                                selectedTicket.priority === "urgent"
+                                  ? "bg-red-500/20 text-red-300"
+                                  : selectedTicket.priority === "high"
+                                  ? "bg-orange-500/20 text-orange-300"
+                                  : selectedTicket.priority === "medium"
+                                  ? "bg-yellow-500/20 text-yellow-300"
+                                  : "bg-green-500/20 text-green-300"
+                              }
+                            >
+                              {selectedTicket.priority}
+                            </Badge>
+                          </div>
+                          <ScrollArea className="h-64 mb-4">
+                            <div className="space-y-3">
+                              {selectedTicket.support_messages
+                                .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+                                .map((message) => (
+                                  <div
+                                    key={message.id}
+                                    className={`p-3 rounded-lg ${message.is_admin ? "bg-blue-500/20 ml-4" : "bg-white/10 mr-4"}`}
+                                  >
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="text-sm font-medium">
+                                        {message.is_admin ? "Support Team" : message.profiles?.full_name || "User"}
+                                      </span>
+                                      <span className="text-xs text-slate-400">{new Date(message.created_at).toLocaleString()}</span>
+                                    </div>
+                                    <p className="text-sm text-slate-300">{message.message}</p>
+                                  </div>
+                                ))}
+                            </div>
+                          </ScrollArea>
+                          {selectedTicket.status !== "closed" && (
+                            <form
+                              onSubmit={(e) => {
+                                e.preventDefault();
+                                sendSupportMessage(selectedTicket.id);
+                              }}
+                              className="space-y-3"
+                            >
+                              <Textarea
+                                placeholder="Type your response..."
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                rows={3}
+                                className="border-white/20 bg-white/5 text-white"
+                              />
+                              <Button
+                                type="submit"
+                                disabled={sending}
+                                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                              >
+                                {sending ? "Sending..." : <><Send className="mr-2 h-4 w-4" /> Send Response</>}
+                              </Button>
+                            </form>
+                          )}
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                </motion.div>
+              </TabsContent>
+
+              <TabsContent value="notifications" key="notifications">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle>Send Notifications</CardTitle>
+                      <CardDescription className="text-slate-300">Send announcements and notifications to users</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
+                        <Input
+                          placeholder="Notification title"
+                          value={notificationTitle}
+                          onChange={(e) => setNotificationTitle(e.target.value)}
+                          className="border-white/20 bg-white/5 text-white placeholder:text-slate-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-slate-300 mb-2 block">Message</label>
+                        <Textarea
+                          placeholder="Notification message"
+                          value={notificationMessage}
+                          onChange={(e) => setNotificationMessage(e.target.value)}
+                          rows={4}
+                          className="border-white/20 bg-white/5 text-white placeholder:text-slate-400 resize-none"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => sendNotification()}
+                          className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                        >
+                          <Bell className="mr-2 h-4 w-4" /> Send to All Users
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => sendNotification(selectedUsers)}
+                          className="flex-1 border-white/20 text-white hover:bg-white/10"
+                          disabled={selectedUsers.length === 0}
+                        >
+                          <Mail className="mr-2 h-4 w-4" /> Send to Selected
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
                 </motion.div>
               </TabsContent>
+
+              <TabsContent value="requests" key="requests">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle>Language Requests</CardTitle>
+                      <CardDescription className="text-slate-300">Review and manage user requests for new languages</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {languageRequests.map((request) => (
+                          <motion.div
+                            key={request.id}
+                            className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                            whileHover={{ scale: 1.01 }}
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <h4 className="font-medium">{request.language_name}</h4>
+                                <p className="text-sm text-slate-400">
+                                  Requested by {request.profiles?.full_name} • {request.votes} votes
+                                </p>
+                                {request.language_code && (
+                                  <Badge variant="outline" className="mt-1 border-white/20 text-slate-300">
+                                    Code: {request.language_code}
+                                  </Badge>
+                                )}
+                              </div>
+                              <Badge
+                                className={
+                                  request.status === "pending"
+                                    ? "bg-yellow-500/20 text-yellow-300"
+                                    : request.status === "approved"
+                                    ? "bg-green-500/20 text-green-300"
+                                    : "bg-red-500/20 text-red-300"
+                                }
+                              >
+                                {request.status}
+                              </Badge>
+                            </div>
+                            {request.reason && <p className="text-sm text-slate-400 mb-3 italic">"{request.reason}"</p>}
+                            {request.status === "pending" && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={() => updateLanguageRequestStatus(request.id, "approved")}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  <CheckCircle className="mr-1 h-3 w-3" /> Approve
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => updateLanguageRequestStatus(request.id, "rejected")}
+                                  className="border-red-300/20 text-red-300 hover:bg-red-500/10"
+                                >
+                                  <AlertTriangle className="mr-1 h-3 w-3" /> Reject
+                                </Button>
+                              </div>
+                            )}
+                          </motion.div>
+                        ))}
+                        {languageRequests.length === 0 && (
+                          <div className="text-center py-8 text-slate-400">
+                            <Languages className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                            <p>No language requests yet</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </TabsContent>
+
+              <TabsContent value="lessons" key="lessons">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle>Lesson Management</CardTitle>
+                      <CardDescription className="text-slate-300">Add, edit, and delete lessons</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Add New Lesson</h3>
+                        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+                          <div>
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
+                            <Input
+                              placeholder="Lesson title"
+                              value={newLesson.title}
+                              onChange={(e) => setNewLesson({ ...newLesson, title: e.target.value })}
+                              className="border-white/20 bg-white/5 text-white"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">Language</label>
+                            <Select
+                              value={newLesson.language}
+                              onValueChange={(value) => setNewLesson({ ...newLesson, language: value })}
+                            >
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                                <SelectValue placeholder="Select language" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="es">Spanish (ES)</SelectItem>
+                                <SelectItem value="fr">French (FR)</SelectItem>
+                                <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                                <SelectItem value="de">German (DE)</SelectItem>
+                                <SelectItem value="it">Italian (IT)</SelectItem>
+                                <SelectItem value="pt">Portuguese (PT)</SelectItem>
+                                <SelectItem value="ru">Russian (RU)</SelectItem>
+                                <SelectItem value="ja">Japanese (JA)</SelectItem>
+                                <SelectItem value="zh">Chinese (ZH)</SelectItem>
+                                <SelectItem value="ar">Arabic (AR)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
+                            <Select
+                              value={newLesson.difficulty}
+                              onValueChange={(value) => setNewLesson({ ...newLesson, difficulty: value as any })}
+                            >
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="beginner">Beginner</SelectItem>
+                                <SelectItem value="intermediate">Intermediate</SelectItem>
+                                <SelectItem value="advanced">Advanced</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">Content Type</label>
+                            <Select
+                              value={newLesson.content_type}
+                              onValueChange={(value) => setNewLesson({ ...newLesson, content_type: value as any })}
+                            >
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="text">Text</SelectItem>
+                                <SelectItem value="video">Video</SelectItem>
+                                <SelectItem value="audio">Audio</SelectItem>
+                                <SelectItem value="interactive">Interactive</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">Order Index</label>
+                            <Input
+                              type="number"
+                              value={newLesson.order_index || 0}
+                              onChange={(e) => setNewLesson({ ...newLesson, order_index: Number(e.target.value) })}
+                              className="border-white/20 bg-white/5 text-white w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">Estimated Duration (min)</label>
+                            <Input
+                              type="number"
+                              value={newLesson.estimated_duration || 10}
+                              onChange={(e) => setNewLesson({ ...newLesson, estimated_duration: Number(e.target.value) })}
+                              className="border-white/20 bg-white/5 text-white w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
+                            <Input
+                              type="number"
+                              value={newLesson.xp_reward || 50}
+                              onChange={(e) => setNewLesson({ ...newLesson, xp_reward: Number(e.target.value) })}
+                              className="border-white/20 bg-white/5 text-white w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">Published</label>
+                            <Select
+                              value={newLesson.is_published ? "true" : "false"}
+                              onValueChange={(value) => setNewLesson({ ...newLesson, is_published: value === "true" })}
+                            >
+                              <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="true">Published</SelectItem>
+                                <SelectItem value="false">Draft</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="sm:col-span-1 md:col-span-2">
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
+                            <Textarea
+                              placeholder="Lesson description"
+                              value={newLesson.description || ""}
+                              onChange={(e) => setNewLesson({ ...newLesson, description: e.target.value })}
+                              className="border-white/20 bg-white/5 text-white w-full"
+                            />
+                          </div>
+                          <div className="sm:col-span-1 md:col-span-2">
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">Main Content</label>
+                            <Textarea
+                              placeholder="Enter lesson content (text, video URL, etc.)"
+                              value={newLesson.content?.main_content || ""}
+                              onChange={(e) => setNewLesson({ ...newLesson, content: { ...newLesson.content, main_content: e.target.value } })}
+                              className="border-white/20 bg-white/5 text-white w-full"
+                              rows={4}
+                            />
+                          </div>
+                          <div className="sm:col-span-1 md:col-span-2">
+                            <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
+                            <Textarea
+                              placeholder='[{"id": 1, "question": "Example?", "type": "multiple_choice", "options": ["A", "B", "C"], "correct_answer": 0, "explanation": "Explanation"}]'
+                              value={JSON.stringify(newLesson.content?.questions || [], null, 2)}
+                              onChange={(e) => {
+                                try {
+                                  const questions = JSON.parse(e.target.value);
+                                  setNewLesson({ ...newLesson, content: { ...newLesson.content, questions } });
+                                } catch {
+                                  toast.error("Invalid JSON format for questions");
+                                }
+                              }}
+                              className="border-white/20 bg-white/5 text-white font-mono w-full"
+                              rows={6}
+                            />
+                          </div>
+                        </div>
+                        <Button onClick={addLesson} className="w-full bg-blue-600 hover:bg-blue-700">
+                          <BookOpen className="mr-2 h-4 w-4" /> Add Lesson
+                        </Button>
+                      </div>
+
+                      <div className="mt-6">
+                        <h3 className="text-lg font-semibold mb-4">Existing Lessons</h3>
+                        <ScrollArea className="h-96">
+                          <div className="space-y-4">
+                            {lessons.map((lesson) => (
+                              <motion.div
+                                key={lesson.id}
+                                className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                                whileHover={{ scale: 1.01 }}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="font-medium">{lesson.title}</h4>
+                                    <p className="text-sm text-slate-400">
+                                      {lesson.language.toUpperCase()} • {lesson.difficulty} • {lesson.content_type}
+                                    </p>
+                                    <Badge className={lesson.is_published ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
+                                      {lesson.is_published ? "Published" : "Draft"}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => setEditingLesson(lesson)}
+                                      className="border-white/20 text-white hover:bg-white/10"
+                                    >
+                                      <Edit className="h-4 w-4 mr-1" /> Edit
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => deleteLesson(lesson.id)}
+                                      className="bg-red-600 hover:bg-red-700"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-1" /> Delete
+                                    </Button>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+
+                      {editingLesson && (
+                        <div className="mt-6 p-4 bg-white/5 rounded-lg">
+                          <h3 className="text-lg font-semibold mb-4">Edit Lesson</h3>
+                          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+                            <div>
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
+                              <Input
+                                value={editingLesson.title}
+                                onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
+                                className="border-white/20 bg-white/5 text-white w-full"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">Language</label>
+                              <Select
+                                value={editingLesson.language}
+                                onValueChange={(value) => setEditingLesson({ ...editingLesson, language: value })}
+                              >
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="es">Spanish (ES)</SelectItem>
+                                  <SelectItem value="fr">French (FR)</SelectItem>
+                                  <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                                  <SelectItem value="de">German (DE)</SelectItem>
+                                  <SelectItem value="it">Italian (IT)</SelectItem>
+                                  <SelectItem value="pt">Portuguese (PT)</SelectItem>
+                                  <SelectItem value="ru">Russian (RU)</SelectItem>
+                                  <SelectItem value="ja">Japanese (JA)</SelectItem>
+                                  <SelectItem value="zh">Chinese (ZH)</SelectItem>
+                                  <SelectItem value="ar">Arabic (AR)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
+                              <Select
+                                value={editingLesson.difficulty}
+                                onValueChange={(value) => setEditingLesson({ ...editingLesson, difficulty: value as any })}
+                              >
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="beginner">Beginner</SelectItem>
+                                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                                  <SelectItem value="advanced">Advanced</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">Content Type</label>
+                              <Select
+                                value={editingLesson.content_type}
+                                onValueChange={(value) => setEditingLesson({ ...editingLesson, content_type: value as any })}
+                              >
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="text">Text</SelectItem>
+                                  <SelectItem value="video">Video</SelectItem>
+                                  <SelectItem value="audio">Audio</SelectItem>
+                                  <SelectItem value="interactive">Interactive</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">Order Index</label>
+                              <Input
+                                type="number"
+                                value={editingLesson.order_index || 0}
+                                onChange={(e) => setEditingLesson({ ...editingLesson, order_index: Number(e.target.value) })}
+                                className="border-white/20 bg-white/5 text-white w-full"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">Estimated Duration (min)</label>
+                              <Input
+                                type="number"
+                                value={editingLesson.estimated_duration || 10}
+                                onChange={(e) => setEditingLesson({ ...editingLesson, estimated_duration: Number(e.target.value) })}
+                                className="border-white/20 bg-white/5 text-white w-full"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
+                              <Input
+                                type="number"
+                                value={editingLesson.xp_reward || 50}
+                                onChange={(e) => setEditingLesson({ ...editingLesson, xp_reward: Number(e.target.value) })}
+                                className="border-white/20 bg-white/5 text-white w-full"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">Published</label>
+                              <Select
+                                value={editingLesson.is_published ? "true" : "false"}
+                                onValueChange={(value) => setEditingLesson({ ...editingLesson, is_published: value === "true" })}
+                              >
+                                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="true">Published</SelectItem>
+                                  <SelectItem value="false">Draft</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="sm:col-span-1 md:col-span-2">
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
+                              <Textarea
+                                value={editingLesson.description || ""}
+                                onChange={(e) => setEditingLesson({ ...editingLesson, description: e.target.value })}
+                                className="border-white/20 bg-white/5 text-white w-full"
+                              />
+                            </div>
+                            <div className="sm:col-span-1 md:col-span-2">
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">Main Content</label>
+                              <Textarea
+                                value={editingLesson.content?.main_content || ""}
+                                onChange={(e) => setEditingLesson({ ...editingLesson, content: { ...editingLesson.content, main_content: e.target.value } })}
+                                className="border-white/20 bg-white/5 text-white w-full"
+                                rows={4}
+                              />
+                            </div>
+                            <div className="sm:col-span-1 md:col-span-2">
+                              <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
+                              <Textarea
+                                value={JSON.stringify(editingLesson.content?.questions || [], null, 2)}
+                                onChange={(e) => {
+                                  try {
+                                    const questions = JSON.parse(e.target.value);
+                                    setEditingLesson({ ...editingLesson, content: { ...editingLesson.content, questions } });
+                                  } catch {
+                                    toast.error("Invalid JSON format for questions");
+                                  }
+                                }}
+                                className="border-white/20 bg-white/5 text-white font-mono w-full"
+                                rows={6}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-4">
+                            <Button
+                              onClick={updateLesson}
+                              className="flex-1 bg-green-600 hover:bg-green-700"
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" /> Save Changes
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => setEditingLesson(null)}
+                              className="flex-1 border-white/20 text-white hover:bg-white/10"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </TabsContent>
+
+             <TabsContent value="quizzes" key="quizzes">
+  <motion.div
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    exit={{ opacity: 0, x: 20 }}
+    transition={{ duration: 0.3 }}
+  >
+    <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+      <CardHeader>
+        <CardTitle>Quiz Management</CardTitle>
+        <CardDescription className="text-slate-300">Add, edit, and delete quizzes</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Add New Quiz</h3>
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
+              <Input
+                placeholder="Quiz title"
+                value={newQuiz.title}
+                onChange={(e) => setNewQuiz({ ...newQuiz, title: e.target.value })}
+                className="border-white/20 bg-white/5 text-white w-full"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Language</label>
+              <Select
+                value={newQuiz.language}
+                onValueChange={(value) => setNewQuiz({ ...newQuiz, language: value })}
+              >
+                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="es">Spanish (ES)</SelectItem>
+                  <SelectItem value="fr">French (FR)</SelectItem>
+                  <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                  <SelectItem value="de">German (DE)</SelectItem>
+                  <SelectItem value="it">Italian (IT)</SelectItem>
+                  <SelectItem value="pt">Portuguese (PT)</SelectItem>
+                  <SelectItem value="ru">Russian (RU)</SelectItem>
+                  <SelectItem value="ja">Japanese (JA)</SelectItem>
+                  <SelectItem value="zh">Chinese (ZH)</SelectItem>
+                  <SelectItem value="ar">Arabic (AR)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
+              <Select
+                value={newQuiz.difficulty}
+                onValueChange={(value) => setNewQuiz({ ...newQuiz, difficulty: value as any })}
+              >
+                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="beginner">Beginner</SelectItem>
+                  <SelectItem value="intermediate">Intermediate</SelectItem>
+                  <SelectItem value="advanced">Advanced</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Category</label>
+              <Select
+                value={newQuiz.category_id || "none"}
+                onValueChange={(value) => setNewQuiz({ ...newQuiz, category_id: value === "none" ? null : value })}
+              >
+                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Category</SelectItem>
+                  {Array.from(new Set(quizzes.map(q => q.categories?.name).filter(Boolean))).map((category) => {
+                    const quiz = quizzes.find(q => q.categories?.name === category);
+                    if (!quiz?.category_id) {
+                      console.warn(`Category "${category}" has no valid category_id`);
+                      return null;
+                    }
+                    return (
+                      <SelectItem key={quiz.category_id} value={quiz.category_id}>
+                        {category}
+                      </SelectItem>
+                    );
+                  }).filter(Boolean)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Time Limit (min)</label>
+              <Input
+                type="number"
+                value={newQuiz.time_limit || 30}
+                onChange={(e) => setNewQuiz({ ...newQuiz, time_limit: Number(e.target.value) })}
+                className="border-white/20 bg-white/5 text-white w-full"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Passing Score (%)</label>
+              <Input
+                type="number"
+                value={newQuiz.passing_score || 60}
+                onChange={(e) => setNewQuiz({ ...newQuiz, passing_score: Number(e.target.value) })}
+                className="border-white/20 bg-white/5 text-white w-full"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
+              <Input
+                type="number"
+                value={newQuiz.xp_reward || 50}
+                onChange={(e) => setNewQuiz({ ...newQuiz, xp_reward: Number(e.target.value) })}
+                className="border-white/20 bg-white/5 text-white w-full"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Published</label>
+              <Select
+                value={newQuiz.is_published ? "true" : "false"}
+                onValueChange={(value) => setNewQuiz({ ...newQuiz, is_published: value === "true" })}
+              >
+                <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="true">Published</SelectItem>
+                  <SelectItem value="false">Draft</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="sm:col-span-1 md:col-span-2">
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
+              <Textarea
+                placeholder="Quiz description"
+                value={newQuiz.description || ""}
+                onChange={(e) => setNewQuiz({ ...newQuiz, description: e.target.value })}
+                className="border-white/20 bg-white/5 text-white w-full"
+              />
+            </div>
+            <div className="sm:col-span-1 md:col-span-2">
+              <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
+              <Textarea
+                placeholder='[{"id": 1, "question": "Example?", "type": "multiple_choice", "options": ["A", "B", "C"], "correct_answer": 0, "explanation": "Explanation"}]'
+                value={JSON.stringify(newQuiz.questions || [], null, 2)}
+                onChange={(e) => {
+                  try {
+                    const questions = JSON.parse(e.target.value);
+                    setNewQuiz({ ...newQuiz, questions });
+                  } catch {
+                    toast.error("Invalid JSON format for questions");
+                  }
+                }}
+                className="border-white/20 bg-white/5 text-white font-mono w-full"
+                rows={6}
+              />
+            </div>
+          </div>
+          <Button onClick={addQuiz} className="w-full bg-blue-600 hover:bg-blue-700">
+            <Trophy className="mr-2 h-4 w-4" /> Add Quiz
+          </Button>
+        </div>
+
+        <div className="mt-6">
+          <h3 className="text-lg font-semibold mb-4">Existing Quizzes</h3>
+          <ScrollArea className="h-96">
+            <div className="space-y-4">
+              {quizzes.map((quiz) => (
+                <motion.div
+                  key={quiz.id}
+                  className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                  whileHover={{ scale: 1.01 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{quiz.title}</h4>
+                      <p className="text-sm text-slate-400">
+                        {quiz.language.toUpperCase()} • {quiz.difficulty} • {quiz.questions.length} questions
+                      </p>
+                      <Badge className={quiz.is_published ? "bg-green-500/20 text-green-300" : "bg-yellow-500/20 text-yellow-300"}>
+                        {quiz.is_published ? "Published" : "Draft"}
+                      </Badge>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingQuiz(quiz)}
+                        className="border-white/20 text-white hover:bg-white/10"
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => deleteQuiz(quiz.id)}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" /> Delete
+                      </Button>
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+
+        {editingQuiz && (
+          <div className="mt-6 p-4 bg-white/5 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4">Edit Quiz</h3>
+            <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2">
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Title</label>
+                <Input
+                  value={editingQuiz.title}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, title: e.target.value })}
+                  className="border-white/20 bg-white/5 text-white w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Language</label>
+                <Select
+                  value={editingQuiz.language}
+                  onValueChange={(value) => setEditingQuiz({ ...editingQuiz, language: value })}
+                >
+                  <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="es">Spanish (ES)</SelectItem>
+                    <SelectItem value="fr">French (FR)</SelectItem>
+                    <SelectItem value="yo">Yoruba (YO)</SelectItem>
+                    <SelectItem value="de">German (DE)</SelectItem>
+                    <SelectItem value="it">Italian (IT)</SelectItem>
+                    <SelectItem value="pt">Portuguese (PT)</SelectItem>
+                    <SelectItem value="ru">Russian (RU)</SelectItem>
+                    <SelectItem value="ja">Japanese (JA)</SelectItem>
+                    <SelectItem value="zh">Chinese (ZH)</SelectItem>
+                    <SelectItem value="ar">Arabic (AR)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Difficulty</label>
+                <Select
+                  value={editingQuiz.difficulty}
+                  onValueChange={(value) => setEditingQuiz({ ...editingQuiz, difficulty: value as any })}
+                >
+                  <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Category</label>
+                <Select
+                  value={editingQuiz.category_id || "none"}
+                  onValueChange={(value) => setEditingQuiz({ ...editingQuiz, category_id: value === "none" ? null : value })}
+                >
+                  <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Category</SelectItem>
+                    {Array.from(new Set(quizzes.map(q => q.categories?.name).filter(Boolean))).map((category) => {
+                      const quiz = quizzes.find(q => q.categories?.name === category);
+                      if (!quiz?.category_id) {
+                        console.warn(`Category "${category}" has no valid category_id`);
+                        return null;
+                      }
+                      return (
+                        <SelectItem key={quiz.category_id} value={quiz.category_id}>
+                          {category}
+                        </SelectItem>
+                      );
+                    }).filter(Boolean)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Time Limit (min)</label>
+                <Input
+                  type="number"
+                  value={editingQuiz.time_limit || 30}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, time_limit: Number(e.target.value) })}
+                  className="border-white/20 bg-white/5 text-white w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Passing Score (%)</label>
+                <Input
+                  type="number"
+                  value={editingQuiz.passing_score || 60}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, passing_score: Number(e.target.value) })}
+                  className="border-white/20 bg-white/5 text-white w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">XP Reward</label>
+                <Input
+                  type="number"
+                  value={editingQuiz.xp_reward || 50}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, xp_reward: Number(e.target.value) })}
+                  className="border-white/20 bg-white/5 text-white w-full"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Published</label>
+                <Select
+                  value={editingQuiz.is_published ? "true" : "false"}
+                  onValueChange={(value) => setEditingQuiz({ ...editingQuiz, is_published: value === "true" })}
+                >
+                  <SelectTrigger className="border-white/20 bg-white/5 text-white w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Published</SelectItem>
+                    <SelectItem value="false">Draft</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="sm:col-span-1 md:col-span-2">
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Description</label>
+                <Textarea
+                  value={editingQuiz.description || ""}
+                  onChange={(e) => setEditingQuiz({ ...editingQuiz, description: e.target.value })}
+                  className="border-white/20 bg-white/5 text-white w-full"
+                />
+              </div>
+              <div className="sm:col-span-1 md:col-span-2">
+                <label className="text-sm font-medium text-slate-300 mb-2 block">Questions (JSON)</label>
+                <Textarea
+                  value={JSON.stringify(editingQuiz.questions || [], null, 2)}
+                  onChange={(e) => {
+                    try {
+                      const questions = JSON.parse(e.target.value);
+                      setEditingQuiz({ ...editingQuiz, questions });
+                    } catch {
+                      toast.error("Invalid JSON format for questions");
+                    }
+                  }}
+                  className="border-white/20 bg-white/5 text-white font-mono w-full"
+                  rows={6}
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button
+                onClick={updateQuiz}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                <CheckCircle className="mr-2 h-4 w-4" /> Save Changes
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setEditingQuiz(null)}
+                className="flex-1 border-white/20 text-white hover:bg-white/10"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    <div className="mt-6">
+      <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle>Quiz Attempts</CardTitle>
+          <CardDescription className="text-slate-300">Recent quiz attempts by users</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-96">
+            <div className="space-y-4">
+              {quizAttempts.map((attempt) => (
+                <motion.div
+                  key={attempt.id}
+                  className="p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"
+                  whileHover={{ scale: 1.01 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">{attempt.profiles?.full_name || "Unknown"}</h4>
+                      <p className="text-sm text-slate-400">
+                        Quiz ID: {attempt.quiz_id.slice(0, 8)} • Score: {attempt.score}%
+                      </p>
+                      <p className="text-sm text-slate-400">
+                        Completed: {new Date(attempt.completed_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <Badge
+                      className={
+                        attempt.score >= (quizzes.find((q) => q.id === attempt.quiz_id)?.passing_score || 60)
+                          ? "bg-green-500/20 text-green-300"
+                          : "bg-red-500/20 text-red-300"
+                      }
+                    >
+                      {attempt.score >= (quizzes.find((q) => q.id === attempt.quiz_id)?.passing_score || 60) ? "Passed" : "Failed"}
+                    </Badge>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    </div>
+  </motion.div>
+</TabsContent>
+
             </AnimatePresence>
           </Tabs>
         </motion.div>
       </div>
     </div>
-  )
+  );
 }
