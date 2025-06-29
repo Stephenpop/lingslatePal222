@@ -57,12 +57,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         {/* Back to Home Button */}
         <div className="mb-6">
           <Link href="/">
-            <Button variant="ghost" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 p-2">
+            <Button variant="ghost" className="text-slate-600 hover:text-slate-900 hover:bg-white/50 p-2">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Home
             </Button>
@@ -82,7 +82,7 @@ export default function LoginPage() {
           <p className="text-slate-600 text-lg">Sign in to continue your language journey</p>
         </div>
 
-        <Card className="border-slate-200 bg-white/80 backdrop-blur-sm shadow-xl">
+        <Card className="border-slate-200 bg-white/90 backdrop-blur-sm shadow-xl">
           <CardHeader className="space-y-1 pb-6">
             <CardTitle className="text-slate-900 text-2xl text-center">Sign In</CardTitle>
             <CardDescription className="text-slate-600 text-center">
