@@ -163,18 +163,18 @@ export default function TranslatePage() {
   return (
     <div className="min-h-screen bg-[--translate-bg]">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
+      <nav className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
-              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-white shadow-lg">
-                <Languages className="h-4 w-4 sm:h-6 sm:w-6 text-gray-600" />
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-card shadow-lg">
+                <Languages className="h-4 w-4 sm:h-6 sm:w-6 text-muted-foreground" />
               </div>
-              <span className="text-lg sm:text-2xl font-bold text-gray-900">LingslatePal</span>
+              <span className="text-lg sm:text-2xl font-bold text-foreground">LingslatePal</span>
             </Link>
             <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/dashboard">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg text-sm sm:text-base px-3 sm:px-4">
+                <Button className="bg-primary text-primary-foreground hover:bg-blue-900 shadow-lg text-sm sm:text-base px-3 sm:px-4">
                   <BookOpen className="mr-1 sm:mr-2 h-4 w-4" />
                   <span className="hidden sm:inline">Dashboard</span>
                   <span className="sm:hidden">Learn</span>
@@ -190,26 +190,26 @@ export default function TranslatePage() {
           {/* Main Translation Area */}
           <div className="lg:col-span-3">
             <div className="mb-6 sm:mb-8">
-              <h1 className="mb-2 text-2xl sm:text-3xl font-bold text-slate-900">Free Language Translation</h1>
-              <p className="text-slate-600 text-sm sm:text-base">
+              <h1 className="mb-2 text-2xl sm:text-3xl font-bold text-foreground">Free Language Translation</h1>
+              <p className="text-muted-foreground text-sm sm:text-base">
                 Translate between 100+ languages instantly with our free translation service
               </p>
             </div>
 
             <div>
-              <Card className="border-slate-200 bg-white shadow-xl">
+              <Card className="border-border bg-card shadow-xl">
                 <CardContent className="p-4 sm:p-6">
                   <div className="grid gap-6 lg:grid-cols-2">
                     {/* Source */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Select value={sourceLang} onValueChange={setSourceLang}>
-                          <SelectTrigger className="w-36 sm:w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500 text-base font-medium shadow-sm">
+                          <SelectTrigger className="w-36 sm:w-48 border-border bg-card text-foreground focus:ring-primary text-base font-medium shadow-sm">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-white border-slate-300 shadow-md">
+                          <SelectContent className="bg-card border-border shadow-md">
                             {languages.map((lang) => (
-                              <SelectItem key={lang.code} value={lang.code} className="text-base hover:bg-blue-50">
+                              <SelectItem key={lang.code} value={lang.code} className="text-foreground hover:bg-muted">
                                 <div className="flex items-center gap-2">
                                   <span>{lang.flag}</span>
                                   <span className="font-medium">{lang.name}</span>
@@ -229,7 +229,7 @@ export default function TranslatePage() {
                         placeholder="Enter text to translate..."
                         value={sourceText}
                         onChange={(e) => setSourceText(e.target.value)}
-                        className="min-h-32 sm:min-h-40 border-slate-300 bg-white text-slate-900 placeholder:text-slate-500 focus:ring-blue-500 text-base font-medium resize-none p-4 shadow-sm"
+                        className="min-h-32 sm:min-h-40 border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-primary text-base font-medium resize-none p-4 shadow-sm"
                         maxLength={5000}
                       />
 
@@ -240,7 +240,7 @@ export default function TranslatePage() {
                             variant="ghost"
                             onClick={handleListen}
                             disabled={isListening}
-                            className="text-blue-700 hover:bg-blue-100 hover:text-blue-900 p-2 shadow-sm"
+                            className="text-primary hover:bg-muted hover:text-primary-foreground p-2 shadow-sm"
                           >
                             {isListening ? <Loader2 className="h-5 w-5 animate-spin" /> : <Mic className="h-5 w-5" />}
                           </Button>
@@ -250,7 +250,7 @@ export default function TranslatePage() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleSpeak(sourceText, sourceLang)}
-                                className="text-blue-700 hover:bg-blue-100 hover:text-blue-900 p-2 shadow-sm"
+                                className="text-primary hover:bg-muted hover:text-primary-foreground p-2 shadow-sm"
                               >
                                 <Volume2 className="h-5 w-5" />
                               </Button>
@@ -258,14 +258,14 @@ export default function TranslatePage() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleCopy(sourceText)}
-                                className="text-blue-700 hover:bg-blue-100 hover:text-blue-900 p-2 shadow-sm"
+                                className="text-primary hover:bg-muted hover:text-primary-foreground p-2 shadow-sm"
                               >
                                 <Copy className="h-5 w-5" />
                               </Button>
                             </>
                           )}
                         </div>
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-800 font-medium shadow-inner">
+                        <Badge variant="secondary" className="bg-muted text-muted-foreground font-medium shadow-inner">
                           {sourceText.length}/5000
                         </Badge>
                       </div>
@@ -278,7 +278,7 @@ export default function TranslatePage() {
                           onClick={handleTranslate}
                           disabled={!sourceText.trim() || isTranslating}
                           size="lg"
-                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-base font-semibold"
+                          className="bg-primary text-primary-foreground hover:bg-blue-900 shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-base font-semibold"
                         >
                           {isTranslating ? (
                             <Loader2 className="h-5 w-5 animate-spin" />
@@ -295,7 +295,7 @@ export default function TranslatePage() {
                           variant="outline"
                           onClick={handleSwapLanguages}
                           disabled={sourceLang === "auto"}
-                          className="border-blue-300 text-blue-900 hover:bg-blue-100 hover:border-blue-400 bg-white px-4 py-3 shadow-sm"
+                          className="border-border text-foreground hover:bg-muted bg-card px-4 py-3 shadow-sm"
                         >
                           <RotateCcw className="h-5 w-5" />
                         </Button>
@@ -306,14 +306,14 @@ export default function TranslatePage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Select value={targetLang} onValueChange={setTargetLang}>
-                          <SelectTrigger className="w-36 sm:w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500 text-base font-medium shadow-sm">
+                          <SelectTrigger className="w-36 sm:w-48 border-border bg-card text-foreground focus:ring-primary text-base font-medium shadow-sm">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent className="bg-white border-slate-300 shadow-md">
+                          <SelectContent className="bg-card border-border shadow-md">
                             {languages
                               .filter((lang) => lang.code !== "auto")
                               .map((lang) => (
-                                <SelectItem key={lang.code} value={lang.code} className="text-base hover:bg-blue-50">
+                                <SelectItem key={lang.code} value={lang.code} className="text-foreground hover:bg-muted">
                                   <div className="flex items-center gap-2">
                                     <span>{lang.flag}</span>
                                     <span className="font-medium">{lang.name}</span>
@@ -324,17 +324,17 @@ export default function TranslatePage() {
                         </Select>
                       </div>
 
-                      <div className="min-h-32 sm:min-h-40 rounded-lg border border-slate-300 bg-white p-4 shadow-md">
+                      <div className="min-h-32 sm:min-h-40 rounded-lg border border-border bg-card p-4 shadow-md">
                         {translatedText ? (
                           <motion.p
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-slate-900 text-lg font-semibold leading-relaxed"
+                            className="text-foreground text-lg font-semibold leading-relaxed"
                           >
                             {translatedText}
                           </motion.p>
                         ) : (
-                          <p className="text-slate-500 text-lg font-medium">Translation will appear here...</p>
+                          <p className="text-muted-foreground text-lg font-medium">Translation will appear here...</p>
                         )}
                       </div>
 
@@ -344,7 +344,7 @@ export default function TranslatePage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleSpeak(translatedText, targetLang)}
-                            className="text-blue-700 hover:bg-blue-100 hover:text-blue-900 p-2 shadow-sm"
+                            className="text-primary hover:bg-muted hover:text-primary-foreground p-2 shadow-sm"
                           >
                             <Volume2 className="h-5 w-5" />
                           </Button>
@@ -352,11 +352,11 @@ export default function TranslatePage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleCopy(translatedText)}
-                            className="text-blue-700 hover:bg-blue-100 hover:text-blue-900 p-2 shadow-sm"
+                            className="text-primary hover:bg-muted hover:text-primary-foreground p-2 shadow-sm"
                           >
                             <Copy className="h-5 w-5" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-blue-700 hover:bg-blue-100 p-2 shadow-sm">
+                          <Button size="sm" variant="ghost" className="text-primary hover:bg-muted p-2 shadow-sm">
                             <Star className="h-5 w-5" />
                           </Button>
                         </div>
@@ -372,9 +372,9 @@ export default function TranslatePage() {
           <div className="space-y-6">
             {/* Recent Translations */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-              <Card className="border-slate-200 bg-white shadow-lg">
+              <Card className="border-border bg-card shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-slate-900 text-lg font-bold">
+                  <CardTitle className="flex items-center gap-2 text-foreground text-lg font-bold">
                     <History className="h-5 w-5" />
                     Recent Translations
                   </CardTitle>
@@ -383,11 +383,11 @@ export default function TranslatePage() {
                   {recentTranslations.map((translation, index) => (
                     <div
                       key={index}
-                      className="cursor-pointer rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:bg-slate-50 hover:border-slate-300 shadow-sm"
+                      className="cursor-pointer rounded-lg border border-border bg-card p-3 transition-colors hover:bg-muted hover:border-muted-foreground shadow-sm"
                       onClick={() => handleRecentTranslation(translation)}
                     >
-                      <div className="text-base text-slate-900 font-medium">{translation.source}</div>
-                      <div className="text-base text-slate-600">{translation.target}</div>
+                      <div className="text-base text-foreground font-medium">{translation.source}</div>
+                      <div className="text-muted-foreground text-base">{translation.target}</div>
                       <div className="mt-2 flex gap-1">
                         <Badge variant="secondary" className="text-sm bg-blue-100 text-blue-800 border-blue-200">
                           {languages.find((l) => l.code === translation.from)?.flag}{" "}
@@ -406,17 +406,17 @@ export default function TranslatePage() {
 
             {/* Upgrade CTA */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-              <Card className="border-blue-200 bg-white shadow-lg">
+              <Card className="border-border bg-card shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-slate-900 text-lg font-bold">Want to Learn More?</CardTitle>
+                  <CardTitle className="text-foreground text-lg font-bold">Want to Learn More?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="mb-4 text-base text-slate-600">
+                  <p className="mb-4 text-base text-muted-foreground">
                     Join LingslatePal to access interactive lessons, quizzes, and track your progress!
                   </p>
                   <div className="space-y-3">
                     <Link href="/auth/register">
-                      <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
+                      <Button className="w-full bg-primary text-primary-foreground hover:bg-blue-900 shadow-lg">
                         <BookOpen className="mr-2 h-5 w-5" />
                         Start Learning Free
                       </Button>
@@ -424,7 +424,7 @@ export default function TranslatePage() {
                     <Link href="/learn">
                       <Button
                         variant="outline"
-                        className="w-full border-slate-300 text-slate-700 hover:bg-slate-50 bg-white"
+                        className="w-full border-border text-foreground hover:bg-muted bg-card"
                       >
                         <Sparkles className="mr-2 h-5 w-5" />
                         Browse Lessons
