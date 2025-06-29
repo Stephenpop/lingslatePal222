@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react"
@@ -8,7 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Volume2, Mic, Copy, RotateCcw, Loader2, Languages, History, BookOpen, Star } from "lucide-react"
+import {
+  ArrowRight,
+  Volume2,
+  Mic,
+  Copy,
+  RotateCcw,
+  Loader2,
+  Languages,
+  History,
+  BookOpen,
+  Star,
+  Sparkles,
+} from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 
@@ -29,18 +40,20 @@ const languages = [
   { code: "tr", name: "Turkish", flag: "🇹🇷" },
   { code: "pl", name: "Polish", flag: "🇵🇱" },
   { code: "nl", name: "Dutch", flag: "🇳🇱" },
-  { code: "yo", name: "Yoruba" },
-  { code: "ig", name: "Igbo" },
-  { code: "ha", name: "Hausa" },
-  { code: "sw", name: "Swahili" },
-  { code: "am", name: "Amharic" },
-  { code: "zu", name: "Zulu" },
+  { code: "yo", name: "Yoruba", flag: "🇳🇬" },
+  { code: "ig", name: "Igbo", flag: "🇳🇬" },
+  { code: "ha", name: "Hausa", flag: "🇳🇬" },
+  { code: "sw", name: "Swahili", flag: "🇹🇿" },
+  { code: "am", name: "Amharic", flag: "🇪🇹" },
+  { code: "zu", name: "Zulu", flag: "🇿🇦" },
 ]
 
 const recentTranslations = [
   { source: "Hello world", target: "Hola mundo", from: "en", to: "es" },
   { source: "Good morning", target: "Bonjour", from: "en", to: "fr" },
   { source: "Thank you", target: "Danke", from: "en", to: "de" },
+  { source: "How are you?", target: "¿Cómo estás?", from: "en", to: "es" },
+  { source: "Goodbye", target: "Au revoir", from: "en", to: "fr" },
 ]
 
 export default function TranslatePage() {
@@ -54,18 +67,18 @@ export default function TranslatePage() {
   const { toast } = useToast()
 
   const translateText = async (text: string, from: string, to: string) => {
-    setIsTranslating(true);
+    setIsTranslating(true)
     try {
-      const response = await fetch('/api/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, source: from, target: to }),
-      });
-      if (!response.ok) throw new Error('Translation failed');
-      const data = await response.json();
-      setTranslatedText(data.translatedText || data);
+      })
+      if (!response.ok) throw new Error("Translation failed")
+      const data = await response.json()
+      setTranslatedText(data.translatedText || data)
     } catch (error) {
-      console.error('Translation error:', error);
+      console.error("Translation error:", error)
       const mockTranslations: Record<string, Record<string, string>> = {
         hello: { es: "hola", fr: "bonjour", de: "hallo", it: "ciao" },
         goodbye: { es: "adiós", fr: "au revoir", de: "auf wiedersehen", it: "ciao" },
@@ -73,98 +86,100 @@ export default function TranslatePage() {
         "how are you": { es: "cómo estás", fr: "comment allez-vous", de: "wie geht es dir", it: "come stai" },
         "good morning": { es: "buenos días", fr: "bonjour", de: "guten morgen", it: "buongiorno" },
         "good night": { es: "buenas noches", fr: "bonne nuit", de: "gute nacht", it: "buonanotte" },
-      };
+      }
       const result =
         mockTranslations[text.toLowerCase()]?.[to] ||
-        `[Translated to ${languages.find((l) => l.code === to)?.name}: ${text}]`;
-      setTranslatedText(result);
+        `[Translated to ${languages.find((l) => l.code === to)?.name}: ${text}]`
+      setTranslatedText(result)
       toast({
-        title: 'Error',
-        description: 'Failed to translate. Using fallback.',
-        variant: 'destructive',
-      });
+        title: "Demo Mode",
+        description: "Using demo translation. Connect to LibreTranslate for full functionality.",
+      })
     } finally {
-      setIsTranslating(false);
+      setIsTranslating(false)
     }
   }
 
   const handleTranslate = () => {
-    if (!sourceText.trim()) return;
-    translateText(sourceText, sourceLang, targetLang);
-  };
+    if (!sourceText.trim()) return
+    translateText(sourceText, sourceLang, targetLang)
+  }
 
   const handleSwapLanguages = () => {
-    if (sourceLang === "auto") return;
-    setSourceLang(targetLang);
-    setTargetLang(sourceLang);
-    setSourceText(translatedText);
-    setTranslatedText(sourceText);
-    setDetectedLang("");
-  };
+    if (sourceLang === "auto") return
+    setSourceLang(targetLang)
+    setTargetLang(sourceLang)
+    setSourceText(translatedText)
+    setTranslatedText(sourceText)
+    setDetectedLang("")
+  }
 
   const handleSpeak = (text: string, lang: string) => {
     if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang === "auto" ? "en" : lang;
-      speechSynthesis.speak(utterance);
+      const utterance = new SpeechSynthesisUtterance(text)
+      utterance.lang = lang === "auto" ? "en" : lang
+      speechSynthesis.speak(utterance)
     }
-  };
+  }
 
   const handleListen = () => {
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = sourceLang === "auto" ? "en" : sourceLang;
-      recognition.onstart = () => setIsListening(true);
-      recognition.onend = () => setIsListening(false);
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+      const recognition = new SpeechRecognition()
+      recognition.continuous = false
+      recognition.interimResults = false
+      recognition.lang = sourceLang === "auto" ? "en" : sourceLang
+      recognition.onstart = () => setIsListening(true)
+      recognition.onend = () => setIsListening(false)
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        setSourceText(transcript);
-      };
-      recognition.start();
+        const transcript = event.results[0][0].transcript
+        setSourceText(transcript)
+      }
+      recognition.start()
     } else {
       toast({
         title: "Speech Recognition Not Supported",
         description: "Your browser doesn't support speech recognition.",
         variant: "destructive",
-      });
+      })
     }
-  };
+  }
 
   const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text);
+    navigator.clipboard.writeText(text)
     toast({
       title: "Copied!",
       description: "Text copied to clipboard.",
-    });
-  };
+    })
+  }
 
   const handleRecentTranslation = (translation: (typeof recentTranslations)[0]) => {
-    setSourceText(translation.source);
-    setTranslatedText(translation.target);
-    setSourceLang(translation.from);
-    setTargetLang(translation.to);
-  };
+    setSourceText(translation.source)
+    setTranslatedText(translation.target)
+    setSourceLang(translation.from)
+    setTargetLang(translation.to)
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-blue-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       {/* Navigation */}
-      <nav className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+      <nav className="sticky top-0 z-50 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600">
-                <Languages className="h-5 w-5 text-white" />
+            <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
+                <Languages className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
               </div>
-              <span className="text-xl font-bold text-gray-900">LingslatetPal</span>
+              <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                LingslatePal
+              </span>
             </Link>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/dashboard">
-                <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white">
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  Dashboard
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg text-sm sm:text-base px-3 sm:px-4">
+                  <BookOpen className="mr-1 sm:mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                  <span className="sm:hidden">Learn</span>
                 </Button>
               </Link>
             </div>
@@ -172,26 +187,26 @@ export default function TranslatePage() {
         </div>
       </nav>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid gap-8 lg:grid-cols-4">
+      <div className="container mx-auto px-4 py-6 sm:py-8">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-4">
           {/* Main Translation Area */}
           <div className="lg:col-span-3">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-              <h1 className="mb-2 text-3xl font-bold text-gray-900">Free Language Translation</h1>
-              <p className="text-gray-600">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8">
+              <h1 className="mb-2 text-2xl sm:text-3xl font-bold text-slate-900">Free Language Translation</h1>
+              <p className="text-slate-600 text-sm sm:text-base">
                 Translate between 100+ languages instantly with our free translation service
               </p>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              <Card className="border-gray-200 bg-white shadow-sm">
-                <CardContent className="p-6">
+              <Card className="border-slate-200 bg-white shadow-xl">
+                <CardContent className="p-4 sm:p-6">
                   <div className="grid gap-6 lg:grid-cols-2">
                     {/* Source */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Select value={sourceLang} onValueChange={setSourceLang}>
-                          <SelectTrigger className="w-48 border-gray-300 bg-white text-gray-900 focus:ring-blue-500">
+                          <SelectTrigger className="w-36 sm:w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500 text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -199,14 +214,14 @@ export default function TranslatePage() {
                               <SelectItem key={lang.code} value={lang.code}>
                                 <div className="flex items-center gap-2">
                                   <span>{lang.flag}</span>
-                                  <span>{lang.name}</span>
+                                  <span className="text-sm">{lang.name}</span>
                                 </div>
                               </SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
                         {detectedLang && (
-                          <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
                             Detected: {detectedLang}
                           </Badge>
                         )}
@@ -216,18 +231,18 @@ export default function TranslatePage() {
                         placeholder="Enter text to translate..."
                         value={sourceText}
                         onChange={(e) => setSourceText(e.target.value)}
-                        className="min-h-40 border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:ring-blue-500"
+                        className="min-h-32 sm:min-h-40 border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-blue-500 text-sm sm:text-base resize-none"
                         maxLength={5000}
                       />
 
                       <div className="flex items-center justify-between">
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 sm:gap-2">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={handleListen}
                             disabled={isListening}
-                            className="text-gray-900 hover:bg-gray-100"
+                            className="text-slate-700 hover:bg-slate-100 p-2"
                           >
                             {isListening ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
                           </Button>
@@ -237,7 +252,7 @@ export default function TranslatePage() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleSpeak(sourceText, sourceLang)}
-                                className="text-gray-900 hover:bg-gray-100"
+                                className="text-slate-700 hover:bg-slate-100 p-2"
                               >
                                 <Volume2 className="h-4 w-4" />
                               </Button>
@@ -245,45 +260,46 @@ export default function TranslatePage() {
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => handleCopy(sourceText)}
-                                className="text-gray-900 hover:bg-gray-100"
+                                className="text-slate-700 hover:bg-slate-100 p-2"
                               >
                                 <Copy className="h-4 w-4" />
                               </Button>
                             </>
                           )}
                         </div>
-                        <Badge variant="secondary" className="bg-gray-100 text-gray-800">
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-700 text-xs">
                           {sourceText.length}/5000
                         </Badge>
                       </div>
                     </div>
 
                     {/* Controls */}
-                    <div className="flex items-center justify-center lg:flex-col lg:gap-4">
-                      <div className="flex gap-2">
+                    <div className="flex items-center justify-center lg:flex-col lg:gap-4 order-last lg:order-none">
+                      <div className="flex flex-col sm:flex-row gap-3">
                         <Button
                           onClick={handleTranslate}
                           disabled={!sourceText.trim() || isTranslating}
                           size="lg"
-                          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 text-sm sm:text-base font-semibold"
                         >
                           {isTranslating ? (
-                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin" />
                           ) : (
                             <>
-                              Translate
-                              <ArrowRight className="ml-2 h-5 w-5" />
+                              <span className="hidden sm:inline">Translate</span>
+                              <span className="sm:hidden">Go</span>
+                              <ArrowRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
                             </>
                           )}
                         </Button>
                         <Button
                           size="lg"
-                          variant="ghost"
+                          variant="outline"
                           onClick={handleSwapLanguages}
                           disabled={sourceLang === "auto"}
-                          className="text-gray-900 hover:bg-gray-100"
+                          className="border-slate-300 text-slate-700 hover:bg-slate-50 bg-transparent px-4 py-3"
                         >
-                          <RotateCcw className="h-5 w-5" />
+                          <RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
                         </Button>
                       </div>
                     </div>
@@ -292,7 +308,7 @@ export default function TranslatePage() {
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <Select value={targetLang} onValueChange={setTargetLang}>
-                          <SelectTrigger className="w-48 border-gray-300 bg-white text-gray-900 focus:ring-blue-500">
+                          <SelectTrigger className="w-36 sm:w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500 text-sm">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -302,7 +318,7 @@ export default function TranslatePage() {
                                 <SelectItem key={lang.code} value={lang.code}>
                                   <div className="flex items-center gap-2">
                                     <span>{lang.flag}</span>
-                                    <span>{lang.name}</span>
+                                    <span className="text-sm">{lang.name}</span>
                                   </div>
                                 </SelectItem>
                               ))}
@@ -310,27 +326,27 @@ export default function TranslatePage() {
                         </Select>
                       </div>
 
-                      <div className="min-h-40 rounded-md border border-gray-300 bg-white p-3">
+                      <div className="min-h-32 sm:min-h-40 rounded-lg border border-slate-300 bg-slate-50 p-3 sm:p-4">
                         {translatedText ? (
                           <motion.p
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="text-gray-900"
+                            className="text-slate-900 text-sm sm:text-base leading-relaxed"
                           >
                             {translatedText}
                           </motion.p>
                         ) : (
-                          <p className="text-gray-400">Translation will appear here...</p>
+                          <p className="text-slate-400 text-sm sm:text-base">Translation will appear here...</p>
                         )}
                       </div>
 
                       {translatedText && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-1 sm:gap-2">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => handleSpeak(translatedText, targetLang)}
-                            className="text-gray-900 hover:bg-gray-100"
+                            className="text-slate-700 hover:bg-slate-100 p-2"
                           >
                             <Volume2 className="h-4 w-4" />
                           </Button>
@@ -338,15 +354,11 @@ export default function TranslatePage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => handleCopy(translatedText)}
-                            className="text-gray-900 hover:bg-gray-100"
+                            className="text-slate-700 hover:bg-slate-100 p-2"
                           >
                             <Copy className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-gray-900 hover:bg-gray-100"
-                          >
+                          <Button size="sm" variant="ghost" className="text-slate-700 hover:bg-slate-100 p-2">
                             <Star className="h-4 w-4" />
                           </Button>
                         </div>
@@ -362,9 +374,9 @@ export default function TranslatePage() {
           <div className="space-y-6">
             {/* Recent Translations */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
-              <Card className="border-gray-200 bg-white shadow-sm">
+              <Card className="border-slate-200 bg-white shadow-lg">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-gray-900">
+                  <CardTitle className="flex items-center gap-2 text-slate-900 text-lg">
                     <History className="h-5 w-5" />
                     Recent Translations
                   </CardTitle>
@@ -373,17 +385,20 @@ export default function TranslatePage() {
                   {recentTranslations.map((translation, index) => (
                     <div
                       key={index}
-                      className="cursor-pointer rounded-lg border border-gray-200 bg-white p-3 transition-colors hover:bg-gray-50"
+                      className="cursor-pointer rounded-lg border border-slate-200 bg-white p-3 transition-colors hover:bg-slate-50 hover:border-slate-300"
                       onClick={() => handleRecentTranslation(translation)}
                     >
-                      <div className="text-sm text-gray-900">{translation.source}</div>
-                      <div className="text-sm text-gray-600">{translation.target}</div>
-                      <div className="mt-1 flex gap-1">
-                        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800">
+                      <div className="text-sm text-slate-900 font-medium">{translation.source}</div>
+                      <div className="text-sm text-slate-600">{translation.target}</div>
+                      <div className="mt-2 flex gap-1">
+                        <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-700 border-blue-200">
                           {languages.find((l) => l.code === translation.from)?.flag}{" "}
                           {languages.find((l) => l.code === translation.from)?.name}
                         </Badge>
-                        <Badge variant="secondary" className="text-xs bg-gray-100 text-gray-800">
+                        <Badge
+                          variant="secondary"
+                          className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200"
+                        >
                           {languages.find((l) => l.code === translation.to)?.flag}{" "}
                           {languages.find((l) => l.code === translation.to)?.name}
                         </Badge>
@@ -396,20 +411,31 @@ export default function TranslatePage() {
 
             {/* Upgrade CTA */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50 shadow-sm">
+              <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-purple-50 shadow-lg">
                 <CardHeader>
-                  <CardTitle className="text-gray-900">Want to Learn More?</CardTitle>
+                  <CardTitle className="text-slate-900 text-lg">Want to Learn More?</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="mb-4 text-sm text-gray-600">
-                    Join PolyglotPal to access interactive lessons, quizzes, and track your progress!
+                  <p className="mb-4 text-sm text-slate-600">
+                    Join LingslatePal to access interactive lessons, quizzes, and track your progress!
                   </p>
-                  <Link href="/auth/register">
-                    <Button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white">
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Start Learning Free
-                    </Button>
-                  </Link>
+                  <div className="space-y-3">
+                    <Link href="/auth/register">
+                      <Button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg">
+                        <BookOpen className="mr-2 h-4 w-4" />
+                        Start Learning Free
+                      </Button>
+                    </Link>
+                    <Link href="/learn">
+                      <Button
+                        variant="outline"
+                        className="w-full border-slate-300 text-slate-700 hover:bg-slate-50 bg-transparent"
+                      >
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Browse Lessons
+                      </Button>
+                    </Link>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
