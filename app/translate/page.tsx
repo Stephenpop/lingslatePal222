@@ -161,22 +161,20 @@ export default function TranslatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[--translate-bg]">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2 sm:space-x-3">
-              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
-                <Languages className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+              <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-white shadow-lg">
+                <Languages className="h-4 w-4 sm:h-6 sm:w-6 text-gray-600" />
               </div>
-              <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                LingslatePal
-              </span>
+              <span className="text-lg sm:text-2xl font-bold text-gray-900">LingslatePal</span>
             </Link>
             <div className="flex items-center space-x-2 sm:space-x-4">
               <Link href="/dashboard">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg text-sm sm:text-base px-3 sm:px-4">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg text-sm sm:text-base px-3 sm:px-4">
                   <BookOpen className="mr-1 sm:mr-2 h-4 w-4" />
                   <span className="hidden sm:inline">Dashboard</span>
                   <span className="sm:hidden">Learn</span>
@@ -191,14 +189,14 @@ export default function TranslatePage() {
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-4">
           {/* Main Translation Area */}
           <div className="lg:col-span-3">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 sm:mb-8">
+            <div className="mb-6 sm:mb-8">
               <h1 className="mb-2 text-2xl sm:text-3xl font-bold text-slate-900">Free Language Translation</h1>
               <p className="text-slate-600 text-sm sm:text-base">
                 Translate between 100+ languages instantly with our free translation service
               </p>
-            </motion.div>
+            </div>
 
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <div>
               <Card className="border-slate-200 bg-white shadow-xl">
                 <CardContent className="p-4 sm:p-6">
                   <div className="grid gap-6 lg:grid-cols-2">
@@ -367,7 +365,7 @@ export default function TranslatePage() {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </div>
           </div>
 
           {/* Sidebar */}
