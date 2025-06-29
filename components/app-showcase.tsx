@@ -80,7 +80,7 @@ export function AppShowcase() {
               ))}
             </div>
 
-            <Card className="mt-8 border-emerald-500/30 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 backdrop-blur-sm">
+            <Card className="mt-8 border-emerald-500/30 bg-gradient-to-r from-emerald-600/80 to-blue-600/80">
               <CardContent className="p-8">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-3 rounded-xl bg-emerald-100">
@@ -105,7 +105,7 @@ export function AppShowcase() {
                     <span>Native app-like experience</span>
                   </div>
                 </div>
-                <Button className="w-full bg-white text-blue-600 hover:bg-blue-50 font-semibold py-3">
+                <Button className="w-full bg-emerald-500 text-white hover:bg-emerald-600 font-semibold py-3 rounded-lg">
                   <Download className="mr-2 h-5 w-5" />
                   Install App
                 </Button>
@@ -190,8 +190,7 @@ export function AppShowcase() {
               <motion.div
                 animate={{ y: [0, 10, 0] }}
                 transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, delay: 1 }}
-                className="absolute -bottom-6 -left-6 bg-blue-500 text-white p-3 rounded-full shadow-xl"
-              >
+                className="absolute -bottom-6 -left-6 bg-blue-500 text-white p-3 rounded Rounded-full shadow-xl">
                 <Zap className="h-6 w-6" />
               </motion.div>
             </div>
