@@ -1,12 +1,32 @@
 {
   "name": "LingslatePal - Language Learning & Translation",
   "short_name": "LingslatePal",
-  "description": "Learn and translate languages with ease",
+  "description": "Learn and translate languages with ease. Free translation tools and interactive language learning.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
-  "theme_color": "#3b82f6",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
   "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "productivity", "utilities", "reference"],
+  "screenshots": [
+    {
+      "src": "/icons/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "LingslatePal main interface"
+    },
+    {
+      "src": "/icons/screenshot-narrow.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "LingslatePal mobile interface"
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -57,7 +77,44 @@
       "purpose": "maskable any"
     }
   ],
-  "categories": ["education", "productivity", "utilities"],
-  "lang": "en",
-  "dir": "ltr"
+  "shortcuts": [
+    {
+      "name": "Translate",
+      "short_name": "Translate",
+      "description": "Quick translation tool",
+      "url": "/translate",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Learn",
+      "short_name": "Learn",
+      "description": "Start learning lessons",
+      "url": "/learn",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Quiz",
+      "short_name": "Quiz",
+      "description": "Take a language quiz",
+      "url": "/quiz",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
 }
