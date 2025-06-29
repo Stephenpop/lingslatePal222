@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Languages, Mail, Lock, Eye, EyeOff, Github, User } from "lucide-react"
+import { Languages, Mail, Lock, Eye, EyeOff, Github, User, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
 import { authService } from "@/lib/auth"
@@ -61,7 +61,6 @@ export default function RegisterPage() {
         title: "Welcome to LingslatePal!",
         description: "Please check your email to verify your account.",
       })
-      // Redirect to login or dashboard
       window.location.href = "/auth/login"
     } catch (error: any) {
       toast({
@@ -82,130 +81,144 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center space-x-2 mb-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600">
-              <Languages className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold text-white">PolyglotPal</span>
+        {/* Back to Home Button */}
+        <div className="mb-6">
+          <Link href="/">
+            <Button variant="ghost" className="text-slate-600 hover:text-slate-900 hover:bg-slate-100 p-2">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Home
+            </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-white mb-2">Join PolyglotPal</h1>
-          <p className="text-slate-300">Start your language learning journey today</p>
         </div>
 
-        <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-white">Create Account</CardTitle>
-            <CardDescription className="text-slate-300">Sign up to access all learning features</CardDescription>
+        <div className="text-center mb-8">
+          <Link href="/" className="inline-flex items-center space-x-3 mb-6">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
+              <Languages className="h-7 w-7 text-white" />
+            </div>
+            <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              LingslatePal
+            </span>
+          </Link>
+          <h1 className="text-3xl font-bold text-slate-900 mb-3">Join LingslatePal</h1>
+          <p className="text-slate-600 text-lg">Start your language learning journey today</p>
+        </div>
+
+        <Card className="border-slate-200 bg-white/80 backdrop-blur-sm shadow-xl">
+          <CardHeader className="space-y-1 pb-6">
+            <CardTitle className="text-slate-900 text-2xl text-center">Create Account</CardTitle>
+            <CardDescription className="text-slate-600 text-center">
+              Sign up to access all learning features
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleRegister} className="space-y-4">
+          <CardContent className="space-y-6">
+            <form onSubmit={handleRegister} className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="name" className="text-white">
+                <Label htmlFor="name" className="text-slate-700 font-medium">
                   Full Name
                 </Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <User className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
                   <Input
                     id="name"
                     type="text"
                     placeholder="Enter your full name"
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    className="pl-10 border-white/20 bg-white/5 text-white placeholder:text-slate-400"
+                    className="pl-11 h-12 border-slate-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white">
-                  Email
+                <Label htmlFor="email" className="text-slate-700 font-medium">
+                  Email Address
                 </Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Mail className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
                   <Input
                     id="email"
                     type="email"
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={(e) => handleInputChange("email", e.target.value)}
-                    className="pl-10 border-white/20 bg-white/5 text-white placeholder:text-slate-400"
+                    className="pl-11 h-12 border-slate-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-white">
+                <Label htmlFor="password" className="text-slate-700 font-medium">
                   Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Lock className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="Create a password"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
-                    className="pl-10 pr-10 border-white/20 bg-white/5 text-white placeholder:text-slate-400"
+                    className="pl-11 pr-11 h-12 border-slate-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                     required
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 top-1 h-8 w-8 p-0 text-slate-400 hover:text-white"
+                    className="absolute right-1 top-1 h-10 w-10 p-0 text-slate-400 hover:text-slate-600"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </Button>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="text-white">
+                <Label htmlFor="confirmPassword" className="text-slate-700 font-medium">
                   Confirm Password
                 </Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                  <Lock className="absolute left-3 top-3.5 h-5 w-5 text-slate-400" />
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
-                    className="pl-10 pr-10 border-white/20 bg-white/5 text-white placeholder:text-slate-400"
+                    className="pl-11 pr-11 h-12 border-slate-300 focus:border-blue-500 focus:ring-blue-500 bg-white"
                     required
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-1 top-1 h-8 w-8 p-0 text-slate-400 hover:text-white"
+                    className="absolute right-1 top-1 h-10 w-10 p-0 text-slate-400 hover:text-slate-600"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </Button>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2">
+              <div className="flex items-start space-x-3 pt-2">
                 <Checkbox
                   id="terms"
                   checked={acceptTerms}
                   onCheckedChange={setAcceptTerms}
-                  className="border-white/20"
+                  className="border-slate-300 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600 mt-1"
                 />
-                <Label htmlFor="terms" className="text-sm text-slate-300">
+                <Label htmlFor="terms" className="text-sm text-slate-600 leading-relaxed">
                   I agree to the{" "}
-                  <Link href="/terms" className="text-blue-400 hover:text-blue-300">
+                  <Link href="/terms" className="text-blue-600 hover:text-blue-700 hover:underline font-medium">
                     Terms of Service
                   </Link>{" "}
                   and{" "}
-                  <Link href="/privacy" className="text-blue-400 hover:text-blue-300">
+                  <Link href="/privacy" className="text-blue-600 hover:text-blue-700 hover:underline font-medium">
                     Privacy Policy
                   </Link>
                 </Label>
@@ -213,7 +226,7 @@ export default function RegisterPage() {
 
               <Button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                className="w-full h-12 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 text-lg font-medium"
                 disabled={isLoading}
               >
                 {isLoading ? "Creating Account..." : "Create Account"}
@@ -222,10 +235,10 @@ export default function RegisterPage() {
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <Separator className="w-full bg-white/20" />
+                <Separator className="w-full bg-slate-200" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-slate-900 px-2 text-slate-400">Or continue with</span>
+                <span className="bg-white px-3 text-slate-500 font-medium">Or continue with</span>
               </div>
             </div>
 
@@ -233,9 +246,9 @@ export default function RegisterPage() {
               <Button
                 variant="outline"
                 onClick={() => handleOAuthRegister("Google")}
-                className="border-white/20 text-white hover:bg-white/10"
+                className="h-12 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
               >
-                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -258,17 +271,17 @@ export default function RegisterPage() {
               <Button
                 variant="outline"
                 onClick={() => handleOAuthRegister("GitHub")}
-                className="border-white/20 text-white hover:bg-white/10"
+                className="h-12 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400"
               >
-                <Github className="mr-2 h-4 w-4" />
+                <Github className="mr-2 h-5 w-5" />
                 GitHub
               </Button>
             </div>
 
-            <div className="text-center">
-              <p className="text-sm text-slate-300">
+            <div className="text-center pt-4">
+              <p className="text-slate-600">
                 Already have an account?{" "}
-                <Link href="/auth/login" className="text-blue-400 hover:text-blue-300">
+                <Link href="/auth/login" className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
                   Sign in
                 </Link>
               </p>
