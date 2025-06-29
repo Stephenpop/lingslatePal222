@@ -161,7 +161,7 @@ export default function TranslatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[--translate-bg]">
+    <div className="min-h-screen bg-[#e0f2e9]">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b border-border bg-card shadow-sm">
         <div className="container mx-auto px-4 py-4">
