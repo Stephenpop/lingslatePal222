@@ -42,62 +42,14 @@ import { authService } from "@/lib/auth"
 import { toast } from "sonner"
 
 const features = [
-  {
-    icon: Globe,
-    title: "Free Translation",
-    description: "Translate between 100+ languages instantly with our free LibreTranslate integration",
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
-  },
-  {
-    icon: BookOpen,
-    title: "Interactive Lessons",
-    description: "Learn with engaging lessons designed by language experts and native speakers",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
-  },
-  {
-    icon: Brain,
-    title: "Smart Quizzes",
-    description: "Test your knowledge with adaptive quizzes that adjust to your learning pace",
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
-  },
-  {
-    icon: Trophy,
-    title: "Track Progress",
-    description: "Monitor your learning journey with detailed analytics and achievement badges",
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
-  },
-  {
-    icon: Camera,
-    title: "Camera Translation",
-    description: "Point your camera at text and get instant translations with OCR technology",
-    color: "text-pink-600",
-    bgColor: "bg-pink-50",
-  },
-  {
-    icon: Headphones,
-    title: "Audio Learning",
-    description: "Perfect your pronunciation with native speaker audio and speech recognition",
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50",
-  },
-  {
-    icon: Smartphone,
-    title: "Mobile Optimized",
-    description: "Learn anywhere with our PWA that works offline on all your devices",
-    color: "text-cyan-600",
-    bgColor: "bg-cyan-50",
-  },
-  {
-    icon: BarChart3,
-    title: "Learning Analytics",
-    description: "Get insights into your learning patterns and optimize your study time",
-    color: "text-orange-600",
-    bgColor: "bg-orange-50",
-  },
+  { icon: Globe, title: "Free Translation", description: "Translate between 100+ languages instantly with our free LibreTranslate integration", color: "text-blue-600", bgColor: "bg-blue-50" },
+  { icon: BookOpen, title: "Interactive Lessons", description: "Learn with engaging lessons designed by language experts and native speakers", color: "text-emerald-600", bgColor: "bg-emerald-50" },
+  { icon: Brain, title: "Smart Quizzes", description: "Test your knowledge with adaptive quizzes that adjust to your learning pace", color: "text-purple-600", bgColor: "bg-purple-50" },
+  { icon: Trophy, title: "Track Progress", description: "Monitor your learning journey with detailed analytics and achievement badges", color: "text-amber-600", bgColor: "bg-amber-50" },
+  { icon: Camera, title: "Camera Translation", description: "Point your camera at text and get instant translations with OCR technology", color: "text-pink-600", bgColor: "bg-pink-50" },
+  { icon: Headphones, title: "Audio Learning", description: "Perfect your pronunciation with native speaker audio and speech recognition", color: "text-indigo-600", bgColor: "bg-indigo-50" },
+  { icon: Smartphone, title: "Mobile Optimized", description: "Learn anywhere with our PWA that works offline on all your devices", color: "text-cyan-600", bgColor: "bg-cyan-50" },
+  { icon: BarChart3, title: "Learning Analytics", description: "Get insights into your learning patterns and optimize your study time", color: "text-orange-600", bgColor: "bg-orange-50" },
 ]
 
 const stats = [
@@ -173,7 +125,7 @@ export default function HomePage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-lg">
                 <Languages className="h-6 w-6 text-blue-600" />
               </div>
-              <span className="text-2xl font-bold text-white">
+              <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
                 LingslatePal
               </span>
             </motion.div>
@@ -189,8 +141,19 @@ export default function HomePage() {
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button className="bg-white text-blue-700 hover:bg-blue-100 hover:text-blue-800 shadow-lg hover:shadow-xl transition-all duration-200">
+                <Button
+                  className="bg-white text-blue-700 hover:bg-blue-100 hover:text-blue-800 shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 max-w-[150px] sm:max-w-[200px]"
+                >
                   Get Started Free
+                </Button>
+              </Link>
+              <Link href="/translate">
+                <Button
+                  variant="outline"
+                  className="border-slate-300 text-white hover:bg-slate-50 hover:text-blue-700 hover:border-slate-400 px-6 py-3 max-w-[150px] sm:max-w-[200px]"
+                >
+                  <PlayCircle className="mr-2 h-5 w-5" />
+                  Try Translation
                 </Button>
               </Link>
             </motion.div>
@@ -226,7 +189,7 @@ export default function HomePage() {
                 <Link href="/auth/register">
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 px-8 py-4 text-lg font-semibold"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 px-8 py-4 text-lg font-semibold max-w-[150px] sm:max-w-[200px]"
                   >
                     Start Learning Free
                     <ArrowRight className="ml-2 h-5 w-5" />
@@ -236,7 +199,7 @@ export default function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 px-8 py-4 text-lg font-semibold bg-transparent"
+                    className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 px-8 py-4 text-lg font-semibold bg-transparent max-w-[150px] sm:max-w-[200px]"
                   >
                     <PlayCircle className="mr-2 h-5 w-5" />
                     Try Translation
@@ -504,7 +467,7 @@ export default function HomePage() {
                 <Link href="/auth/register">
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-8 py-4 text-lg font-semibold"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-8 py-4 text-lg font-semibold max-w-[150px] sm:max-w-[200px]"
                   >
                     <Users className="mr-2 h-5 w-5" />
                     Join Free Today
@@ -514,7 +477,7 @@ export default function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 px-8 py-4 text-lg font-semibold bg-transparent"
+                    className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 px-8 py-4 text-lg font-semibold bg-transparent max-w-[150px] sm:max-w-[200px]"
                   >
                     <BookOpen className="mr-2 h-5 w-5" />
                     Explore Lessons
