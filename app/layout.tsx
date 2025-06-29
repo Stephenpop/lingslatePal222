@@ -11,9 +11,22 @@ const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "LingslatePal - Language Learning & Translation",
-  description: "Learn and translate languages with ease. Free translation tools and interactive language learning.",
+  description:
+    "Learn and translate languages with ease. Free translation tools and interactive language learning with 100+ languages including African languages.",
   manifest: "/manifest.json",
-  keywords: ["language learning", "translation", "lingslate", "education"],
+  keywords: [
+    "language learning",
+    "translation",
+    "lingslate",
+    "education",
+    "free translation",
+    "African languages",
+    "Yoruba",
+    "Swahili",
+    "language exchange",
+    "PWA",
+    "offline learning",
+  ],
   authors: [{ name: "LingslatePal Team" }],
   creator: "LingslatePal",
   publisher: "LingslatePal",
@@ -22,18 +35,60 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-    generator: 'v0.dev'
+  generator: "v0.dev",
+  applicationName: "LingslatePal",
+  referrer: "origin-when-cross-origin",
+  colorScheme: "light",
+  category: "education",
+  classification: "Education",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://lingslatepal.com",
+    siteName: "LingslatePal",
+    title: "LingslatePal - Language Learning & Translation",
+    description: "Learn and translate languages with ease. Free translation tools and interactive language learning.",
+    images: [
+      {
+        url: "/icons/icon-512x512.png",
+        width: 512,
+        height: 512,
+        alt: "LingslatePal Logo",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LingslatePal - Language Learning & Translation",
+    description: "Learn and translate languages with ease. Free translation tools and interactive language learning.",
+    images: ["/icons/icon-512x512.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: "your-google-verification-code",
+  },
 }
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#3b82f6" },
+    { media: "(prefers-color-scheme: light)", color: "#2563eb" },
     { media: "(prefers-color-scheme: dark)", color: "#1e40af" },
   ],
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
 }
 
 export default function RootLayout({
@@ -44,14 +99,55 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* PWA Meta Tags */}
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192x192.png" />
+
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="LingslatePal" />
         <meta name="mobile-web-app-capable" content="yes" />
+
+        {/* Additional PWA Meta Tags */}
+        <meta name="application-name" content="LingslatePal" />
+        <meta name="msapplication-TileColor" content="#2563eb" />
+        <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+        <meta name="msapplication-config" content="/browserconfig.xml" />
+
+        {/* Preconnect to external domains */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+
+        {/* DNS Prefetch */}
+        <link rel="dns-prefetch" href="https://libretranslate.com" />
+
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/icons/icon-192x192.png" type="image/png" />
+
+        {/* Service Worker Registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('SW registered: ', registration);
+                    })
+                    .catch(function(registrationError) {
+                      console.log('SW registration failed: ', registrationError);
+                    });
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
           <FloatingInstallPrompt />
           <PWAInstallPrompt />
