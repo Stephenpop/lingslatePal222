@@ -41,7 +41,12 @@ export function AnimatedCounter({ value, suffix = "", delay = 0 }: AnimatedCount
   }, [isInView, value, delay])
 
   return (
-    <motion.span ref={ref} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay }}>
+    <motion.span
+      ref={ref}
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={isInView ? { opacity: 1, scale: 1 } : {}}
+      transition={{ duration: 0.5, delay }}
+    >
       {count.toLocaleString()}
       {suffix}
     </motion.span>
