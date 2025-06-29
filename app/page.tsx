@@ -162,7 +162,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl shadow-sm">
+      <nav className="sticky top-0 z-50 border-b border-blue-200/50 bg-gradient-to-r from-blue-700 to-purple-700 text-white shadow-md">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <motion.div
@@ -170,10 +170,10 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center space-x-3"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
-                <Languages className="h-6 w-6 text-white" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-lg">
+                <Languages className="h-6 w-6 text-blue-600" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold text-white">
                 LingslatePal
               </span>
             </motion.div>
@@ -184,12 +184,12 @@ export default function HomePage() {
               className="flex items-center space-x-4"
             >
               <Link href="/auth/login">
-                <Button variant="ghost" className="hidden sm:inline-flex text-slate-700 hover:text-blue-600 hover:bg-blue-50">
+                <Button variant="ghost" className="hidden sm:inline-flex text-white hover:text-blue-200 hover:bg-blue-800/30">
                   Login
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200">
+                <Button className="bg-white text-blue-700 hover:bg-blue-100 hover:text-blue-800 shadow-lg hover:shadow-xl transition-all duration-200">
                   Get Started Free
                 </Button>
               </Link>
@@ -589,7 +589,7 @@ export default function HomePage() {
       </Dialog>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-slate-50">
+      <footer className="border-t border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50">
         <div className="container mx-auto px-4 py-16">
           <div className="grid gap-12 md:grid-cols-4">
             <div className="space-y-4">
@@ -682,7 +682,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="border-t border-slate-200 mt-12 pt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <div className="border-t border-blue-200 mt-12 pt-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
             <p className="text-slate-600">© 2025 LingslatePal. Made with ❤️ for language learners worldwide.</p>
             <div className="flex items-center gap-4">
               <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
