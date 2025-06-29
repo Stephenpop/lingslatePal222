@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Volume2, Mic, Copy, RotateCcw, Loader2, Sparkles } from "lucide-react"
+import { ArrowRight, Volume2, Mic, Copy, RotateCcw, Loader2, Sparkles, Zap } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 const languages = [
@@ -125,14 +125,14 @@ export function QuickTranslate() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-      <Card className="border-slate-200 bg-white shadow-xl">
-        <CardContent className="p-8">
-          <div className="grid gap-8 lg:grid-cols-2">
+      <Card className="border-slate-200 bg-white shadow-2xl overflow-hidden">
+        <CardContent className="p-6 sm:p-8">
+          <div className="grid gap-6 lg:grid-cols-3">
             {/* Source */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Select value={sourceLang} onValueChange={setSourceLang}>
-                  <SelectTrigger className="w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500">
+                  <SelectTrigger className="w-full border-slate-300 bg-white text-slate-900 focus:ring-blue-500 text-sm font-medium">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -140,25 +140,27 @@ export function QuickTranslate() {
                       <SelectItem key={lang.code} value={lang.code}>
                         <div className="flex items-center gap-2">
                           <span>{lang.flag}</span>
-                          <span>{lang.name}</span>
+                          <span className="text-sm">{lang.name}</span>
                         </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+              </div>
+
+              <div className="relative">
+                <Textarea
+                  placeholder="Enter text to translate..."
+                  value={sourceText}
+                  onChange={(e) => setSourceText(e.target.value)}
+                  className="min-h-40 border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-blue-500 text-base resize-none pr-12"
+                  maxLength={5000}
+                />
+                <Badge className="absolute top-3 right-3 bg-blue-100 text-blue-700 border-blue-200 text-xs">
                   <Sparkles className="mr-1 h-3 w-3" />
                   Source
                 </Badge>
               </div>
-
-              <Textarea
-                placeholder="Enter text to translate..."
-                value={sourceText}
-                onChange={(e) => setSourceText(e.target.value)}
-                className="min-h-40 border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-blue-500 text-lg"
-                maxLength={5000}
-              />
 
               <div className="flex items-center justify-between">
                 <div className="flex gap-2">
@@ -167,7 +169,7 @@ export function QuickTranslate() {
                     variant="ghost"
                     onClick={handleListen}
                     disabled={isListening}
-                    className="text-slate-700 hover:bg-slate-100"
+                    className="text-slate-700 hover:bg-slate-100 p-2"
                   >
                     {isListening ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
                   </Button>
@@ -177,7 +179,7 @@ export function QuickTranslate() {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleSpeak(sourceText, sourceLang)}
-                        className="text-slate-700 hover:bg-slate-100"
+                        className="text-slate-700 hover:bg-slate-100 p-2"
                       >
                         <Volume2 className="h-4 w-4" />
                       </Button>
@@ -185,54 +187,53 @@ export function QuickTranslate() {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleCopy(sourceText)}
-                        className="text-slate-700 hover:bg-slate-100"
+                        className="text-slate-700 hover:bg-slate-100 p-2"
                       >
                         <Copy className="h-4 w-4" />
                       </Button>
                     </>
                   )}
                 </div>
-                <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                <Badge variant="secondary" className="bg-slate-100 text-slate-700 text-xs">
                   {sourceText.length}/5000
                 </Badge>
               </div>
             </div>
 
             {/* Controls */}
-            <div className="flex items-center justify-center lg:flex-col lg:gap-6">
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleTranslate}
-                  disabled={!sourceText.trim() || isTranslating}
-                  size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  {isTranslating ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <>
-                      Translate
-                      <ArrowRight className="ml-2 h-5 w-5" />
-                    </>
-                  )}
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={handleSwapLanguages}
-                  disabled={sourceLang === "auto"}
-                  className="border-slate-300 text-slate-700 hover:bg-slate-50 bg-transparent"
-                >
-                  <RotateCcw className="h-5 w-5" />
-                </Button>
-              </div>
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <Button
+                onClick={handleTranslate}
+                disabled={!sourceText.trim() || isTranslating}
+                size="lg"
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 px-8 py-4 text-lg font-bold w-full sm:w-auto min-w-[200px]"
+              >
+                {isTranslating ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <>
+                    <Zap className="mr-2 h-6 w-6" />
+                    TRANSLATE
+                    <ArrowRight className="ml-2 h-6 w-6" />
+                  </>
+                )}
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={handleSwapLanguages}
+                disabled={sourceLang === "auto"}
+                className="border-slate-300 text-slate-700 hover:bg-slate-50 bg-transparent px-6 py-3"
+              >
+                <RotateCcw className="h-5 w-5" />
+              </Button>
             </div>
 
             {/* Target */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Select value={targetLang} onValueChange={setTargetLang}>
-                  <SelectTrigger className="w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500">
+                  <SelectTrigger className="w-full border-slate-300 bg-white text-slate-900 focus:ring-blue-500 text-sm font-medium">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -242,30 +243,30 @@ export function QuickTranslate() {
                         <SelectItem key={lang.code} value={lang.code}>
                           <div className="flex items-center gap-2">
                             <span>{lang.flag}</span>
-                            <span>{lang.name}</span>
+                            <span className="text-sm">{lang.name}</span>
                           </div>
                         </SelectItem>
                       ))}
                   </SelectContent>
                 </Select>
-                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
-                  <Sparkles className="mr-1 h-3 w-3" />
-                  Translation
-                </Badge>
               </div>
 
-              <div className="min-h-40 rounded-lg border border-slate-300 bg-slate-50 p-4">
+              <div className="relative min-h-40 rounded-lg border border-slate-300 bg-gradient-to-br from-slate-50 to-white p-4">
                 {translatedText ? (
                   <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-slate-900 text-lg leading-relaxed"
+                    className="text-slate-900 text-base leading-relaxed"
                   >
                     {translatedText}
                   </motion.p>
                 ) : (
-                  <p className="text-slate-400 text-lg">Translation will appear here...</p>
+                  <p className="text-slate-400 text-base">Translation will appear here...</p>
                 )}
+                <Badge className="absolute top-3 right-3 bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  Translation
+                </Badge>
               </div>
 
               {translatedText && (
@@ -274,7 +275,7 @@ export function QuickTranslate() {
                     size="sm"
                     variant="ghost"
                     onClick={() => handleSpeak(translatedText, targetLang)}
-                    className="text-slate-700 hover:bg-slate-100"
+                    className="text-slate-700 hover:bg-slate-100 p-2"
                   >
                     <Volume2 className="h-4 w-4" />
                   </Button>
@@ -282,7 +283,7 @@ export function QuickTranslate() {
                     size="sm"
                     variant="ghost"
                     onClick={() => handleCopy(translatedText)}
-                    className="text-slate-700 hover:bg-slate-100"
+                    className="text-slate-700 hover:bg-slate-100 p-2"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
