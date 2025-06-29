@@ -184,7 +184,7 @@ export default function HomePage() {
               className="flex items-center space-x-4"
             >
               <Link href="/auth/login">
-                <Button variant="ghost" className="text-slate-700 hover:text-blue-600 hover:bg-blue-50">
+                <Button variant="ghost" className="hidden sm:inline-flex text-slate-700 hover:text-blue-600 hover:bg-blue-50">
                   Login
                 </Button>
               </Link>
