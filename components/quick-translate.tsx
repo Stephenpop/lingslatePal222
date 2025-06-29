@@ -205,7 +205,7 @@ export function QuickTranslate() {
                   onClick={handleTranslate}
                   disabled={!sourceText.trim() || isTranslating}
                   size="lg"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg px-6"
+                  className="bg-gradient-to-r from-emerald-500 to-blue-500 hover:from-emerald-600 hover:to-blue-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-lg px-6"
                 >
                   {isTranslating ? (
                     <Loader2 className="h-6 w-6 animate-spin" />
@@ -221,7 +221,7 @@ export function QuickTranslate() {
                   variant="outline"
                   onClick={handleSwapLanguages}
                   disabled={sourceLang === "auto"}
-                  className="border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 bg-transparent rounded-lg px-4"
+                  className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:border-emerald-400 bg-transparent rounded-lg px-4"
                 >
                   <RotateCcw className="h-6 w-6" />
                 </Button>
@@ -259,7 +259,7 @@ export function QuickTranslate() {
                   <motion.p
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-slate-900 text-lg font-medium leading-relaxed"
+                    className="text-slate-800 text-lg font-medium leading-relaxed"
                   >
                     {translatedText}
                   </motion.p>
