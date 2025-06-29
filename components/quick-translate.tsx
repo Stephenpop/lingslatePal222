@@ -1,39 +1,32 @@
 "use client"
 
 import { useState } from "react"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Volume2, Mic, Copy, RotateCcw, Loader2 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { ArrowRight, Volume2, Mic, Copy, RotateCcw, Loader2, Sparkles } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-
 const languages = [
-  { code: "auto", name: "Auto Detect" },
-  { code: "en", name: "English" },
-  { code: "es", name: "Spanish" },
-  { code: "fr", name: "French" },
-  { code: "de", name: "German" },
-  { code: "it", name: "Italian" },
-  { code: "pt", name: "Portuguese" },
-  { code: "ru", name: "Russian" },
-  { code: "ja", name: "Japanese" },
-  { code: "ko", name: "Korean" },
-  { code: "zh", name: "Chinese" },
-  { code: "ar", name: "Arabic" },
-  { code: "hi", name: "Hindi" },
-  { code: "tr", name: "Turkish" },
-  { code: "pl", name: "Polish" },
-  { code: "nl", name: "Dutch" },
-  { code: "yo", name: "Yoruba" },
-  { code: "ig", name: "Igbo" },
-  { code: "ha", name: "Hausa" },
-  { code: "sw", name: "Swahili" },
-  { code: "am", name: "Amharic" },
-  { code: "zu", name: "Zulu" },
+  { code: "auto", name: "Auto Detect", flag: "🌐" },
+  { code: "en", name: "English", flag: "🇺🇸" },
+  { code: "es", name: "Spanish", flag: "🇪🇸" },
+  { code: "fr", name: "French", flag: "🇫🇷" },
+  { code: "de", name: "German", flag: "🇩🇪" },
+  { code: "it", name: "Italian", flag: "🇮🇹" },
+  { code: "pt", name: "Portuguese", flag: "🇵🇹" },
+  { code: "ru", name: "Russian", flag: "🇷🇺" },
+  { code: "ja", name: "Japanese", flag: "🇯🇵" },
+  { code: "ko", name: "Korean", flag: "🇰🇷" },
+  { code: "zh", name: "Chinese", flag: "🇨🇳" },
+  { code: "ar", name: "Arabic", flag: "🇸🇦" },
+  { code: "hi", name: "Hindi", flag: "🇮🇳" },
+  { code: "yo", name: "Yoruba", flag: "🇳🇬" },
+  { code: "ig", name: "Igbo", flag: "🇳🇬" },
+  { code: "ha", name: "Hausa", flag: "🇳🇬" },
 ]
 
 export function QuickTranslate() {
@@ -44,44 +37,40 @@ export function QuickTranslate() {
   const [isTranslating, setIsTranslating] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const { toast } = useToast()
-  const [detectedLang, setDetectedLang] = useState<string | null>(null)
 
-  // Replace the translateText function with:
   const translateText = async (text: string, from: string, to: string) => {
-  setIsTranslating(true);
-
-  try {
-    const response = await fetch('/api/translate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, source: from, target: to }),
-    });
-    if (!response.ok) throw new Error('Translation failed');
-    const data = await response.json();
-
-    setTranslatedText(data.translatedText || '');
-
-    if (data.detectedLanguage && from === "auto") {
-      setDetectedLang(data.detectedLanguage.language);
+    setIsTranslating(true)
+    try {
+      const response = await fetch("/api/translate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, source: from, target: to }),
+      })
+      if (!response.ok) throw new Error("Translation failed")
+      const data = await response.json()
+      setTranslatedText(data.translatedText || data)
+    } catch (error) {
+      console.error("Translation error:", error)
+      const mockTranslations: Record<string, Record<string, string>> = {
+        hello: { es: "hola", fr: "bonjour", de: "hallo", it: "ciao" },
+        goodbye: { es: "adiós", fr: "au revoir", de: "auf wiedersehen", it: "ciao" },
+        "thank you": { es: "gracias", fr: "merci", de: "danke", it: "grazie" },
+        "how are you": { es: "cómo estás", fr: "comment allez-vous", de: "wie geht es dir", it: "come stai" },
+        "good morning": { es: "buenos días", fr: "bonjour", de: "guten morgen", it: "buongiorno" },
+      }
+      const result =
+        mockTranslations[text.toLowerCase()]?.[to] ||
+        `[Translated to ${languages.find((l) => l.code === to)?.name}: ${text}]`
+      setTranslatedText(result)
+      toast({
+        title: "Demo Mode",
+        description: "Using demo translation. Connect to LibreTranslate for full functionality.",
+      })
+    } finally {
+      setIsTranslating(false)
     }
-  } catch (error) {
-    console.error("Translation failed:", error);
-    // Fallback to mock translation for demo
-    const mockTranslations: Record<string, string> = {
-      hello: "hola",
-      goodbye: "adiós",
-      "thank you": "gracias",
-      "how are you": "cómo estás",
-      "good morning": "buenos días",
-      "good night": "buenas noches",
-    };
-
-    const result = mockTranslations[text.toLowerCase()] || `[Translation: ${text}]`;
-    setTranslatedText(result);
-  } finally {
-    setIsTranslating(false);
   }
-}
+
   const handleTranslate = () => {
     if (!sourceText.trim()) return
     translateText(sourceText, sourceLang, targetLang)
@@ -107,18 +96,15 @@ export function QuickTranslate() {
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
       const recognition = new SpeechRecognition()
-
       recognition.continuous = false
       recognition.interimResults = false
       recognition.lang = sourceLang === "auto" ? "en" : sourceLang
-
       recognition.onstart = () => setIsListening(true)
       recognition.onend = () => setIsListening(false)
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript
         setSourceText(transcript)
       }
-
       recognition.start()
     } else {
       toast({
@@ -138,119 +124,149 @@ export function QuickTranslate() {
   }
 
   return (
-    <Card className="border-white/10 bg-white/5 backdrop-blur-sm">
-      <CardContent className="p-6">
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Source */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Select value={sourceLang} onValueChange={setSourceLang}>
-                <SelectTrigger className="w-40 border-white/20 bg-white/5 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {languages.map((lang) => (
-                    <SelectItem key={lang.code} value={lang.code}>
-                      {lang.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+      <Card className="border-slate-200 bg-white shadow-xl">
+        <CardContent className="p-8">
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Source */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Select value={sourceLang} onValueChange={setSourceLang}>
+                  <SelectTrigger className="w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        <div className="flex items-center gap-2">
+                          <span>{lang.flag}</span>
+                          <span>{lang.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  Source
+                </Badge>
+              </div>
 
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={handleListen}
-                  disabled={isListening}
-                  className="text-white hover:bg-white/10"
-                >
-                  {isListening ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
-                </Button>
-                {sourceText && (
+              <Textarea
+                placeholder="Enter text to translate..."
+                value={sourceText}
+                onChange={(e) => setSourceText(e.target.value)}
+                className="min-h-40 border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:ring-blue-500 text-lg"
+                maxLength={5000}
+              />
+
+              <div className="flex items-center justify-between">
+                <div className="flex gap-2">
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => handleSpeak(sourceText, sourceLang)}
-                    className="text-white hover:bg-white/10"
+                    onClick={handleListen}
+                    disabled={isListening}
+                    className="text-slate-700 hover:bg-slate-100"
                   >
-                    <Volume2 className="h-4 w-4" />
+                    {isListening ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
                   </Button>
-                )}
+                  {sourceText && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleSpeak(sourceText, sourceLang)}
+                        className="text-slate-700 hover:bg-slate-100"
+                      >
+                        <Volume2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleCopy(sourceText)}
+                        className="text-slate-700 hover:bg-slate-100"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
+                </div>
+                <Badge variant="secondary" className="bg-slate-100 text-slate-700">
+                  {sourceText.length}/5000
+                </Badge>
               </div>
             </div>
 
-            <Textarea
-              placeholder="Enter text to translate..."
-              value={sourceText}
-              onChange={(e) => setSourceText(e.target.value)}
-              className="min-h-32 border-white/20 bg-white/5 text-white placeholder:text-slate-400"
-            />
-
-            <div className="flex items-center justify-between">
-              <Badge variant="secondary" className="bg-white/10 text-white">
-                {sourceText.length}/500
-              </Badge>
-              {sourceText && (
+            {/* Controls */}
+            <div className="flex items-center justify-center lg:flex-col lg:gap-6">
+              <div className="flex gap-3">
                 <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => handleCopy(sourceText)}
-                  className="text-white hover:bg-white/10"
+                  onClick={handleTranslate}
+                  disabled={!sourceText.trim() || isTranslating}
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
                 >
-                  <Copy className="h-4 w-4" />
+                  {isTranslating ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <>
+                      Translate
+                      <ArrowRight className="ml-2 h-5 w-5" />
+                    </>
+                  )}
                 </Button>
-              )}
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={handleSwapLanguages}
+                  disabled={sourceLang === "auto"}
+                  className="border-slate-300 text-slate-700 hover:bg-slate-50 bg-transparent"
+                >
+                  <RotateCcw className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* Controls */}
-          <div className="flex items-center justify-center lg:flex-col lg:gap-4">
-            <div className="flex gap-2">
-              <Button
-                onClick={handleTranslate}
-                disabled={!sourceText.trim() || isTranslating}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
-              >
-                {isTranslating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+            {/* Target */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Select value={targetLang} onValueChange={setTargetLang}>
+                  <SelectTrigger className="w-48 border-slate-300 bg-white text-slate-900 focus:ring-blue-500">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {languages
+                      .filter((lang) => lang.code !== "auto")
+                      .map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          <div className="flex items-center gap-2">
+                            <span>{lang.flag}</span>
+                            <span>{lang.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  Translation
+                </Badge>
+              </div>
+
+              <div className="min-h-40 rounded-lg border border-slate-300 bg-slate-50 p-4">
+                {translatedText ? (
+                  <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-slate-900 text-lg leading-relaxed"
+                  >
+                    {translatedText}
+                  </motion.p>
                 ) : (
-                  <>
-                    Translate
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
+                  <p className="text-slate-400 text-lg">Translation will appear here...</p>
                 )}
-              </Button>
-
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleSwapLanguages}
-                disabled={sourceLang === "auto"}
-                className="text-white hover:bg-white/10"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* Target */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <Select value={targetLang} onValueChange={setTargetLang}>
-                <SelectTrigger className="w-40 border-white/20 bg-white/5 text-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {languages
-                    .filter((lang) => lang.code !== "auto")
-                    .map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code}>
-                        {lang.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              </div>
 
               {translatedText && (
                 <div className="flex gap-2">
@@ -258,7 +274,7 @@ export function QuickTranslate() {
                     size="sm"
                     variant="ghost"
                     onClick={() => handleSpeak(translatedText, targetLang)}
-                    className="text-white hover:bg-white/10"
+                    className="text-slate-700 hover:bg-slate-100"
                   >
                     <Volume2 className="h-4 w-4" />
                   </Button>
@@ -266,31 +282,16 @@ export function QuickTranslate() {
                     size="sm"
                     variant="ghost"
                     onClick={() => handleCopy(translatedText)}
-                    className="text-white hover:bg-white/10"
+                    className="text-slate-700 hover:bg-slate-100"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
               )}
             </div>
-
-            <div className="min-h-32 rounded-md border border-white/20 bg-white/5 p-3">
-              <AnimatePresence>
-                {translatedText && (
-                  <motion.p
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="text-white"
-                  >
-                    {translatedText}
-                  </motion.p>
-                )}
-              </AnimatePresence>
-            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   )
 }
