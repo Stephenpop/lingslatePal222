@@ -1,11 +1,12 @@
 // app/contact/page.tsx
 
-// Separate metadata file or inline static metadata (preferred for simplicity)
+// Static metadata exports
 export const viewport = {
   themeColor: "#f8fafc",
   colorScheme: "light dark",
 };
 
+// Client component directive must be at the top
 "use client";
 
 import { motion } from "framer-motion";
