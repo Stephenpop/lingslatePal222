@@ -62,6 +62,7 @@ export default function QuizPage() {
   const [learningLanguage, setLearningLanguage] = useState<string>("multilingual");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true); // Voice toggle state
 
   const availableLanguages = [
     { code: "multilingual", name: "Multilingual" },
@@ -187,11 +188,13 @@ export default function QuizPage() {
     if (quiz.time_limit) {
       setTimeLeft(quiz.time_limit * 60);
     }
-    // Speak quiz title and first question
-    speakQuestion(quiz.questions[0], quiz.title);
+    if (isVoiceEnabled) {
+      speakQuestion(quiz.questions[0], quiz.title);
+    }
   };
 
   const speakQuestion = (question: Question, quizTitle?: string) => {
+    if (!isVoiceEnabled) return;
     let textToSpeak = quizTitle ? `${quizTitle}. Question: ${question.question}` : question.question;
     if (question.type === "multiple_choice" && question.options) {
       question.options.forEach((option, index) => {
@@ -220,7 +223,9 @@ export default function QuizPage() {
     if (selectedQuiz && currentQuestion < selectedQuiz.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       const nextQuestion = selectedQuiz.questions[currentQuestion + 1];
-      speakQuestion(nextQuestion);
+      if (isVoiceEnabled) {
+        speakQuestion(nextQuestion);
+      }
     } else {
       finishQuiz();
     }
@@ -230,21 +235,20 @@ export default function QuizPage() {
     if (currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
       const prevQuestion = selectedQuiz!.questions[currentQuestion - 1];
-      speakQuestion(prevQuestion);
+      if (isVoiceEnabled) {
+        speakQuestion(prevQuestion);
+      }
     }
   };
 
   const speakText = (text: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = learningLanguage === "multilingual" ? "en-US" : learningLanguage;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
-    } else {
-      toast.error("Text-to-speech is not supported in this browser");
-    }
+    if (!isVoiceEnabled || !('speechSynthesis' in window)) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = learningLanguage === "multilingual" ? "en-US" : learningLanguage;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
   };
 
   const finishQuiz = async () => {
@@ -296,8 +300,9 @@ export default function QuizPage() {
     setShowResults(true);
     setQuizStarted(false);
 
-    // Speak the review text
-    speakText(reviewText);
+    if (isVoiceEnabled) {
+      speakText(reviewText);
+    }
 
     try {
       const { error } = await supabase.from("quiz_attempts").insert({
@@ -440,6 +445,17 @@ export default function QuizPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="mt-4 flex items-center gap-2">
+                <Label className="text-sm text-slate-700">Voice: </Label>
+                <Button
+                  variant={isVoiceEnabled ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+                  className="px-2 py-1"
+                >
+                  {isVoiceEnabled ? "On" : "Off"}
+                </Button>
+              </div>
             </motion.div>
 
             <div className="grid gap-8 lg:grid-cols-3">
@@ -504,7 +520,7 @@ export default function QuizPage() {
                               </div>
                               <Button
                                 onClick={() => startQuiz(quiz)}
-                                className="w-full mt-4"
+                                className="w-full mt-4 text-sm px-3 py-2"
                                 disabled={quiz.questions.length < 20}
                               >
                                 <Play className="mr-2 h-4 w-4" />
@@ -647,30 +663,32 @@ export default function QuizPage() {
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
                               <p className="font-medium text-slate-800 mb-2">{question.question}</p>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  let text = `Question: ${question.question}. Your answer: ${
-                                    wasSkipped
-                                      ? "Skipped"
-                                      : question.type === "multiple_choice"
-                                      ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
-                                      : userAnswer || "No answer"
-                                  }. Correct answer: ${
-                                    question.type === "multiple_choice"
-                                      ? question.options![question.correct_answer as number]
-                                      : question.correct_answer as string
-                                  }.`;
-                                  if (question.explanation) {
-                                    text += ` Explanation: ${question.explanation}.`;
-                                  }
-                                  speakText(text);
-                                }}
-                                disabled={isSpeaking}
-                              >
-                                <Volume2 className="h-4 w-4 text-black" />
-                              </Button>
+                              {isVoiceEnabled && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    let text = `Question: ${question.question}. Your answer: ${
+                                      wasSkipped
+                                        ? "Skipped"
+                                        : question.type === "multiple_choice"
+                                        ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
+                                        : userAnswer || "No answer"
+                                    }. Correct answer: ${
+                                      question.type === "multiple_choice"
+                                        ? question.options![question.correct_answer as number]
+                                        : question.correct_answer as string
+                                    }.`;
+                                    if (question.explanation) {
+                                      text += ` Explanation: ${question.explanation}.`;
+                                    }
+                                    speakText(text);
+                                  }}
+                                  disabled={isSpeaking}
+                                >
+                                  <Volume2 className="h-4 w-4 text-black" />
+                                </Button>
+                              )}
                             </div>
 
                             {question.type === "multiple_choice" && question.options && (
@@ -721,11 +739,11 @@ export default function QuizPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button onClick={resetQuiz} variant="outline" className="flex-1">
+                  <Button onClick={resetQuiz} variant="outline" className="flex-1 text-sm px-3 py-2">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Quizzes
                   </Button>
-                  <Button onClick={() => startQuiz(selectedQuiz)} className="flex-1">
+                  <Button onClick={() => startQuiz(selectedQuiz)} className="flex-1 text-sm px-3 py-2">
                     <RotateCcw className="mr-2 h-4 w-4" />
                     Retake Quiz
                   </Button>
@@ -759,14 +777,16 @@ export default function QuizPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-slate-800">{selectedQuiz.questions[currentQuestion].question}</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => speakQuestion(selectedQuiz.questions[currentQuestion])}
-                    disabled={isSpeaking}
-                  >
-                    <Volume2 className="h-4 w-4 text-black" />
-                  </Button>
+                  {isVoiceEnabled && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => speakQuestion(selectedQuiz.questions[currentQuestion])}
+                      disabled={isSpeaking}
+                    >
+                      <Volume2 className="h-4 w-4 text-black" />
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -809,15 +829,15 @@ export default function QuizPage() {
                 )}
 
                 <div className="flex justify-between gap-2">
-                  <Button onClick={previousQuestion} disabled={currentQuestion === 0} variant="outline">
+                  <Button onClick={previousQuestion} disabled={currentQuestion === 0} variant="outline" className="text-sm px-3 py-2 w-1/3 sm:w-auto">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Previous
                   </Button>
-                  <Button onClick={skipQuestion} variant="outline">
+                  <Button onClick={skipQuestion} variant="outline" className="text-sm px-3 py-2 w-1/3 sm:w-auto">
                     <SkipForward className="mr-2 h-4 w-4" />
                     Skip
                   </Button>
-                  <Button onClick={nextQuestion}>
+                  <Button onClick={nextQuestion} className="text-sm px-3 py-2 w-1/3 sm:w-auto">
                     {currentQuestion === selectedQuiz.questions.length - 1 ? (
                       <>
                         <Trophy className="mr-2 h-4 w-4" />
