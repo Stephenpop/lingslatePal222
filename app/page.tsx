@@ -10,21 +10,13 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
-  Globe,
   BookOpen,
-  Brain,
-  Trophy,
-  Users,
   ArrowRight,
-  Languages,
-  Smartphone,
-  BarChart3,
-  Camera,
-  Headphones,
   CheckCircle,
   PlayCircle,
   Award,
   TrendingUp,
+  Users,
   Shield,
   Sparkles,
 } from "lucide-react"
@@ -42,14 +34,14 @@ import { authService } from "@/lib/auth"
 import { toast } from "sonner"
 
 const features = [
-  { icon: Globe, title: "Free Translation", description: "Translate between 100+ languages instantly with our free LibreTranslate integration", color: "text-blue-600", bgColor: "bg-blue-50" },
+  { icon: BookOpen, title: "Free Translation", description: "Translate between 100+ languages instantly with our free LibreTranslate integration", color: "text-blue-600", bgColor: "bg-blue-50" },
   { icon: BookOpen, title: "Interactive Lessons", description: "Learn with engaging lessons designed by language experts and native speakers", color: "text-emerald-600", bgColor: "bg-emerald-50" },
-  { icon: Brain, title: "Smart Quizzes", description: "Test your knowledge with adaptive quizzes that adjust to your learning pace", color: "text-purple-600", bgColor: "bg-purple-50" },
-  { icon: Trophy, title: "Track Progress", description: "Monitor your learning journey with detailed analytics and achievement badges", color: "text-amber-600", bgColor: "bg-amber-50" },
-  { icon: Camera, title: "Camera Translation", description: "Point your camera at text and get instant translations with OCR technology", color: "text-pink-600", bgColor: "bg-pink-50" },
-  { icon: Headphones, title: "Audio Learning", description: "Perfect your pronunciation with native speaker audio and speech recognition", color: "text-indigo-600", bgColor: "bg-indigo-50" },
-  { icon: Smartphone, title: "Mobile Optimized", description: "Learn anywhere with our PWA that works offline on all your devices", color: "text-cyan-600", bgColor: "bg-cyan-50" },
-  { icon: BarChart3, title: "Learning Analytics", description: "Get insights into your learning patterns and optimize your study time", color: "text-orange-600", bgColor: "bg-orange-50" },
+  { icon: BookOpen, title: "Smart Quizzes", description: "Test your knowledge with adaptive quizzes that adjust to your learning pace", color: "text-purple-600", bgColor: "bg-purple-50" },
+  { icon: BookOpen, title: "Track Progress", description: "Monitor your learning journey with detailed analytics and achievement badges", color: "text-amber-600", bgColor: "bg-amber-50" },
+  { icon: BookOpen, title: "Camera Translation", description: "Point your camera at text and get instant translations with OCR technology", color: "text-pink-600", bgColor: "bg-pink-50" },
+  { icon: BookOpen, title: "Audio Learning", description: "Perfect your pronunciation with native speaker audio and speech recognition", color: "text-indigo-600", bgColor: "bg-indigo-50" },
+  { icon: BookOpen, title: "Mobile Optimized", description: "Learn anywhere with our PWA that works offline on all your devices", color: "text-cyan-600", bgColor: "bg-cyan-50" },
+  { icon: BookOpen, title: "Learning Analytics", description: "Get insights into your learning patterns and optimize your study time", color: "text-orange-600", bgColor: "bg-orange-50" },
 ]
 
 const stats = [
@@ -122,8 +114,8 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center space-x-3"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-lg">
-                <Languages className="h-6 w-6 text-blue-600" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white shadow-lg">
+                {/* Placeholder for custom logo icon */}
               </div>
               <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white">
                 LingslatePal
@@ -142,18 +134,9 @@ export default function HomePage() {
               </Link>
               <Link href="/auth/register">
                 <Button
-                  className="bg-white text-blue-700 hover:bg-blue-100 hover:text-blue-800 shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3 max-w-[150px] sm:max-w-[200px]"
+                  className="bg-white text-blue-700 hover:bg-blue-100 hover:text-blue-800 shadow-lg hover:shadow-xl transition-all duration-200 px-4 py-2 text-sm max-w-[120px] sm:max-w-[150px]"
                 >
-                  Get Started Free
-                </Button>
-              </Link>
-              <Link href="/translate">
-                <Button
-                  variant="outline"
-                  className="border-slate-300 text-white hover:bg-slate-50 hover:text-blue-700 hover:border-slate-400 px-6 py-3 max-w-[150px] sm:max-w-[200px]"
-                >
-                  <PlayCircle className="mr-2 h-5 w-5" />
-                  Try Translation
+                  Get Started
                 </Button>
               </Link>
             </motion.div>
@@ -189,9 +172,9 @@ export default function HomePage() {
                 <Link href="/auth/register">
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 px-8 py-4 text-lg font-semibold max-w-[150px] sm:max-w-[200px]"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 px-4 py-2 text-sm max-w-[150px] sm:max-w-[200px]"
                   >
-                    Start Learning Free
+                    Start Learning
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
@@ -199,7 +182,7 @@ export default function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 px-8 py-4 text-lg font-semibold bg-transparent max-w-[150px] sm:max-w-[200px]"
+                    className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm max-w-[150px] sm:max-w-[200px]"
                   >
                     <PlayCircle className="mr-2 h-5 w-5" />
                     Try Translation
@@ -349,7 +332,7 @@ export default function HomePage() {
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-3 rounded-xl bg-amber-100">
-                    <Trophy className="h-8 w-8 text-amber-600" />
+                    <Award className="h-8 w-8 text-amber-600" />
                   </div>
                   <div>
                     <CardTitle className="text-slate-900">Achievements</CardTitle>
@@ -467,7 +450,7 @@ export default function HomePage() {
                 <Link href="/auth/register">
                   <Button
                     size="lg"
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-8 py-4 text-lg font-semibold max-w-[150px] sm:max-w-[200px]"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-4 py-2 text-sm max-w-[150px] sm:max-w-[200px]"
                   >
                     <Users className="mr-2 h-5 w-5" />
                     Join Free Today
@@ -477,7 +460,7 @@ export default function HomePage() {
                   <Button
                     size="lg"
                     variant="outline"
-                    className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 px-8 py-4 text-lg font-semibold bg-transparent max-w-[150px] sm:max-w-[200px]"
+                    className="border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 px-4 py-2 text-sm max-w-[150px] sm:max-w-[200px]"
                   >
                     <BookOpen className="mr-2 h-5 w-5" />
                     Explore Lessons
@@ -558,7 +541,7 @@ export default function HomePage() {
             <div className="space-y-4">
               <div className="flex items-center space-x-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
-                  <Languages className="h-6 w-6 text-white" />
+                  {/* Placeholder for custom logo icon */}
                 </div>
                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   LingslatePal
