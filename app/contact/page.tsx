@@ -4,11 +4,18 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label"; // Added import for Label
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
+
+// Metadata export with viewport fix
+export const viewport = {
+  themeColor: "#f8fafc",
+  colorScheme: "light dark",
+};
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -33,7 +40,7 @@ export default function ContactPage() {
         email: formData.email,
         subject: formData.subject,
         message: formData.message,
-        created_at: new Date().toISOString(), // Explicitly set timestamp
+        created_at: new Date().toISOString(),
       });
 
       if (error) throw error;
