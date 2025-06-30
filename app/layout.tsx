@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     description: "Learn and translate languages with ease. Free translation tools and interactive language learning.",
     images: [
       {
-        url: "/icons/icon-512x512.png",
+        url: "/icon-512x512.png",
         width: 512,
         height: 512,
         alt: "LingslatePal Logo",
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "LingslatePal - Language Learning & Translation",
     description: "Learn and translate languages with ease. Free translation tools and interactive language learning.",
-    images: ["/icons/icon-512x512.png"],
+    images: ["/icon-512x512.png"],
   },
   robots: {
     index: true,
@@ -100,10 +100,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* PWA Meta Tags */}
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
-        <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icon-152x152.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/icon-192x192.png" />
 
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
