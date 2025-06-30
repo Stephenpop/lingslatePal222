@@ -146,7 +146,16 @@ export default function HomePage() {
                 >
                   Get Started Free
                 </Button>
-              
+              </Link>
+              <Link href="/translate">
+                <Button
+                  variant="outline"
+                  className="border-slate-300 text-white hover:bg-slate-50 hover:text-blue-700 hover:border-slate-400 px-6 py-3 max-w-[150px] sm:max-w-[200px]"
+                >
+                  <PlayCircle className="mr-2 h-5 w-5" />
+                  Try Translation
+                </Button>
+              </Link>
             </motion.div>
           </div>
         </div>
