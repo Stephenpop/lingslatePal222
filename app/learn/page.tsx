@@ -56,6 +56,7 @@ export default function LearnPage() {
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
   const [learningLanguage, setLearningLanguage] = useState<string>("es");
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true); // Toggle for voice
   const router = useRouter();
 
   const availableLanguages = [
@@ -137,21 +138,25 @@ export default function LearnPage() {
     setAnswers({});
     setShowResults(false);
     setScore(0);
-    // Speak all lesson content
-    speakText(`${lesson.title}. ${lesson.description || ""}. ${lesson.content.main_content}`);
+    if (isVoiceEnabled) {
+      speakText(`${lesson.title}. ${lesson.description || ""}. ${lesson.content.main_content}`);
+    }
   };
 
   const startQuestions = () => {
     if (selectedLesson && selectedLesson.content.questions.length > 0) {
       setCurrentQuestion(0);
       const firstQuestion = selectedLesson.content.questions[0];
-      speakQuestion(firstQuestion);
+      if (isVoiceEnabled) {
+        speakQuestion(firstQuestion);
+      }
     } else {
       completeLesson();
     }
   };
 
   const speakQuestion = (question: Question) => {
+    if (!isVoiceEnabled) return;
     let textToSpeak = question.question;
     if (question.type === "multiple_choice" && question.options) {
       question.options.forEach((option, index) => {
@@ -171,8 +176,15 @@ export default function LearnPage() {
   const nextQuestion = () => {
     if (selectedLesson && currentQuestion !== null && currentQuestion < selectedLesson.content.questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
+      setAnswers((prev) => {
+        const newAnswers = { ...prev };
+        delete newAnswers[selectedLesson.content.questions[currentQuestion].id]; // Clear previous input
+        return newAnswers;
+      });
       const nextQuestion = selectedLesson.content.questions[currentQuestion + 1];
-      speakQuestion(nextQuestion);
+      if (isVoiceEnabled) {
+        speakQuestion(nextQuestion);
+      }
     } else {
       finishQuestions();
     }
@@ -182,21 +194,20 @@ export default function LearnPage() {
     if (currentQuestion !== null && currentQuestion > 0) {
       setCurrentQuestion(currentQuestion - 1);
       const prevQuestion = selectedLesson.content.questions[currentQuestion - 1];
-      speakQuestion(prevQuestion);
+      if (isVoiceEnabled) {
+        speakQuestion(prevQuestion);
+      }
     }
   };
 
   const speakText = (text: string) => {
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = learningLanguage;
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utterance);
-    } else {
-      toast.error("Text-to-speech is not supported in this browser");
-    }
+    if (!isVoiceEnabled || !('speechSynthesis' in window)) return;
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = learningLanguage;
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
   };
 
   const finishQuestions = async () => {
@@ -227,33 +238,34 @@ export default function LearnPage() {
     setScore(finalScore);
     setShowResults(true);
 
-    // Speak results and review
-    let reviewText = `Lesson completed. You scored ${finalScore} percent.`;
-    selectedLesson.content.questions.forEach((question: Question) => {
-      const userAnswer = answers[question.id];
-      let isCorrect = false;
+    if (isVoiceEnabled) {
+      let reviewText = `Lesson completed. You scored ${finalScore} percent.`;
+      selectedLesson.content.questions.forEach((question: Question) => {
+        const userAnswer = answers[question.id];
+        let isCorrect = false;
 
-      if (question.type === "multiple_choice") {
-        isCorrect = userAnswer === question.correct_answer;
-      } else if (question.type === "text_input") {
-        const correctAnswer = question.correct_answer as string;
-        const alternatives = question.alternatives || [];
-        const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim());
-        isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim());
-      }
+        if (question.type === "multiple_choice") {
+          isCorrect = userAnswer === question.correct_answer;
+        } else if (question.type === "text_input") {
+          const correctAnswer = question.correct_answer as string;
+          const alternatives = question.alternatives || [];
+          const allCorrectAnswers = [correctAnswer, ...alternatives].map((a) => a.toLowerCase().trim());
+          isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim());
+        }
 
-      const correctAnswerText = question.type === "multiple_choice" 
-        ? question.options![question.correct_answer as number]
-        : question.correct_answer as string;
-      const userAnswerText = question.type === "multiple_choice" 
-        ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
-        : userAnswer || "No answer";
-      reviewText += ` Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`;
-      if (question.explanation) {
-        reviewText += ` Explanation: ${question.explanation}.`;
-      }
-    });
-    speakText(reviewText);
+        const correctAnswerText = question.type === "multiple_choice" 
+          ? question.options![question.correct_answer as number]
+          : question.correct_answer as string;
+        const userAnswerText = question.type === "multiple_choice" 
+          ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
+          : userAnswer || "No answer";
+        reviewText += ` Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`;
+        if (question.explanation) {
+          reviewText += ` Explanation: ${question.explanation}.`;
+        }
+      });
+      speakText(reviewText);
+    }
 
     if (finalScore >= 70) {
       await completeLesson();
@@ -384,6 +396,17 @@ export default function LearnPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="mt-4 flex items-center gap-2">
+                <Label className="text-sm text-slate-700">Voice: </Label>
+                <Button
+                  variant={isVoiceEnabled ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsVoiceEnabled(!isVoiceEnabled)}
+                  className="px-2 py-1"
+                >
+                  {isVoiceEnabled ? "On" : "Off"}
+                </Button>
+              </div>
             </motion.div>
 
             <motion.div
@@ -427,7 +450,7 @@ export default function LearnPage() {
                         </div>
                         <Button
                           onClick={() => startLesson(lesson)}
-                          className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                          className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-sm px-3 py-2"
                         >
                           {completedLessonIds.includes(lesson.id) ? "Review Lesson" : "Start Lesson"}
                         </Button>
@@ -517,28 +540,30 @@ export default function LearnPage() {
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
                               <p className="font-medium text-slate-800 mb-2">{question.question}</p>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  let text = `Question: ${question.question}. Your answer: ${
-                                    question.type === "multiple_choice" 
-                                      ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
-                                      : userAnswer || "No answer"
-                                  }. Correct answer: ${
-                                    question.type === "multiple_choice" 
-                                      ? question.options![question.correct_answer as number]
-                                      : question.correct_answer as string
-                                  }.`;
-                                  if (question.explanation) {
-                                    text += ` Explanation: ${question.explanation}.`;
-                                  }
-                                  speakText(text);
-                                }}
-                                disabled={isSpeaking}
-                              >
-                                <Volume2 className="h-4 w-4 text-black" />
-                              </Button>
+                              {isVoiceEnabled && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    let text = `Question: ${question.question}. Your answer: ${
+                                      question.type === "multiple_choice" 
+                                        ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
+                                        : userAnswer || "No answer"
+                                    }. Correct answer: ${
+                                      question.type === "multiple_choice" 
+                                        ? question.options![question.correct_answer as number]
+                                        : question.correct_answer as string
+                                    }.`;
+                                    if (question.explanation) {
+                                      text += ` Explanation: ${question.explanation}.`;
+                                    }
+                                    speakText(text);
+                                  }}
+                                  disabled={isSpeaking}
+                                >
+                                  <Volume2 className="h-4 w-4 text-black" />
+                                </Button>
+                              )}
                             </div>
 
                             {question.type === "multiple_choice" && question.options && (
@@ -589,12 +614,12 @@ export default function LearnPage() {
                 </div>
 
                 <div className="flex gap-3">
-                  <Button onClick={() => setSelectedLesson(null)} variant="outline" className="flex-1">
+                  <Button onClick={() => setSelectedLesson(null)} variant="outline" className="flex-1 text-sm px-3 py-2">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Lessons
                   </Button>
                   {score < 70 && (
-                    <Button onClick={() => { setCurrentQuestion(0); setAnswers({}); setShowResults(false); }} className="flex-1">
+                    <Button onClick={() => { setCurrentQuestion(0); setAnswers({}); setShowResults(false); }} className="flex-1 text-sm px-3 py-2">
                       Retake Questions
                     </Button>
                   )}
@@ -627,14 +652,16 @@ export default function LearnPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-slate-800">{selectedLesson.content.questions[currentQuestion].question}</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => speakQuestion(selectedLesson.content.questions[currentQuestion])}
-                    disabled={isSpeaking}
-                  >
-                    <Volume2 className="h-4 w-4 text-black" />
-                  </Button>
+                  {isVoiceEnabled && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => speakQuestion(selectedLesson.content.questions[currentQuestion])}
+                      disabled={isSpeaking}
+                    >
+                      <Volume2 className="h-4 w-4 text-black" />
+                    </Button>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -677,11 +704,11 @@ export default function LearnPage() {
                 )}
 
                 <div className="flex justify-between">
-                  <Button onClick={previousQuestion} disabled={currentQuestion === 0} variant="outline">
+                  <Button onClick={previousQuestion} disabled={currentQuestion === 0} variant="outline" className="text-sm px-3 py-2">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Previous
                   </Button>
-                  <Button onClick={nextQuestion}>
+                  <Button onClick={nextQuestion} className="text-sm px-3 py-2">
                     {currentQuestion === selectedLesson.content.questions.length - 1 ? (
                       <>
                         <Trophy className="mr-2 h-4 w-4" />
@@ -704,14 +731,16 @@ export default function LearnPage() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-slate-800">{selectedLesson.title}</CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => speakText(`${selectedLesson.title}. ${selectedLesson.description || ""}. ${selectedLesson.content.main_content}`)}
-                    disabled={isSpeaking}
-                  >
-                    <Volume2 className="h-4 w-4 text-black" />
-                  </Button>
+                  {isVoiceEnabled && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => speakText(`${selectedLesson.title}. ${selectedLesson.description || ""}. ${selectedLesson.content.main_content}`)}
+                      disabled={isSpeaking}
+                    >
+                      <Volume2 className="h-4 w-4 text-black" />
+                    </Button>
+                  )}
                 </div>
                 <CardDescription className="text-slate-600">{selectedLesson.description || "No description"}</CardDescription>
               </CardHeader>
@@ -744,17 +773,17 @@ export default function LearnPage() {
                   </div>
                 )}
                 <div className="flex gap-3">
-                  <Button onClick={() => setSelectedLesson(null)} variant="outline" className="flex-1">
+                  <Button onClick={() => setSelectedLesson(null)} variant="outline" className="flex-1 text-sm px-3 py-2">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Lessons
                   </Button>
                   {selectedLesson.content.questions.length > 0 ? (
-                    <Button onClick={startQuestions} className="flex-1">
+                    <Button onClick={startQuestions} className="flex-1 text-sm px-3 py-2">
                       Start Questions
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   ) : (
-                    <Button onClick={completeLesson} className="flex-1">
+                    <Button onClick={completeLesson} className="flex-1 text-sm px-3 py-2">
                       Complete Lesson
                       <Trophy className="ml-2 h-4 w-4" />
                     </Button>
