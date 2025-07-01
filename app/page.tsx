@@ -173,7 +173,7 @@ export default function HomePage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg">
                 <Languages className="h-6 w-6 text-white" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent sm:text-2xl">
                 LingslatePal
               </span>
             </motion.div>
@@ -183,14 +183,14 @@ export default function HomePage() {
               animate={{ opacity: 1, x: 0 }}
               className="flex items-center space-x-4"
             >
-              <Link href="/auth/login">
+              <Link href="/auth/login" className="hidden sm:block">
                 <Button variant="ghost" className="text-slate-700 hover:text-blue-600 hover:bg-blue-50">
                   Login
                 </Button>
               </Link>
               <Link href="/auth/register">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200">
-                  Get Started Free
+                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 sm:px-8 sm:py-4 px-4 py-2 text-sm sm:text-base">
+                  Get Started 
                 </Button>
               </Link>
             </motion.div>
@@ -539,6 +539,8 @@ export default function HomePage() {
               </Label>
               <Input
                 id="language-name"
+                valueソー
+
                 value={languageName}
                 onChange={(e) => setLanguageName(e.target.value)}
                 placeholder="e.g., Swahili"
