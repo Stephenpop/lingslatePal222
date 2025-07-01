@@ -113,7 +113,7 @@ export default function RootLayout({
         {/* Additional PWA Meta Tags */}
         <meta name="application-name" content="LingslatePal" />
         <meta name="msapplication-TileColor" content="#2563eb" />
-        <meta name="msapplication-TileImage" content="/icons/icon-144x144.png" />
+        <meta name="msapplication-TileImage" content="/icon-144x144.png" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
 
         {/* Preconnect to external domains */}
@@ -125,7 +125,7 @@ export default function RootLayout({
 
         {/* Favicon */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" href="/icons/icon-192x192.png" type="image/png" />
+        <link rel="icon" href="/icon-192x192.png" type="image/png" />
 
         {/* Service Worker Registration */}
         <script
