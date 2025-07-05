@@ -5,7 +5,6 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/toaster"
 import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
-import { FloatingInstallPrompt } from "@/components/floating-install-prompt"
 
 const inter = Inter({ subsets: ["latin"] })
 
