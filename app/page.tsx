@@ -107,7 +107,7 @@ const features = [
 const stats = [
   { label: "Languages Supported", value: 100, suffix: "+" },
   { label: "Active Learners", value: 75000, suffix: "+" },
-  { label: "Lessons Completed", value: 2500000, suffix: "+" },
+  { label: "Lessons Completed", value: 25000, suffix: "+" },
   { label: "Countries Reached", value: 195, suffix: "" },
 ]
 
