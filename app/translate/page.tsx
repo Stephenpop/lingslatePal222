@@ -70,7 +70,6 @@ const languages = [
   { code: "ti", name: "Tigrinya", flag: "🇪🇷" },
   { code: "so", name: "Somali", flag: "🇸🇴" },
   { code: "ne", name: "Nepali", flag: "🇳🇵" },
-  // Add more as needed from Lingva's 100+ (e.g., Basque, Welsh) if confirmed supported
 ];
 
 const recentTranslations = [
@@ -87,11 +86,13 @@ export default function TranslatePage() {
   const [sourceLang, setSourceLang] = useState("auto");
   const [targetLang, setTargetLang] = useState("es");
   const [isTranslating, setIsTranslating] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  [isListening, setIsListening] = useState(false);
   const [searchSourceQuery, setSearchSourceQuery] = useState("");
   const [searchTargetQuery, setSearchTargetQuery] = useState("");
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const { toast } = useToast();
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const translateText = async (text: string, from: string, to: string) => {
     setIsTranslating(true);
@@ -104,6 +105,7 @@ export default function TranslatePage() {
       if (!response.ok) throw new Error("Translation failed");
       const data = await response.json();
       setTranslatedText(data.translatedText || data);
+      setAudioUrl(null); // Reset audio on new translation
     } catch (error) {
       console.error("Translation error:", error);
       const mockTranslations: Record<string, Record<string, string>> = {
@@ -150,6 +152,21 @@ export default function TranslatePage() {
       utterance.pitch = 1.0; // Mimic user tone (limited control)
       utterance.rate = 1.0;
       window.speechSynthesis.speak(utterance);
+
+      // Record synthesized audio
+      const audioContext = new AudioContext();
+      const destination = audioContext.createMediaStreamDestination();
+      const source = audioContext.createBufferSource();
+      const chunks: BlobPart[] = [];
+      const recorder = new MediaRecorder(destination.stream);
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/wav" });
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url); // Set URL for playback/download
+      };
+      recorder.start();
+      utterance.onend = () => recorder.stop();
     }
   };
 
@@ -189,36 +206,6 @@ export default function TranslatePage() {
     setTranslatedText(translation.target);
     setSourceLang(translation.from);
     setTargetLang(translation.to);
-  };
-
-  const synthesizeAndRecord = (text: string, lang: string) => {
-    if ("speechSynthesis" in window && audioRef.current) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = lang === "auto" ? "en" : lang;
-      const voices = window.speechSynthesis.getVoices();
-      const targetVoice = voices.find((v) => v.lang.startsWith(lang.split("-")[0])) || voices[0];
-      utterance.voice = targetVoice;
-      utterance.pitch = 1.0; // Adjust to mimic user (limited)
-      utterance.rate = 1.0;
-      const chunks: BlobPart[] = [];
-      const audioContext = new AudioContext();
-      const destination = audioContext.createMediaStreamDestination();
-      const source = audioContext.createBufferSource();
-      const recorder = new MediaRecorder(destination.stream);
-      recorder.ondataavailable = (e) => chunks.push(e.data);
-      recorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "audio/wav" });
-        const url = URL.createObjectURL(blob);
-        audioRef.current!.src = url;
-        const downloadLink = document.createElement("a");
-        downloadLink.href = url;
-        downloadLink.download = `translation_${lang}_${Date.now()}.wav`;
-        downloadLink.click();
-      };
-      window.speechSynthesis.speak(utterance);
-      recorder.start();
-      utterance.onend = () => recorder.stop();
-    }
   };
 
   return (
@@ -274,14 +261,14 @@ export default function TranslatePage() {
                       <SelectTrigger className="w-full sm:w-48 border-slate-200 bg-white/80 text-slate-800 focus:ring-blue-500 text-base font-medium shadow-sm">
                         <SelectValue placeholder="Select Source Language" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white/80 border-slate-200 shadow-md max-h-60 overflow-auto">
+                      <SelectContent className="bg-black border-slate-200 shadow-md max-h-60 overflow-auto text-white">
                         <div className="p-2">
                           <input
                             type="text"
                             placeholder="Search language..."
                             value={searchSourceQuery}
                             onChange={(e) => setSearchSourceQuery(e.target.value)}
-                            className="w-full p-2 border border-slate-200 rounded-md bg-white/80 text-slate-800 focus:ring-blue-500 text-sm shadow-sm"
+                            className="w-full p-2 border border-slate-200 rounded-md bg-gray-900 text-white focus:ring-blue-500 text-sm shadow-sm"
                           />
                         </div>
                         {languages
@@ -293,7 +280,7 @@ export default function TranslatePage() {
                             <SelectItem
                               key={lang.code}
                               value={lang.code}
-                              className="text-slate-800 hover:bg-slate-100"
+                              className="text-white hover:bg-gray-800"
                             >
                               <div className="flex items-center gap-2">
                                 <span>{lang.flag}</span>
@@ -387,14 +374,14 @@ export default function TranslatePage() {
                       <SelectTrigger className="w-full sm:w-48 border-slate-200 bg-white/80 text-slate-800 focus:ring-blue-500 text-base font-medium shadow-sm">
                         <SelectValue placeholder="Select Target Language" />
                       </SelectTrigger>
-                      <SelectContent className="bg-white/80 border-slate-200 shadow-md max-h-60 overflow-auto">
+                      <SelectContent className="bg-black border-slate-200 shadow-md max-h-60 overflow-auto text-white">
                         <div className="p-2">
                           <input
                             type="text"
                             placeholder="Search language..."
                             value={searchTargetQuery}
                             onChange={(e) => setSearchTargetQuery(e.target.value)}
-                            className="w-full p-2 border border-slate-200 rounded-md bg-white/80 text-slate-800 focus:ring-blue-500 text-sm shadow-sm"
+                            className="w-full p-2 border border-slate-200 rounded-md bg-gray-900 text-white focus:ring-blue-500 text-sm shadow-sm"
                           />
                         </div>
                         {languages
@@ -407,7 +394,7 @@ export default function TranslatePage() {
                             <SelectItem
                               key={lang.code}
                               value={lang.code}
-                              className="text-slate-800 hover:bg-slate-100"
+                              className="text-white hover:bg-gray-800"
                             >
                               <div className="flex items-center gap-2">
                                 <span>{lang.flag}</span>
@@ -432,12 +419,12 @@ export default function TranslatePage() {
                       )}
                     </div>
 
-                    {translatedText && (
+                    {translatedText && audioUrl && (
                       <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => synthesizeAndRecord(translatedText, targetLang)}
+                          onClick={() => audioRef.current?.play()}
                           className="text-blue-600 hover:bg-slate-100 p-2 shadow-sm"
                         >
                           <Volume2 className="h-5 w-5" />
@@ -450,7 +437,20 @@ export default function TranslatePage() {
                         >
                           <Copy className="h-5 w-5" />
                         </Button>
-                        <audio ref={audioRef} controls className="hidden" />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = audioUrl;
+                            link.download = `translation_${targetLang}_${Date.now()}.wav`;
+                            link.click();
+                          }}
+                          className="text-blue-600 hover:bg-slate-100 p-2 shadow-sm"
+                        >
+                          <Download className="h-5 w-5" />
+                        </Button>
+                        <audio ref={audioRef} src={audioUrl} className="hidden" />
                       </div>
                     )}
                   </div>
