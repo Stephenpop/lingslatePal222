@@ -1,4 +1,4 @@
-const CACHE_NAME = 'polyglot-pal-v2'; // Updated version to invalidate old cache
+const CACHE_NAME = 'polyglot-pal-v3'; // Updated version to invalidate old cache
 
 const urlsToCache = [
  
