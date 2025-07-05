@@ -105,7 +105,7 @@ export default function TranslatePage() {
       if (!response.ok) throw new Error("Translation failed");
       const data = await response.json();
       setTranslatedText(data.translatedText || data);
-      setAudioUrl(null); // Reset audio on new translation
+      setAudioUrl(null);
     } catch (error) {
       console.error("Translation error:", error);
       const mockTranslations: Record<string, Record<string, string>> = {
@@ -148,25 +148,38 @@ export default function TranslatePage() {
       utterance.lang = lang === "auto" ? "en" : lang;
       const voices = window.speechSynthesis.getVoices();
       const targetVoice = voices.find((v) => v.lang.startsWith(lang.split("-")[0])) || voices[0];
-      utterance.voice = targetVoice;
-      utterance.pitch = 1.0; // Mimic user tone (limited control)
+      if (targetVoice) utterance.voice = targetVoice;
+      utterance.pitch = 1.0;
       utterance.rate = 1.0;
+
+      // Ensure voices are loaded before speaking
+      if (voices.length === 0) {
+        window.speechSynthesis.onvoiceschanged = () => handleSpeak(text, lang);
+        return;
+      }
+
       window.speechSynthesis.speak(utterance);
 
-      // Record synthesized audio
-      const audioContext = new AudioContext();
+      // Record audio
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const destination = audioContext.createMediaStreamDestination();
-      const source = audioContext.createBufferSource();
+      const oscillator = audioContext.createOscillator();
+      oscillator.connect(destination);
+      oscillator.start();
       const chunks: BlobPart[] = [];
       const recorder = new MediaRecorder(destination.stream);
       recorder.ondataavailable = (e) => chunks.push(e.data);
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: "audio/wav" });
         const url = URL.createObjectURL(blob);
-        setAudioUrl(url); // Set URL for playback/download
+        setAudioUrl(url);
+        oscillator.stop();
       };
       recorder.start();
-      utterance.onend = () => recorder.stop();
+      utterance.onend = () => {
+        recorder.stop();
+        oscillator.disconnect();
+      };
     }
   };
 
@@ -198,6 +211,7 @@ export default function TranslatePage() {
     toast({
       title: "Copied!",
       description: "Text copied to clipboard.",
+      className: "bg-gray-800 text-white",
     });
   };
 
@@ -210,7 +224,6 @@ export default function TranslatePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Navigation */}
       <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-sm shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -237,7 +250,6 @@ export default function TranslatePage() {
 
       <div className="container mx-auto px-4 py-6 sm:py-8">
         <div className="grid gap-6 sm:gap-8 lg:grid-cols-4">
-          {/* Main Translation Area */}
           <div className="lg:col-span-3">
             <div className="mb-6 sm:mb-8">
               <h1 className="mb-2 text-2xl sm:text-3xl font-bold text-slate-800">Free Language Translation</h1>
@@ -255,7 +267,6 @@ export default function TranslatePage() {
               </CardHeader>
               <CardContent className="p-4 sm:p-6">
                 <div className="grid gap-6 lg:grid-cols-2">
-                  {/* Source */}
                   <div className="space-y-4">
                     <Select value={sourceLang} onValueChange={setSourceLang}>
                       <SelectTrigger className="w-full sm:w-48 border-slate-200 bg-white/80 text-slate-800 focus:ring-blue-500 text-base font-medium shadow-sm">
@@ -337,7 +348,6 @@ export default function TranslatePage() {
                     </div>
                   </div>
 
-                  {/* Controls */}
                   <div className="flex items-center justify-center lg:flex-col lg:gap-4 order-last lg:order-none">
                     <div className="flex flex-col sm:flex-row gap-3">
                       <Button
@@ -368,7 +378,6 @@ export default function TranslatePage() {
                     </div>
                   </div>
 
-                  {/* Target */}
                   <div className="space-y-4">
                     <Select value={targetLang} onValueChange={setTargetLang}>
                       <SelectTrigger className="w-full sm:w-48 border-slate-200 bg-white/80 text-slate-800 focus:ring-blue-500 text-base font-medium shadow-sm">
@@ -463,9 +472,7 @@ export default function TranslatePage() {
             </Card>
           </div>
 
-          {/* Sidebar */}
           <div className="space-y-6">
-            {/* Recent Translations */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
               <Card className="border-slate-200 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl">
                 <CardHeader>
@@ -499,8 +506,7 @@ export default function TranslatePage() {
               </Card>
             </motion.div>
 
-            {/* Upgrade CTA */}
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3}}>
               <Card className="border-slate-200 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl">
                 <CardHeader>
                   <CardTitle className="text-slate-800 text-lg font-bold">Want to Learn More?</CardTitle>
