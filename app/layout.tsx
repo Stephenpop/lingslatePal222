@@ -4,12 +4,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
-import dynamic from "next/dynamic";
-
-// Dynamically import PWAInstallPrompt to prevent SSR issues
-const PWAInstallPrompt = dynamic(() => import("@/components/pwa-install-prompt"), {
-  ssr: false, // Disable server-side rendering
-});
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -87,7 +81,7 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "#2563eb" },
     { media: "(prefers-color-scheme: dark)", color: "#1e40af" },
   ],
-  colorScheme: "light", // Moved from metadata
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -152,7 +146,6 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
-          <PWAInstallPrompt />
           <Toaster />
         </ThemeProvider>
       </body>
