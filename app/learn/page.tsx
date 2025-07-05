@@ -749,7 +749,7 @@ export default function LearnPage() {
       </CardContent>
     </Card>
   </div>
-
+        )}
         ) : (
           <div className="max-w-2xl mx-auto">
             <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
