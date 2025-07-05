@@ -56,7 +56,7 @@ export default function LearnPage() {
   const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
   const [learningLanguage, setLearningLanguage] = useState<string>("es");
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true); // Toggle for voice
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const router = useRouter();
 
   const availableLanguages = [
@@ -178,7 +178,7 @@ export default function LearnPage() {
       setCurrentQuestion(currentQuestion + 1);
       setAnswers((prev) => {
         const newAnswers = { ...prev };
-        delete newAnswers[selectedLesson.content.questions[currentQuestion].id]; // Clear previous input
+        delete newAnswers[selectedLesson.content.questions[currentQuestion].id];
         return newAnswers;
       });
       const nextQuestion = selectedLesson.content.questions[currentQuestion + 1];
@@ -201,7 +201,7 @@ export default function LearnPage() {
   };
 
   const speakText = (text: string) => {
-    if (!isVoiceEnabled || !('speechSynthesis' in window)) return;
+    if (!isVoiceEnabled || !("speechSynthesis" in window)) return;
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = learningLanguage;
     utterance.onstart = () => setIsSpeaking(true);
@@ -253,12 +253,16 @@ export default function LearnPage() {
           isCorrect = userAnswer && allCorrectAnswers.includes(userAnswer.toLowerCase().trim());
         }
 
-        const correctAnswerText = question.type === "multiple_choice" 
-          ? question.options![question.correct_answer as number]
-          : question.correct_answer as string;
-        const userAnswerText = question.type === "multiple_choice" 
-          ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
-          : userAnswer || "No answer";
+        const correctAnswerText =
+          question.type === "multiple_choice"
+            ? question.options![question.correct_answer as number]
+            : question.correct_answer as string;
+        const userAnswerText =
+          question.type === "multiple_choice"
+            ? userAnswer !== undefined
+              ? question.options![userAnswer]
+              : "No answer"
+            : userAnswer || "No answer";
         reviewText += ` Question: ${question.question}. Your answer: ${userAnswerText}. Correct answer: ${correctAnswerText}.`;
         if (question.explanation) {
           reviewText += ` Explanation: ${question.explanation}.`;
@@ -322,9 +326,7 @@ export default function LearnPage() {
     }
   };
 
-  const filteredLessons = difficultyFilter === "all"
-    ? lessons
-    : lessons.filter((lesson) => lesson.difficulty === difficultyFilter);
+  const filteredLessons = difficultyFilter === "all" ? lessons : lessons.filter((lesson) => lesson.difficulty === difficultyFilter);
 
   if (loading) {
     return (
@@ -343,15 +345,13 @@ export default function LearnPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 sm:h-10 sm:w-10">
+              <div className="flex h-8 w-firstQuestion8 items-center justify-center rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 sm:h-10 sm:w-10">
                 <Languages className="h-5 w-5 text-white" />
               </div>
               <span className="text-xl font-bold text-slate-800 hidden sm:inline">LingslatePal</span>
             </Link>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-slate-600">
-                {user?.profile?.xp_points || 0} XP
-              </span>
+              <span className="text-sm text-slate-600">{user?.profile?.xp_points || 0} XP</span>
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm" className="text-slate-700 hover:bg-slate-100">
                   <ArrowLeft className="mr-2 h-4 w-4" />
@@ -427,17 +427,13 @@ export default function LearnPage() {
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-slate-800">{lesson.title}</CardTitle>
-                          {completedLessonIds.includes(lesson.id) && (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          )}
+                          {completedLessonIds.includes(lesson.id) && <CheckCircle className="h-4 w-4 text-green-600" />}
                         </div>
                         <CardDescription className="text-slate-600">{lesson.description || "No description"}</CardDescription>
                       </CardHeader>
                       <CardContent className="space-y-2">
                         <div className="flex items-center gap-2">
-                          <Badge className={getDifficultyColor(lesson.difficulty)}>
-                            {lesson.difficulty}
-                          </Badge>
+                          <Badge className={getDifficultyColor(lesson.difficulty)}>{lesson.difficulty}</Badge>
                           <Badge className="bg-blue-100 text-blue-700">{lesson.content_type}</Badge>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-slate-600">
@@ -476,35 +472,24 @@ export default function LearnPage() {
                     </div>
                   )}
                 </div>
-                <CardTitle className="text-2xl text-slate-800">
-                  {score >= 70 ? "Lesson Completed!" : "Keep Practicing!"}
-                </CardTitle>
-                <CardDescription className="text-slate-600">
-                  You scored {score}% on {selectedLesson.title}
-                </CardDescription>
+                <CardTitle className="text-2xl text-slate-800">{score >= 70 ? "Lesson Completed!" : "Keep Practicing!"}</CardTitle>
+                <CardDescription className="text-slate-600">You scored {score}% on {selectedLesson.title}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center">
                   <div className="text-4xl font-bold text-slate-800 mb-2">{score}%</div>
                   <div className="w-full bg-slate-200 rounded-full h-2.5">
-                    <div
-                      className="bg-blue-500 h-2.5 rounded-full"
-                      style={{ width: `${score}%` }}
-                    ></div>
+                    <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${score}%` }}></div>
                   </div>
                   <p className="text-sm text-slate-600 mt-2">
-                    {score >= 70
-                      ? "You passed! Minimum required: 70%"
-                      : "You need 70% to complete the lesson"}
+                    {score >= 70 ? "You passed! Minimum required: 70%" : "You need 70% to complete the lesson"}
                   </p>
                 </div>
 
                 {score >= 70 && (
                   <div className="text-center p-4 bg-yellow-50 rounded-lg">
                     <Trophy className="h-6 w-6 mx-auto mb-2 text-yellow-600" />
-                    <p className="text-sm font-medium text-yellow-800">
-                      You earned {selectedLesson.xp_reward} XP points!
-                    </p>
+                    <p className="text-sm font-medium text-yellow-800">You earned {selectedLesson.xp_reward} XP points!</p>
                   </div>
                 )}
 
@@ -531,11 +516,7 @@ export default function LearnPage() {
                               isCorrect ? "bg-green-100" : "bg-red-100"
                             }`}
                           >
-                            {isCorrect ? (
-                              <CheckCircle className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <XCircle className="h-4 w-4 text-red-600" />
-                            )}
+                            {isCorrect ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-red-600" />}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center justify-between">
@@ -546,11 +527,13 @@ export default function LearnPage() {
                                   size="sm"
                                   onClick={() => {
                                     let text = `Question: ${question.question}. Your answer: ${
-                                      question.type === "multiple_choice" 
-                                        ? (userAnswer !== undefined ? question.options![userAnswer] : "No answer")
+                                      question.type === "multiple_choice"
+                                        ? userAnswer !== undefined
+                                          ? question.options![userAnswer]
+                                          : "No answer"
                                         : userAnswer || "No answer"
                                     }. Correct answer: ${
-                                      question.type === "multiple_choice" 
+                                      question.type === "multiple_choice"
                                         ? question.options![question.correct_answer as number]
                                         : question.correct_answer as string
                                     }.`;
@@ -592,9 +575,7 @@ export default function LearnPage() {
                               <div className="space-y-1 mb-2">
                                 <div className="text-sm">
                                   <span className="text-slate-600">Your answer: </span>
-                                  <span className={isCorrect ? "text-green-700" : "text-red-700"}>
-                                    {userAnswer || "No answer"}
-                                  </span>
+                                  <span className={isCorrect ? "text-green-700" : "text-red-700"}>{userAnswer || "No answer"}</span>
                                 </div>
                                 <div className="text-sm">
                                   <span className="text-slate-600">Correct answer: </span>
@@ -603,9 +584,7 @@ export default function LearnPage() {
                               </div>
                             )}
 
-                            {question.explanation && (
-                              <p className="text-sm text-slate-600 italic">{question.explanation}</p>
-                            )}
+                            {question.explanation && <p className="text-sm text-slate-600 italic">{question.explanation}</p>}
                           </div>
                         </div>
                       </div>
@@ -613,13 +592,24 @@ export default function LearnPage() {
                   })}
                 </div>
 
-                <div className="flex gap-3">
-                  <Button onClick={() => setSelectedLesson(null)} variant="outline" className="flex-1 text-sm px-3 py-2">
+                <div className="flex flex-wrap gap-2 sm:gap-3">
+                  <Button
+                    onClick={() => setSelectedLesson(null)}
+                    variant="outline"
+                    className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+                  >
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Lessons
                   </Button>
                   {score < 70 && (
-                    <Button onClick={() => { setCurrentQuestion(0); setAnswers({}); setShowResults(false); }} className="flex-1 text-sm px-3 py-2">
+                    <Button
+                      onClick={() => {
+                        setCurrentQuestion(0);
+                        setAnswers({});
+                        setShowResults(false);
+                      }}
+                      className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+                    >
                       Retake Questions
                     </Button>
                   )}
@@ -672,84 +662,67 @@ export default function LearnPage() {
                       handleAnswer(selectedLesson.content.questions[currentQuestion].id, Number.parseInt(value))
                     }
                   >
-                {selectedLesson && currentQuestion === null && (
-  <div className="max-w-2xl mx-auto">
-    <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-slate-800">{selectedLesson.title}</CardTitle>
-          {isVoiceEnabled && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => speakText(`${selectedLesson.title}. ${selectedLesson.description || ""}. ${selectedLesson.content.main_content}`)}
-              disabled={isSpeaking}
-            >
-              <Volume2 className="h-4 w-4 text-black" />
-            </Button>
-          )}
-        </div>
-        <CardDescription className="text-slate-600">{selectedLesson.description || "No description"}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {selectedLesson.content_type === "text" && (
-          <div className="prose text-slate-800">
-            {selectedLesson.content.main_content}
+                    {selectedLesson.content.questions[currentQuestion].options?.map((option, index) => (
+                      <div key={index} className="flex items-center space-x-2">
+                        <RadioGroupItem value={index.toString()} id={`option-${index}`} />
+                        <Label
+                          htmlFor={`option-${index}`}
+                          className={`flex-1 cursor-pointer p-2 rounded ${
+                            answers[selectedLesson.content.questions[currentQuestion].id] === index
+                              ? "bg-blue-100 text-blue-800"
+                              : "text-slate-800 bg-gray-50 hover:bg-gray-100"
+                          }`}
+                        >
+                          {String.fromCharCode(65 + index)}. {option}
+                        </Label>
+                      </div>
+                    ))}
+                  </RadioGroup>
+                ) : (
+                  <div>
+                    <Label htmlFor="text-answer" className="text-sm font-medium text-slate-700">
+                      Your Answer
+                    </Label>
+                    <Input
+                      id="text-answer"
+                      placeholder="Type your answer here..."
+                      value={answers[selectedLesson.content.questions[currentQuestion].id] || ""}
+                      onChange={(e) => handleAnswer(selectedLesson.content.questions[currentQuestion].id, e.target.value)}
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2 sm:gap-3 justify-between">
+                  <Button
+                    onClick={previousQuestion}
+                    disabled={currentQuestion === 0}
+                    variant="outline"
+                    className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Previous
+                  </Button>
+                  <Button
+                    onClick={nextQuestion}
+                    className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+                  >
+                    {currentQuestion === selectedLesson.content.questions.length - 1 ? (
+                      <>
+                        <Trophy className="mr-2 h-4 w-4" />
+                        Finish Questions
+                      </>
+                    ) : (
+                      <>
+                        Next
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        )}
-        {selectedLesson.content_type === "video" && (
-          <div className="aspect-video">
-            <iframe
-              src={selectedLesson.content.main_content}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full rounded-lg"
-            ></iframe>
-          </div>
-        )}
-        {selectedLesson.content_type === "audio" && (
-          <audio controls className="w-full">
-            <source src={selectedLesson.content.main_content} type="audio/mpeg" />
-            Your browser does not support the audio element.
-          </audio>
-        )}
-        {selectedLesson.content_type === "interactive" && (
-          <div className="text-slate-800">
-            <p>{selectedLesson.content.main_content}</p>
-          </div>
-        )}
-        <div className="flex flex-wrap gap-2 sm:gap-3">
-          <Button 
-            onClick={() => setSelectedLesson(null)} 
-            variant="outline" 
-            className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Lessons
-          </Button>
-          {selectedLesson.content.questions.length > 0 ? (
-            <Button 
-              onClick={startQuestions} 
-              className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
-            >
-              Start Questions
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          ) : (
-            <Button 
-              onClick={completeLesson} 
-              className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
-            >
-              Complete Lesson
-              <Trophy className="ml-2 h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-        )}
         ) : (
           <div className="max-w-2xl mx-auto">
             <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
@@ -770,11 +743,7 @@ export default function LearnPage() {
                 <CardDescription className="text-slate-600">{selectedLesson.description || "No description"}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {selectedLesson.content_type === "text" && (
-                  <div className="prose text-slate-800">
-                    {selectedLesson.content.main_content}
-                  </div>
-                )}
+                {selectedLesson.content_type === "text" && <div className="prose text-slate-800">{selectedLesson.content.main_content}</div>}
                 {selectedLesson.content_type === "video" && (
                   <div className="aspect-video">
                     <iframe
@@ -797,18 +766,28 @@ export default function LearnPage() {
                     <p>{selectedLesson.content.main_content}</p>
                   </div>
                 )}
-                <div className="flex gap-3">
-                  <Button onClick={() => setSelectedLesson(null)} variant="outline" className="flex-1 text-sm px-3 py-2">
+                <div className="flex flex-wrap gap-2 sm:gap-3">
+                  <Button
+                    onClick={() => setSelectedLesson(null)}
+                    variant="outline"
+                    className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+                  >
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Lessons
                   </Button>
                   {selectedLesson.content.questions.length > 0 ? (
-                    <Button onClick={startQuestions} className="flex-1 text-sm px-3 py-2">
+                    <Button
+                      onClick={startQuestions}
+                      className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+                    >
                       Start Questions
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   ) : (
-                    <Button onClick={completeLesson} className="flex-1 text-sm px-3 py-2">
+                    <Button
+                      onClick={completeLesson}
+                      className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+                    >
                       Complete Lesson
                       <Trophy className="ml-2 h-4 w-4" />
                     </Button>
