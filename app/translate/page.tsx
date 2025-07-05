@@ -86,7 +86,7 @@ export default function TranslatePage() {
   const [sourceLang, setSourceLang] = useState("auto");
   const [targetLang, setTargetLang] = useState("es");
   const [isTranslating, setIsTranslating] = useState(false);
-  const [isListening, setIsListening] = useState(false); // Fixed syntax
+  const [isListening, setIsListening] = useState(false);
   const [searchSourceQuery, setSearchSourceQuery] = useState("");
   const [searchTargetQuery, setSearchTargetQuery] = useState("");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -419,12 +419,12 @@ export default function TranslatePage() {
                       )}
                     </div>
 
-                    {translatedText && audioUrl && (
+                    {translatedText && (
                       <div className="flex gap-2">
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => audioRef.current?.play()}
+                          onClick={() => handleSpeak(translatedText, targetLang)}
                           className="text-blue-600 hover:bg-slate-100 p-2 shadow-sm"
                         >
                           <Volume2 className="h-5 w-5" />
@@ -437,22 +437,24 @@ export default function TranslatePage() {
                         >
                           <Copy className="h-5 w-5" />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = audioUrl;
-                            link.download = `translation_${targetLang}_${Date.now()}.wav`;
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                          }}
-                          className="text-blue-600 hover:bg-slate-100 p-2 shadow-sm"
-                        >
-                          <Download className="h-5 w-5" />
-                        </Button>
-                        <audio ref={audioRef} src={audioUrl} className="hidden" />
+                        {audioUrl && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const link = document.createElement("a");
+                              link.href = audioUrl;
+                              link.download = `translation_${targetLang}_${Date.now()}.wav`;
+                              document.body.appendChild(link);
+                              link.click();
+                              document.body.removeChild(link);
+                            }}
+                            className="text-blue-600 hover:bg-slate-100 p-2 shadow-sm"
+                          >
+                            <Download className="h-5 w-5" />
+                          </Button>
+                        )}
+                        {audioUrl && <audio ref={audioRef} src={audioUrl} className="hidden" />}
                       </div>
                     )}
                   </div>
