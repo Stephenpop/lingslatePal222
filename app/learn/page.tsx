@@ -672,59 +672,84 @@ export default function LearnPage() {
                       handleAnswer(selectedLesson.content.questions[currentQuestion].id, Number.parseInt(value))
                     }
                   >
-                    {selectedLesson.content.questions[currentQuestion].options?.map((option, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                        <Label
-                          htmlFor={`option-${index}`}
-                          className={`flex-1 cursor-pointer p-2 rounded ${
-                            answers[selectedLesson.content.questions[currentQuestion].id] === index
-                              ? "bg-blue-100 text-blue-800"
-                              : "text-slate-800 bg-gray-50 hover:bg-gray-100"
-                          }`}
-                        >
-                          {String.fromCharCode(65 + index)}. {option}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                ) : (
-                  <div>
-                    <Label htmlFor="text-answer" className="text-sm font-medium text-slate-700">
-                      Your Answer
-                    </Label>
-                    <Input
-                      id="text-answer"
-                      placeholder="Type your answer here..."
-                      value={answers[selectedLesson.content.questions[currentQuestion].id] || ""}
-                      onChange={(e) => handleAnswer(selectedLesson.content.questions[currentQuestion].id, e.target.value)}
-                      className="mt-2"
-                    />
-                  </div>
-                )}
-
-                <div className="flex justify-between">
-                  <Button onClick={previousQuestion} disabled={currentQuestion === 0} variant="outline" className="text-sm px-3 py-2">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Previous
-                  </Button>
-                  <Button onClick={nextQuestion} className="text-sm px-3 py-2">
-                    {currentQuestion === selectedLesson.content.questions.length - 1 ? (
-                      <>
-                        <Trophy className="mr-2 h-4 w-4" />
-                        Finish Questions
-                      </>
-                    ) : (
-                      <>
-                        Next
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                {selectedLesson && currentQuestion === null && (
+  <div className="max-w-2xl mx-auto">
+    <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-slate-800">{selectedLesson.title}</CardTitle>
+          {isVoiceEnabled && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => speakText(`${selectedLesson.title}. ${selectedLesson.description || ""}. ${selectedLesson.content.main_content}`)}
+              disabled={isSpeaking}
+            >
+              <Volume2 className="h-4 w-4 text-black" />
+            </Button>
+          )}
+        </div>
+        <CardDescription className="text-slate-600">{selectedLesson.description || "No description"}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {selectedLesson.content_type === "text" && (
+          <div className="prose text-slate-800">
+            {selectedLesson.content.main_content}
           </div>
+        )}
+        {selectedLesson.content_type === "video" && (
+          <div className="aspect-video">
+            <iframe
+              src={selectedLesson.content.main_content}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full rounded-lg"
+            ></iframe>
+          </div>
+        )}
+        {selectedLesson.content_type === "audio" && (
+          <audio controls className="w-full">
+            <source src={selectedLesson.content.main_content} type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
+        )}
+        {selectedLesson.content_type === "interactive" && (
+          <div className="text-slate-800">
+            <p>{selectedLesson.content.main_content}</p>
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <Button 
+            onClick={() => setSelectedLesson(null)} 
+            variant="outline" 
+            className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Lessons
+          </Button>
+          {selectedLesson.content.questions.length > 0 ? (
+            <Button 
+              onClick={startQuestions} 
+              className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+            >
+              Start Questions
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button 
+              onClick={completeLesson} 
+              className="w-full sm:flex-1 text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-2"
+            >
+              Complete Lesson
+              <Trophy className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  </div>
+
         ) : (
           <div className="max-w-2xl mx-auto">
             <Card className="border-slate-200 bg-white/80 backdrop-blur-sm">
