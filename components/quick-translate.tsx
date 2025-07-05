@@ -1,13 +1,13 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { ArrowRight, Volume2, Mic, Copy, RotateCcw, Loader2, Sparkles } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Volume2, Mic, Copy, RotateCcw, Loader2, Sparkles, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const languages = [
   { code: "auto", name: "Auto Detect", flag: "🌐" },
@@ -23,104 +23,158 @@ const languages = [
   { code: "zh", name: "Chinese", flag: "🇨🇳" },
   { code: "ar", name: "Arabic", flag: "🇸🇦" },
   { code: "hi", name: "Hindi", flag: "🇮🇳" },
+  { code: "tr", name: "Turkish", flag: "🇹🇷" },
+  { code: "pl", name: "Polish", flag: "🇵🇱" },
+  { code: "nl", name: "Dutch", flag: "🇳🇱" },
+  { code: "el", name: "Greek", flag: "🇬🇷" },
+  { code: "he", name: "Hebrew", flag: "🇮🇱" },
+  { code: "th", name: "Thai", flag: "🇹🇭" },
+  { code: "fa", name: "Persian", flag: "🇮🇷" },
+  { code: "vi", name: "Vietnamese", flag: "🇻🇳" },
+  { code: "ms", name: "Malay", flag: "🇲🇾" },
+  { code: "ur", name: "Urdu", flag: "🇵🇰" },
+  { code: "ta", name: "Tamil", flag: "🇮🇳" },
+  { code: "te", name: "Telugu", flag: "🇮🇳" },
+  { code: "kn", name: "Kannada", flag: "🇮🇳" },
+  { code: "ml", name: "Malayalam", flag: "🇮🇳" },
+  { code: "mr", name: "Marathi", flag: "🇮🇳" },
+  { code: "gu", name: "Gujarati", flag: "🇮🇳" },
+  { code: "bn", name: "Bengali", flag: "🇧🇩" },
+  { code: "pa", name: "Punjabi", flag: "🇮🇳" },
+  { code: "or", name: "Odia", flag: "🇮🇳" },
+  { code: "as", name: "Assamese", flag: "🇮🇳" },
+  { code: "si", name: "Sinhala", flag: "🇱🇰" },
+  { code: "km", name: "Khmer", flag: "🇰🇭" },
+  { code: "lo", name: "Lao", flag: "🇱🇦" },
+  { code: "my", name: "Burmese", flag: "🇲🇲" },
   { code: "yo", name: "Yoruba", flag: "🇳🇬" },
   { code: "ig", name: "Igbo", flag: "🇳🇬" },
   { code: "ha", name: "Hausa", flag: "🇳🇬" },
-]
+  { code: "zu", name: "Zulu", flag: "🇿🇦" },
+  { code: "sw", name: "Swahili", flag: "🇹🇿" },
+  { code: "am", name: "Amharic", flag: "🇪🇹" },
+  { code: "ti", name: "Tigrinya", flag: "🇪🇷" },
+  { code: "so", name: "Somali", flag: "🇸🇴" },
+  { code: "ne", name: "Nepali", flag: "🇳🇵" },
+];
 
 export function QuickTranslate() {
-  const [sourceText, setSourceText] = useState("")
-  const [translatedText, setTranslatedText] = useState("")
-  const [sourceLang, setSourceLang] = useState("auto")
-  const [targetLang, setTargetLang] = useState("es")
-  const [isTranslating, setIsTranslating] = useState(false)
-  const [isListening, setIsListening] = useState(false)
-  const { toast } = useToast()
+  const [sourceText, setSourceText] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [sourceLang, setSourceLang] = useState("auto");
+  const [targetLang, setTargetLang] = useState("es");
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [searchSourceQuery, setSearchSourceQuery] = useState("");
+  const [searchTargetQuery, setSearchTargetQuery] = useState("");
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const { toast } = useToast();
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const translateText = async (text: string, from: string, to: string) => {
-    setIsTranslating(true)
+    setIsTranslating(true);
     try {
       const response = await fetch("/api/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, source: from, target: to }),
-      })
-      if (!response.ok) throw new Error("Translation failed")
-      const data = await response.json()
-      setTranslatedText(data.translatedText || data)
+      });
+      if (!response.ok) throw new Error("Translation failed");
+      const data = await response.json();
+      setTranslatedText(data.translatedText || data);
     } catch (error) {
-      console.error("Translation error:", error)
+      console.error("Translation error:", error);
       const mockTranslations: Record<string, Record<string, string>> = {
         hello: { es: "hola", fr: "bonjour", de: "hallo", it: "ciao" },
         goodbye: { es: "adiós", fr: "au revoir", de: "auf wiedersehen", it: "ciao" },
         "thank you": { es: "gracias", fr: "merci", de: "danke", it: "grazie" },
         "how are you": { es: "cómo estás", fr: "comment allez-vous", de: "wie geht es dir", it: "come stai" },
         "good morning": { es: "buenos días", fr: "bonjour", de: "guten morgen", it: "buongiorno" },
-      }
+      };
       const result =
         mockTranslations[text.toLowerCase()]?.[to] ||
-        `[Translated to ${languages.find((l) => l.code === to)?.name}: ${text}]`
-      setTranslatedText(result)
+        `[Translated to ${languages.find((l) => l.code === to)?.name}: ${text}]`;
+      setTranslatedText(result);
       toast({
         title: "Demo Mode",
         description: "Using demo translation. Connect to LibreTranslate for full functionality.",
-      })
+      });
     } finally {
-      setIsTranslating(false)
+      setIsTranslating(false);
     }
-  }
+  };
 
   const handleTranslate = () => {
-    if (!sourceText.trim()) return
-    translateText(sourceText, sourceLang, targetLang)
-  }
+    if (!sourceText.trim()) return;
+    translateText(sourceText, sourceLang, targetLang);
+  };
 
   const handleSwapLanguages = () => {
-    if (sourceLang === "auto") return
-    setSourceLang(targetLang)
-    setTargetLang(sourceLang)
-    setSourceText(translatedText)
-    setTranslatedText(sourceText)
-  }
+    if (sourceLang === "auto") return;
+    setSourceLang(targetLang);
+    setTargetLang(sourceLang);
+    setSourceText(translatedText);
+    setTranslatedText(sourceText);
+  };
 
   const handleSpeak = (text: string, lang: string) => {
     if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = lang === "auto" ? "en" : lang
-      speechSynthesis.speak(utterance)
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang === "auto" ? "en" : lang;
+      const voices = window.speechSynthesis.getVoices();
+      const targetVoice = voices.find((v) => v.lang.startsWith(lang.split("-")[0])) || voices[0];
+      utterance.voice = targetVoice;
+      utterance.pitch = 1.0;
+      utterance.rate = 1.0;
+      window.speechSynthesis.speak(utterance);
+
+      // Record synthesized audio
+      const audioContext = new AudioContext();
+      const destination = audioContext.createMediaStreamDestination();
+      const source = audioContext.createBufferSource();
+      const chunks: BlobPart[] = [];
+      const recorder = new MediaRecorder(destination.stream);
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/wav" });
+        const url = URL.createObjectURL(blob);
+        setAudioUrl(url);
+      };
+      recorder.start();
+      utterance.onend = () => recorder.stop();
     }
-  }
+  };
 
   const handleListen = () => {
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-      const recognition = new SpeechRecognition()
-      recognition.continuous = false
-      recognition.interimResults = false
-      recognition.lang = sourceLang === "auto" ? "en" : sourceLang
-      recognition.onstart = () => setIsListening(true)
-      recognition.onend = () => setIsListening(false)
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = sourceLang === "auto" ? "en" : sourceLang;
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript
-        setSourceText(transcript)
-      }
-      recognition.start()
+        const transcript = event.results[0][0].transcript;
+        setSourceText(transcript);
+      };
+      recognition.start();
     } else {
       toast({
         title: "Speech Recognition Not Supported",
         description: "Your browser doesn't support speech recognition.",
         variant: "destructive",
-      })
+      });
     }
-  }
+  };
 
   const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text)
+    navigator.clipboard.writeText(text);
     toast({
       title: "Copied!",
       description: "Text copied to clipboard.",
-    })
-  }
+    });
+  };
 
   return (
     <div className="bg-[--translate-bg]">
@@ -132,17 +186,35 @@ export function QuickTranslate() {
               <div className="flex items-center justify-between">
                 <Select value={sourceLang} onValueChange={setSourceLang}>
                   <SelectTrigger className="w-48 border-border bg-card text-foreground focus:ring-primary font-medium text-base rounded-lg shadow-sm">
-                    <SelectValue />
+                    <SelectValue placeholder="Select Source Language" />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border shadow-md">
-                    {languages.map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code} className="text-foreground hover:bg-muted">
-                        <div className="flex items-center gap-2">
-                          <span>{lang.flag}</span>
-                          <span className="font-medium">{lang.name}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="bg-black border-border shadow-md max-h-60 overflow-auto text-white">
+                    <div className="p-2">
+                      <input
+                        type="text"
+                        placeholder="Search language..."
+                        value={searchSourceQuery}
+                        onChange={(e) => setSearchSourceQuery(e.target.value)}
+                        className="w-full p-2 border border-border rounded-md bg-gray-900 text-white focus:ring-primary text-sm shadow-sm"
+                      />
+                    </div>
+                    {languages
+                      .filter((lang) =>
+                        lang.name.toLowerCase().includes(searchSourceQuery.toLowerCase()) ||
+                        lang.code.toLowerCase().includes(searchSourceQuery.toLowerCase())
+                      )
+                      .map((lang) => (
+                        <SelectItem
+                          key={lang.code}
+                          value={lang.code}
+                          className="text-white hover:bg-gray-800"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span>{lang.flag}</span>
+                            <span className="font-medium">{lang.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
                 <Badge className="bg-blue-100 text-blue-900 border-blue-200 font-semibold shadow-inner">
@@ -232,13 +304,30 @@ export function QuickTranslate() {
               <div className="flex items-center justify-between">
                 <Select value={targetLang} onValueChange={setTargetLang}>
                   <SelectTrigger className="w-48 border-border bg-card text-foreground focus:ring-primary font-medium text-base rounded-lg shadow-sm">
-                    <SelectValue />
+                    <SelectValue placeholder="Select Target Language" />
                   </SelectTrigger>
-                  <SelectContent className="bg-card border-border shadow-md">
+                  <SelectContent className="bg-black border-border shadow-md max-h-60 overflow-auto text-white">
+                    <div className="p-2">
+                      <input
+                        type="text"
+                        placeholder="Search language..."
+                        value={searchTargetQuery}
+                        onChange={(e) => setSearchTargetQuery(e.target.value)}
+                        className="w-full p-2 border border-border rounded-md bg-gray-900 text-white focus:ring-primary text-sm shadow-sm"
+                      />
+                    </div>
                     {languages
                       .filter((lang) => lang.code !== "auto")
+                      .filter((lang) =>
+                        lang.name.toLowerCase().includes(searchTargetQuery.toLowerCase()) ||
+                        lang.code.toLowerCase().includes(searchTargetQuery.toLowerCase())
+                      )
                       .map((lang) => (
-                        <SelectItem key={lang.code} value={lang.code} className="text-foreground hover:bg-muted">
+                        <SelectItem
+                          key={lang.code}
+                          value={lang.code}
+                          className="text-white hover:bg-gray-800"
+                        >
                           <div className="flex items-center gap-2">
                             <span>{lang.flag}</span>
                             <span className="font-medium">{lang.name}</span>
@@ -281,6 +370,24 @@ export function QuickTranslate() {
                   >
                     <Copy className="h-5 w-5" />
                   </Button>
+                  {audioUrl && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        const link = document.createElement("a");
+                        link.href = audioUrl;
+                        link.download = `translation_${targetLang}_${Date.now()}.wav`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="text-primary hover:bg-muted hover:text-primary-foreground rounded-lg shadow-sm"
+                    >
+                      <Download className="h-5 w-5" />
+                    </Button>
+                  )}
+                  {audioUrl && <audio ref={audioRef} src={audioUrl} className="hidden" />}
                 </div>
               )}
             </div>
@@ -288,5 +395,5 @@ export function QuickTranslate() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
