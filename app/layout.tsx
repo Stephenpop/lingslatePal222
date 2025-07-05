@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  generator: "v0.dev",
+  generator: "anyaibe ebuka",
   applicationName: "LingslatePal",
   referrer: "origin-when-cross-origin",
   category: "education",
@@ -41,16 +41,18 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://lingslatepal.com",
+    url: "https://lingslatepal.vercel.app",
     siteName: "LingslatePal",
     title: "LingslatePal - Language Learning & Translation",
     description: "Learn and translate languages with ease. Free translation tools and interactive language learning.",
     images: [
       {
-        url: "/icon-512x512.png",
-        width: 512,
-        height: 512,
+        url: "https://lingslatepal.vercel.app/og-image.jpg",
+        width: 1200,
+        height: 630,
         alt: "LingslatePal Logo",
+        type: "image/jpeg",
+        secureUrl: "https://lingslatepal.vercel.app/og-image.jpg",
       },
     ],
   },
@@ -58,7 +60,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "LingslatePal - Language Learning & Translation",
     description: "Learn and translate languages with ease. Free translation tools and interactive language learning.",
-    images: ["/icon-512x512.png"],
+    images: ["https://lingslatepal.vercel.app/og-image.jpg"],
   },
   robots: {
     index: true,
@@ -89,15 +91,10 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* PWA Meta Tags */}
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
         <link rel="apple-touch-icon" sizes="152x152" href="/icon-152x152.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icon-192x192.png" />
@@ -113,18 +110,13 @@ export default function RootLayout({
         <meta name="msapplication-TileImage" content="/icon-144x144.png" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
 
-        {/* Preconnect to external domains */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-
-        {/* DNS Prefetch */}
         <link rel="dns-prefetch" href="https://libretranslate.com" />
 
-        {/* Favicon */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" href="/icon-192x192.png" type="image/png" />
 
-        {/* Service Worker Registration */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
