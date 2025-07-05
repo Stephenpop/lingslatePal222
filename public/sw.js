@@ -1,8 +1,9 @@
 const CACHE_NAME = 'polyglot-pal-v2'; // Updated version to invalidate old cache
 
 const urlsToCache = [
-  '/',
-  '/translate',
+ 
+  '/learn',
+  '/quizz',
   '/offline',
   '/manifest.json',
   // Add other static assets as needed, e.g., '/globals.css', '/icon-192x192.png'
