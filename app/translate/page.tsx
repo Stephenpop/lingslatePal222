@@ -77,7 +77,7 @@ const recentTranslations = [
   { source: "Good morning", target: "Bonjour", from: "en", to: "fr" },
   { source: "Thank you", target: "Danke", from: "en", to: "de" },
   { source: "How are you?", target: "¿Cómo estás?", from: "en", to: "es" },
-  { code: "Goodbye", target: "Au revoir", from: "en", to: "fr" },
+  { source: "Goodbye", target: "Au revoir", from: "en", to: "fr" },
 ];
 
 export default function TranslatePage() {
@@ -86,7 +86,7 @@ export default function TranslatePage() {
   const [sourceLang, setSourceLang] = useState("auto");
   const [targetLang, setTargetLang] = useState("es");
   const [isTranslating, setIsTranslating] = useState(false);
-  [isListening, setIsListening] = useState(false);
+  const [isListening, setIsListening] = useState(false); // Fixed syntax
   const [searchSourceQuery, setSearchSourceQuery] = useState("");
   const [searchTargetQuery, setSearchTargetQuery] = useState("");
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -444,7 +444,9 @@ export default function TranslatePage() {
                             const link = document.createElement("a");
                             link.href = audioUrl;
                             link.download = `translation_${targetLang}_${Date.now()}.wav`;
+                            document.body.appendChild(link);
                             link.click();
+                            document.body.removeChild(link);
                           }}
                           className="text-blue-600 hover:bg-slate-100 p-2 shadow-sm"
                         >
