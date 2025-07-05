@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -27,6 +28,8 @@ import {
   TrendingUp,
   Shield,
   Sparkles,
+  Menu,
+  X,
 } from "lucide-react"
 import Link from "next/link"
 import { QuickTranslate } from "@/components/quick-translate"
@@ -37,6 +40,7 @@ import { LearningPath } from "@/components/learning-path"
 import { HowItWorks } from "@/components/how-it-works"
 import { TestimonialSection } from "@/components/testimonial-section"
 import { AppShowcase } from "@/components/app-showcase"
+import { FloatingInstallPrompt } from "@/components/floating-install-prompt"
 import { supabase } from "@/lib/supabase"
 import { authService } from "@/lib/auth"
 import { toast } from "sonner"
@@ -123,6 +127,7 @@ export default function HomePage() {
   const [languageName, setLanguageName] = useState("")
   const [languageCode, setLanguageCode] = useState("")
   const [reason, setReason] = useState("")
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   const handleLanguageRequest = async () => {
     const user = await authService.getCurrentUser()
@@ -181,20 +186,73 @@ export default function HomePage() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center space-x-4"
+              className="hidden sm:flex items-center space-x-4"
             >
-              <Link href="/auth/login" className="hidden sm:block">
+              <Link href="/dashboard">
+                <Button variant="ghost" className="text-slate-700 hover:text-blue-600 hover:bg-blue-50">
+                  Dashboard
+                </Button>
+              </Link>
+              <Link href="/translate">
+                <Button variant="ghost" className="text-slate-700 hover:text-blue-600 hover:bg-blue-50">
+                  Translate
+                </Button>
+              </Link>
+              <Link href="/auth/login">
                 <Button variant="ghost" className="text-slate-700 hover:text-blue-600 hover:bg-blue-50">
                   Login
                 </Button>
               </Link>
               <Link href="/auth/register">
                 <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 sm:px-8 sm:py-4 px-4 py-2 text-sm sm:text-base">
-                  Get Started 
+                  Get Started
                 </Button>
               </Link>
             </motion.div>
+
+            <div className="sm:hidden">
+              <Button
+                variant="ghost"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="text-slate-700 hover:text-blue-600 hover:bg-blue-50"
+              >
+                {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
           </div>
+
+          {isMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="sm:hidden mt-4 bg-white border-t border-slate-200"
+            >
+              <div className="flex flex-col space-y-2 py-4">
+                <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full text-left text-slate-700 hover:text-blue-600 hover:bg-blue-50">
+                    Dashboard
+                  </Button>
+                </Link>
+                <Link href="/translate" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full text-left text-slate-700 hover:text-blue-600 hover:bg-blue-50">
+                    Translate
+                  </Button>
+                </Link>
+                <Link href="/auth/login" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full text-left text-slate-700 hover:text-blue-600 hover:bg-blue-50">
+                    Login
+                  </Button>
+                </Link>
+                <Link href="/auth/register" onClick={() => setIsMenuOpen(false)}>
+                  <Button className="w-full text-left bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+                    Get Started
+                  </Button>
+                </Link>
+              </div>
+            </motion.div>
+          )}
         </div>
       </nav>
 
@@ -539,8 +597,6 @@ export default function HomePage() {
               </Label>
               <Input
                 id="language-name"
-                valueソー
-
                 value={languageName}
                 onChange={(e) => setLanguageName(e.target.value)}
                 placeholder="e.g., Swahili"
@@ -589,6 +645,9 @@ export default function HomePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Floating Install Prompt */}
+      <FloatingInstallPrompt />
 
       {/* Footer */}
       <footer className="border-t border-slate-200 bg-slate-50">
