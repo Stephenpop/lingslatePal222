@@ -1,12 +1,17 @@
-import type React from "react"
-import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
-import { PWAInstallPrompt } from "@/components/pwa-install-prompt"
+import type React from "react";
+import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/toaster";
+import dynamic from "next/dynamic";
 
-const inter = Inter({ subsets: ["latin"] })
+// Dynamically import PWAInstallPrompt to prevent SSR issues
+const PWAInstallPrompt = dynamic(() => import("@/components/pwa-install-prompt"), {
+  ssr: false, // Disable server-side rendering
+});
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "LingslatePal - Language Learning & Translation",
@@ -37,7 +42,6 @@ export const metadata: Metadata = {
   generator: "v0.dev",
   applicationName: "LingslatePal",
   referrer: "origin-when-cross-origin",
-  colorScheme: "light",
   category: "education",
   classification: "Education",
   openGraph: {
@@ -76,24 +80,25 @@ export const metadata: Metadata = {
   verification: {
     google: "your-google-verification-code",
   },
-}
+};
 
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#2563eb" },
     { media: "(prefers-color-scheme: dark)", color: "#1e40af" },
   ],
+  colorScheme: "light", // Moved from metadata
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
   viewportFit: "cover",
-}
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -109,7 +114,6 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="LingslatePal" />
         <meta name="mobile-web-app-capable" content="yes" />
 
-        {/* Additional PWA Meta Tags */}
         <meta name="application-name" content="LingslatePal" />
         <meta name="msapplication-TileColor" content="#2563eb" />
         <meta name="msapplication-TileImage" content="/icon-144x144.png" />
@@ -148,11 +152,10 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           {children}
-          <FloatingInstallPrompt />
           <PWAInstallPrompt />
           <Toaster />
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
