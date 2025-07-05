@@ -123,15 +123,22 @@ export function QuickTranslate() {
       utterance.lang = lang === "auto" ? "en" : lang;
       const voices = window.speechSynthesis.getVoices();
       const targetVoice = voices.find((v) => v.lang.startsWith(lang.split("-")[0])) || voices[0];
-      utterance.voice = targetVoice;
+      if (targetVoice) utterance.voice = targetVoice;
       utterance.pitch = 1.0;
       utterance.rate = 1.0;
+
+      if (voices.length === 0) {
+        window.speechSynthesis.onvoiceschanged = () => handleSpeak(text, lang);
+        return;
+      }
+
       window.speechSynthesis.speak(utterance);
 
-      // Record synthesized audio
-      const audioContext = new AudioContext();
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       const destination = audioContext.createMediaStreamDestination();
-      const source = audioContext.createBufferSource();
+      const oscillator = audioContext.createOscillator();
+      oscillator.connect(destination);
+      oscillator.start();
       const chunks: BlobPart[] = [];
       const recorder = new MediaRecorder(destination.stream);
       recorder.ondataavailable = (e) => chunks.push(e.data);
@@ -139,9 +146,13 @@ export function QuickTranslate() {
         const blob = new Blob(chunks, { type: "audio/wav" });
         const url = URL.createObjectURL(blob);
         setAudioUrl(url);
+        oscillator.stop();
       };
       recorder.start();
-      utterance.onend = () => recorder.stop();
+      utterance.onend = () => {
+        recorder.stop();
+        oscillator.disconnect();
+      };
     }
   };
 
@@ -173,6 +184,7 @@ export function QuickTranslate() {
     toast({
       title: "Copied!",
       description: "Text copied to clipboard.",
+      className: "bg-gray-800 text-white",
     });
   };
 
@@ -181,7 +193,6 @@ export function QuickTranslate() {
       <Card className="border border-border bg-card shadow-xl">
         <CardContent className="p-6 sm:p-8">
           <div className="flex flex-col space-y-6 lg:flex-row lg:space-y-0 lg:space-x-6">
-            {/* Source */}
             <div className="flex-1 space-y-4">
               <div className="flex items-center justify-between">
                 <Select value={sourceLang} onValueChange={setSourceLang}>
@@ -269,7 +280,6 @@ export function QuickTranslate() {
               </div>
             </div>
 
-            {/* Controls */}
             <div className="flex items-center justify-center lg:flex-col lg:gap-6">
               <div className="flex gap-3">
                 <Button
@@ -299,7 +309,6 @@ export function QuickTranslate() {
               </div>
             </div>
 
-            {/* Target */}
             <div className="flex-1 space-y-4">
               <div className="flex items-center justify-between">
                 <Select value={targetLang} onValueChange={setTargetLang}>
