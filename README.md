@@ -1,30 +1,43 @@
-# New Project
+# 🌐 LingslatePal
 
-*Automatically synced with your [v0.dev](https://v0.dev) deployments*
+**LingslatePal** is a multilingual translation and language learning platform built to help users translate words and phrases across multiple languages with ease. It also serves as a gateway to language immersion through a user-friendly interface and clean, modern design.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/anyaibe-ebuka-stephens-projects/v0-new-project-hr38bda5quk)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.dev-black?style=for-the-badge)](https://v0.dev/chat/projects/hR38bDA5quK)
+Live site: [https://lingslatepal.vercel.app](https://lingslatepal.vercel.app)
 
-## Overview
+---
 
-This repository will stay in sync with your deployed chats on [v0.dev](https://v0.dev).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.dev](https://v0.dev).
+## ✨ Features
 
-## Deployment
+- 🌍 Translate between 25+ languages (LibreTranslate API)
+- 📱 Responsive and mobile-friendly interface
+- 🔤 Clean UI for entering text, selecting source and target languages
+- 💾 Keeps a short translation history (client-side)
+- 🌓 Light and dark mode support (if enabled)
+- 🔗 Social sharing and information links
+- ⚡ Fast, serverless deployment via Vercel
 
-Your project is live at:
+---
 
-**[https://vercel.com/anyaibe-ebuka-stephens-projects/v0-new-project-hr38bda5quk](https://vercel.com/anyaibe-ebuka-stephens-projects/v0-new-project-hr38bda5quk)**
+## 🛠 Tech Stack
 
-## Build your app
+| Layer        | Tech                                 |
+|--------------|--------------------------------------|
+| Frontend     | Next.js, React, TypeScript           |
+| Styling      | Tailwind CSS                         |
+| Translation  | [LibreTranslate](https://libretranslate.com) API |
+| Deployment   | Vercel                               |
 
-Continue building your app on:
+---
 
-**[https://v0.dev/chat/projects/hR38bDA5quK](https://v0.dev/chat/projects/hR38bDA5quK)**
+## 📦 Installation (Local Development)
 
-## How It Works
+```bash
+# Clone the repository
+git clone https://github.com/your-username/lingslatepal.git
+cd lingslatepal
 
-1. Create and modify your project using [v0.dev](https://v0.dev)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+# Install dependencies
+npm install
+
+# Run the development server
+npm run dev
